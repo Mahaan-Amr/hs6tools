@@ -48,7 +48,10 @@ fi
 
 # Step 2: Install dependencies
 log "Step 2: Installing dependencies..."
-npm ci --only=production
+# Clean old dependencies first
+rm -rf node_modules package-lock.json
+# Install all dependencies (including dev dependencies needed for build)
+npm install
 log "✅ Dependencies installed"
 
 # Step 3: Generate Prisma client
