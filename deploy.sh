@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# HS6Tools One-Click Deployment Script
-# This script will deploy the entire application to your Ubuntu server
+# HS6Tools Server Deployment Script
+# This script will deploy the application when run directly on the server
 
 set -e
 
@@ -11,11 +11,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
-
-# Configuration
-SERVER_IP="87.107.73.10"
-SERVER_USER="root"
-SERVER_PASS="OzyNIV29@hm4"
 
 # Logging function
 log() {
@@ -35,91 +30,188 @@ info() {
     echo -e "${BLUE}[INFO] $1${NC}"
 }
 
-log "🚀 Starting HS6Tools One-Click Deployment..."
+log "🚀 Starting HS6Tools Server Deployment..."
 
-# Check if sshpass is installed
-if ! command -v sshpass &> /dev/null; then
-    warning "sshpass not found. Installing..."
-    if command -v apt &> /dev/null; then
-        sudo apt update && sudo apt install -y sshpass
-    elif command -v yum &> /dev/null; then
-        sudo yum install -y sshpass
-    elif command -v brew &> /dev/null; then
-        brew install hudochenkov/sshpass/sshpass
-    else
-        error "Could not install sshpass. Please install it manually."
-    fi
+# Check if we're in the right directory
+if [ ! -f "package.json" ]; then
+    error "Please run this script from the /var/www/hs6tools directory"
 fi
 
-# Function to run commands on remote server
-run_remote() {
-    sshpass -p "$SERVER_PASS" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "$1"
-}
-
-# Function to copy files to remote server
-copy_to_server() {
-    sshpass -p "$SERVER_PASS" scp -o StrictHostKeyChecking=no "$1" ${SERVER_USER}@${SERVER_IP}:"$2"
-}
-
-# Test server connection
-log "Testing server connection..."
-if ! run_remote "echo 'Connection successful'" &> /dev/null; then
-    error "Cannot connect to server. Please check your credentials and network connection."
+# Step 1: Set up environment
+log "Step 1: Setting up environment..."
+if [ -f ".env.production" ]; then
+    cp .env.production .env
+    log "✅ Environment file created from .env.production"
+else
+    warning "⚠️  .env.production not found, using existing .env"
 fi
 
-log "✅ Server connection successful!"
+# Step 2: Install dependencies
+log "Step 2: Installing dependencies..."
+npm ci --only=production
+log "✅ Dependencies installed"
 
-# Step 1: Copy setup script to server
-log "Step 1: Copying setup script to server..."
-copy_to_server "deploy/setup-server.sh" "/tmp/setup-server.sh"
+# Step 3: Generate Prisma client
+log "Step 3: Generating Prisma client..."
+npx prisma generate
+log "✅ Prisma client generated"
 
-# Step 2: Run server setup
-log "Step 2: Running server setup (this may take 10-15 minutes)..."
-run_remote "chmod +x /tmp/setup-server.sh && /tmp/setup-server.sh"
+# Step 4: Run database migrations
+log "Step 4: Running database migrations..."
+npx prisma migrate deploy
+log "✅ Database migrations completed"
 
-# Step 3: Clone repository
-log "Step 3: Cloning repository..."
-run_remote "cd /var/www/hs6tools && git clone https://github.com/Mahaan-Amr/hs6tools.git ."
+# Step 5: Seed database
+log "Step 5: Seeding database..."
+npm run db:seed
+log "✅ Database seeded with sample data"
 
-# Step 4: Set up environment
-log "Step 4: Setting up environment..."
-run_remote "cd /var/www/hs6tools && cp .env.production .env"
+# Step 6: Build application
+log "Step 6: Building application..."
+npm run build
+log "✅ Application built successfully"
 
-# Step 5: Install dependencies
-log "Step 5: Installing dependencies..."
-run_remote "cd /var/www/hs6tools && npm ci --only=production"
+# Step 7: Create PM2 ecosystem file if it doesn't exist
+log "Step 7: Setting up PM2 configuration..."
+if [ ! -f "ecosystem.config.js" ]; then
+    cat > ecosystem.config.js << 'EOF'
+module.exports = {
+  apps: [{
+    name: 'hs6tools',
+    script: 'npm',
+    args: 'start',
+    cwd: '/var/www/hs6tools',
+    instances: 'max',
+    exec_mode: 'cluster',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000
+    },
+    env_production: {
+      NODE_ENV: 'production',
+      PORT: 3000
+    },
+    error_file: '/var/log/pm2/hs6tools-error.log',
+    out_file: '/var/log/pm2/hs6tools-out.log',
+    log_file: '/var/log/pm2/hs6tools-combined.log',
+    time: true,
+    max_memory_restart: '1G',
+    node_args: '--max-old-space-size=1024'
+  }]
+};
+EOF
+    log "✅ PM2 ecosystem file created"
+else
+    log "✅ PM2 ecosystem file already exists"
+fi
 
-# Step 6: Generate Prisma client
-log "Step 6: Generating Prisma client..."
-run_remote "cd /var/www/hs6tools && npx prisma generate"
+# Step 8: Create log directory
+log "Step 8: Setting up logging..."
+mkdir -p /var/log/pm2
+chown hs6tools:hs6tools /var/log/pm2 2>/dev/null || chown root:root /var/log/pm2
+log "✅ Log directory created"
 
-# Step 7: Run database migrations
-log "Step 7: Running database migrations..."
-run_remote "cd /var/www/hs6tools && npx prisma migrate deploy"
+# Step 9: Start with PM2
+log "Step 9: Starting application with PM2..."
+pm2 start ecosystem.config.js --env production
+pm2 save
+pm2 startup
+log "✅ Application started with PM2"
 
-# Step 8: Seed database
-log "Step 8: Seeding database..."
-run_remote "cd /var/www/hs6tools && npm run db:seed"
+# Step 10: Set up Nginx configuration
+log "Step 10: Setting up Nginx configuration..."
+if [ ! -f "/etc/nginx/sites-available/hs6tools" ]; then
+    cat > /etc/nginx/sites-available/hs6tools << 'EOF'
+server {
+    listen 80;
+    server_name hs6tools.com www.hs6tools.com 87.107.73.10;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied expired no-cache no-store private must-revalidate auth;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/javascript application/json;
+    
+    # Client max body size for file uploads
+    client_max_body_size 10M;
+    
+    # Proxy to Next.js app
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 86400;
+    }
+    
+    # Static files
+    location /_next/static {
+        alias /var/www/hs6tools/.next/static;
+        expires 365d;
+        access_log off;
+    }
+    
+    # Uploads
+    location /uploads {
+        alias /var/www/hs6tools/public/uploads;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Fonts
+    location /fonts {
+        alias /var/www/hs6tools/public/fonts;
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+EOF
 
-# Step 9: Build application
-log "Step 9: Building application..."
-run_remote "cd /var/www/hs6tools && npm run build"
+    # Enable site
+    ln -sf /etc/nginx/sites-available/hs6tools /etc/nginx/sites-enabled/
+    rm -f /etc/nginx/sites-enabled/default
+    
+    # Test Nginx configuration
+    nginx -t
+    
+    # Restart Nginx
+    systemctl restart nginx
+    log "✅ Nginx configuration created and enabled"
+else
+    log "✅ Nginx configuration already exists"
+fi
 
-# Step 10: Start with PM2
-log "Step 10: Starting application with PM2..."
-run_remote "cd /var/www/hs6tools && pm2 start ecosystem.config.js --env production"
-run_remote "pm2 save"
-run_remote "pm2 startup"
+# Step 11: Set up SSL certificate
+log "Step 11: Setting up SSL certificate..."
+if command -v certbot &> /dev/null; then
+    certbot --nginx -d hs6tools.com -d www.hs6tools.com --non-interactive --agree-tos --email admin@hs6tools.com || warning "SSL certificate setup failed or already exists"
+    log "✅ SSL certificate configured"
+else
+    warning "⚠️  Certbot not found, SSL setup skipped"
+fi
 
-# Step 11: Final configuration
-log "Step 11: Final configuration..."
-run_remote "chown -R hs6tools:hs6tools /var/www/hs6tools"
-run_remote "systemctl restart nginx"
+# Step 12: Set proper permissions
+log "Step 12: Setting final permissions..."
+chown -R hs6tools:hs6tools /var/www/hs6tools 2>/dev/null || chown -R root:root /var/www/hs6tools
+log "✅ Permissions set"
 
-# Step 12: Health check
-log "Step 12: Performing health check..."
-sleep 10
-if run_remote "curl -f http://localhost:3000 > /dev/null 2>&1"; then
+# Step 13: Health check
+log "Step 13: Performing health check..."
+sleep 5
+if curl -f http://localhost:3000 > /dev/null 2>&1; then
     log "✅ Application is running successfully!"
 else
     warning "⚠️  Application health check failed. Please check logs manually."
@@ -129,31 +221,25 @@ log ""
 log "🎉 HS6Tools Deployment Completed Successfully!"
 log ""
 log "📋 Deployment Summary:"
-log "   Server: ${SERVER_IP}"
+log "   Server: 87.107.73.10"
 log "   Application: /var/www/hs6tools"
-log "   Admin Panel: http://${SERVER_IP}/fa/admin"
-log "   Main Site: http://${SERVER_IP}"
+log "   Admin Panel: https://hs6tools.com/fa/admin"
+log "   Main Site: https://hs6tools.com"
 log ""
 log "🔑 Admin Credentials:"
 log "   Email: admin@hs6tools.com"
 log "   Password: Admin123!"
 log ""
 log "📊 Quick Commands:"
-log "   Check status: ssh root@${SERVER_IP} 'pm2 status'"
-log "   View logs: ssh root@${SERVER_IP} 'pm2 logs hs6tools'"
-log "   Restart: ssh root@${SERVER_IP} 'pm2 restart hs6tools'"
+log "   Check status: pm2 status"
+log "   View logs: pm2 logs hs6tools"
+log "   Restart: pm2 restart hs6tools"
 log ""
 log "🔄 Future Updates:"
-log "   ssh root@${SERVER_IP} 'cd /var/www/hs6tools && ./deploy.sh'"
+log "   cd /var/www/hs6tools && ./deploy.sh"
 log ""
 log "💾 Backup:"
-log "   ssh root@${SERVER_IP} 'cd /var/www/hs6tools && ./backup.sh'"
-log ""
-log "🌐 Next Steps:"
-log "   1. Domain hs6tools.com will be configured automatically"
-log "   2. SSL certificate will be installed automatically"
-log "   3. Update environment variables for production"
-log "   4. Configure payment gateway credentials"
+log "   cd /var/www/hs6tools && ./backup.sh"
 log ""
 log "📞 Support:"
 log "   Check logs if you encounter issues:"
