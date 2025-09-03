@@ -88,14 +88,9 @@ run_remote "cd ${APP_DIR} && pm2 start ecosystem.config.js --env production"
 run_remote "pm2 save"
 run_remote "pm2 startup"
 
-# Step 10: Set up SSL (if domain is configured)
+# Step 10: Set up SSL
 log "Step 10: Setting up SSL..."
-if [ "$DOMAIN" != "hs6tools.com" ]; then
-    run_remote "certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos --email admin@${DOMAIN}"
-else
-    warning "Domain not configured. SSL setup skipped."
-    info "To set up SSL later, run: certbot --nginx -d your-domain.com"
-fi
+run_remote "certbot --nginx -d hs6tools.com -d www.hs6tools.com --non-interactive --agree-tos --email admin@hs6tools.com"
 
 # Step 11: Final configuration
 log "Step 11: Final configuration..."
