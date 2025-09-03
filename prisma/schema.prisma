@@ -1,0 +1,435 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  phone         String?        @unique
+  firstName     String
+  lastName      String
+  passwordHash  String
+  role          UserRole       @default(CUSTOMER)
+  isActive      Boolean        @default(true)
+  emailVerified Boolean        @default(false)
+  phoneVerified Boolean        @default(false)
+  avatar        String?
+  dateOfBirth   DateTime?
+  gender        Gender?
+  company       String?
+  position      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  lastLoginAt   DateTime?
+  deletedAt     DateTime?
+  addresses     Address[]
+  articles      Article[]
+  orders        Order[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+  settings      UserSettings?
+
+  @@map("users")
+}
+
+model Address {
+  id             String      @id @default(cuid())
+  userId         String
+  type           AddressType
+  title          String
+  firstName      String
+  lastName       String
+  company        String?
+  addressLine1   String
+  addressLine2   String?
+  city           String
+  state          String
+  postalCode     String
+  country        String
+  phone          String
+  isDefault      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingOrders  Order[]     @relation("BillingAddress")
+  shippingOrders Order[]     @relation("ShippingAddress")
+
+  @@map("addresses")
+}
+
+model Category {
+  id              String     @id @default(cuid())
+  name            String     // Persian name (for admin)
+  slug            String     @unique
+  description     String?    // Persian description (for admin)
+  image           String?
+  icon            String?
+  parentId        String?
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  isActive        Boolean    @default(true)
+  sortOrder       Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+  
+  // Multilingual fields for customer-facing website
+  nameEn          String?    // English name
+  nameAr          String?    // Arabic name
+  descriptionEn   String?    // English description
+  descriptionAr   String?    // Arabic description
+  
+  parent          Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        Category[] @relation("CategoryHierarchy")
+  products        Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                String           @id @default(cuid())
+  sku               String           @unique
+  name              String           // Persian name (for admin)
+  slug              String           @unique
+  description       String?          // Persian description (for admin)
+  shortDescription  String?          // Persian short description (for admin)
+  price             Decimal          @db.Decimal(10, 2)
+  comparePrice      Decimal?         @db.Decimal(10, 2)
+  costPrice         Decimal?         @db.Decimal(10, 2)
+  stockQuantity     Int              @default(0)
+  lowStockThreshold Int              @default(5)
+  isInStock         Boolean          @default(true)
+  allowBackorders   Boolean          @default(false)
+  weight            Decimal?         @db.Decimal(8, 3)
+  dimensions        Json?
+  material          String?
+  warranty          String?
+  brand             String?
+  categoryId        String
+  metaTitle         String?
+  metaDescription   String?
+  metaKeywords      String?
+  isActive          Boolean          @default(true)
+  isFeatured        Boolean          @default(false)
+  sortOrder         Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+  
+  // Multilingual fields for customer-facing website
+  nameEn            String?          // English name
+  nameAr            String?          // Arabic name
+  descriptionEn     String?          // English description
+  descriptionAr     String?          // Arabic description
+  shortDescriptionEn String?         // English short description
+  shortDescriptionAr String?         // Arabic short description
+  
+  orderItems        OrderItem[]
+  images            ProductImage[]
+  variants          ProductVariant[]
+  category          Category         @relation(fields: [categoryId], references: [id])
+  reviews           Review[]
+  wishlistItems     WishlistItem[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  title     String?
+  sortOrder Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductVariant {
+  id            String      @id @default(cuid())
+  productId     String
+  sku           String      @unique
+  name          String
+  attributes    Json
+  price         Decimal?    @db.Decimal(10, 2)
+  comparePrice  Decimal?    @db.Decimal(10, 2)
+  stockQuantity Int         @default(0)
+  isInStock     Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variants")
+}
+
+model Order {
+  id                String         @id @default(cuid())
+  orderNumber       String         @unique
+  userId            String
+  status            OrderStatus    @default(PENDING)
+  totalAmount       Decimal        @db.Decimal(10, 2)
+  subtotal          Decimal        @db.Decimal(10, 2)
+  taxAmount         Decimal        @db.Decimal(10, 2)
+  shippingAmount    Decimal        @db.Decimal(10, 2)
+  discountAmount    Decimal        @db.Decimal(10, 2)
+  customerEmail     String
+  customerPhone     String?
+  customerNote      String?
+  billingAddressId  String
+  shippingAddressId String
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus  @default(PENDING)
+  paymentId         String?
+  paymentDate       DateTime?
+  shippingMethod    ShippingMethod
+  trackingNumber    String?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  orderItems        OrderItem[]
+  billingAddress    Address        @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  shippingAddress   Address        @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  user              User           @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String          @id @default(cuid())
+  orderId     String
+  productId   String?
+  variantId   String?
+  sku         String
+  name        String
+  description String?
+  image       String?
+  unitPrice   Decimal         @db.Decimal(10, 2)
+  totalPrice  Decimal         @db.Decimal(10, 2)
+  quantity    Int
+  attributes  Json?
+  createdAt   DateTime        @default(now())
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product?        @relation(fields: [productId], references: [id])
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("order_items")
+}
+
+model ContentCategory {
+  id              String            @id @default(cuid())
+  name            String
+  slug            String            @unique
+  description     String?
+  image           String?
+  parentId        String?
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  isActive        Boolean           @default(true)
+  sortOrder       Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  articles        Article[]
+  parent          ContentCategory?  @relation("ContentCategoryHierarchy", fields: [parentId], references: [id])
+  children        ContentCategory[] @relation("ContentCategoryHierarchy")
+
+  @@map("content_categories")
+}
+
+model Article {
+  id              String           @id @default(cuid())
+  title           String
+  slug            String           @unique
+  excerpt         String?
+  content         String
+  categoryId      String?
+  featuredImage   String?
+  authorId        String?
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  status          ArticleStatus    @default(DRAFT)
+  publishedAt     DateTime?
+  isFeatured      Boolean          @default(false)
+  viewCount       Int              @default(0)
+  likeCount       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+  author          User?            @relation(fields: [authorId], references: [id])
+  category        ContentCategory? @relation(fields: [categoryId], references: [id])
+
+  @@map("articles")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String
+  title      String?
+  content    String
+  rating     Int
+  isApproved Boolean  @default(false)
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+// ============================================================================
+// SYSTEM SETTINGS MODELS
+// ============================================================================
+
+model SystemSettings {
+  id                      String   @id @default(cuid())
+  siteName                String   @default("HS6Tools")
+  siteDescription         String?  @db.Text
+  siteUrl                 String   @default("http://localhost:3000")
+  contactEmail            String   @default("support@hs6tools.com")
+  contactPhone            String   @default("+98-21-12345678")
+  businessAddress         String?  @db.Text
+  currency                String   @default("IRR")
+  language                String   @default("fa")
+  timezone                String   @default("Asia/Tehran")
+  maintenanceMode         Boolean  @default(false)
+  allowRegistration       Boolean  @default(true)
+  requireEmailVerification Boolean @default(false)
+  requirePhoneVerification Boolean @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model EmailSettings {
+  id          String   @id @default(cuid())
+  smtpHost    String   @default("smtp.gmail.com")
+  smtpPort    Int      @default(587)
+  smtpUser    String   @default("")
+  smtpPassword String  @default("")
+  fromEmail   String   @default("noreply@hs6tools.com")
+  fromName    String   @default("HS6Tools")
+  enableSSL   Boolean  @default(true)
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("email_settings")
+}
+
+model PaymentSettings {
+  id                    String   @id @default(cuid())
+  zarinpalMerchantId    String   @default("")
+  zarinpalApiKey        String   @default("")
+  zarinpalSandbox       Boolean  @default(true)
+  allowBankTransfer     Boolean  @default(true)
+  allowCashOnDelivery   Boolean  @default(true)
+  minimumOrderAmount    Int      @default(0)
+  maximumOrderAmount    Int      @default(1000000000)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("payment_settings")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum AddressType {
+  BILLING
+  SHIPPING
+  BOTH
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  ZARINPAL
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum ShippingMethod {
+  TIPAX
+  POST
+  EXPRESS
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model UserSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  language      String   @default("fa")
+  currency      String   @default("IRR")
+  timezone      String   @default("Asia/Tehran")
+  notifications Json     @default("{\"orderUpdates\":true,\"promotionalEmails\":true,\"smsNotifications\":false,\"newProductAlerts\":false,\"priceDropAlerts\":false}")
+  privacy       Json     @default("{\"showOnlineStatus\":false,\"allowDataSharing\":false,\"showPurchaseHistory\":true}")
+  display       Json     @default("{\"itemsPerPage\":10,\"dateFormat\":\"persian\",\"theme\":\"auto\"}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}

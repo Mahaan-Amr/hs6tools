@@ -3,13 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-vazirmatn: 'Vazirmatn', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-vazirmatn);
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +20,75 @@
   }
 }
 
+/* Persian/Arabic text rendering optimization */
+html {
+  font-feature-settings: 'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'ss07', 'ss08', 'ss09', 'ss10', 'ss11', 'ss12', 'ss13', 'ss14', 'ss15', 'ss16', 'ss17', 'ss18', 'ss19', 'ss20';
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-vazirmatn), system-ui, sans-serif;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* RTL text optimization */
+[dir="rtl"] {
+  text-align: right;
+  font-feature-settings: 'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'ss07', 'ss08', 'ss09', 'ss10', 'ss11', 'ss12', 'ss13', 'ss14', 'ss15', 'ss16', 'ss17', 'ss18', 'ss19', 'ss20';
+}
+
+/* Persian number optimization */
+[lang="fa"] {
+  font-feature-settings: 'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'ss07', 'ss08', 'ss09', 'ss10', 'ss11', 'ss12', 'ss13', 'ss14', 'ss15', 'ss16', 'ss17', 'ss18', 'ss19', 'ss20';
+}
+
+/* Global layout conflict prevention */
+.admin-panel-container,
+.admin-layout-wrapper {
+  position: relative;
+  z-index: 9999 !important;
+  isolation: isolate;
+}
+
+/* Ensure admin panel is completely isolated */
+.admin-panel-container *,
+.admin-layout-wrapper * {
+  box-sizing: border-box;
+}
+
+/* Prevent main platform elements from interfering with admin panel */
+.admin-panel-container ~ *,
+.admin-layout-wrapper ~ * {
+  display: none !important;
+}
+
+/* Ensure proper stacking context for admin panel */
+.admin-panel-container,
+.admin-layout-wrapper {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Hide main header when admin panel is active */
+.admin-panel-container ~ .main-header,
+.admin-layout-wrapper ~ .main-header {
+  display: none !important;
+}
+
+/* Fix any potential overflow issues */
+.admin-panel-container,
+.admin-layout-wrapper {
+  overflow: visible;
+}
+
+/* Ensure admin panel components don't inherit unwanted styles */
+.admin-panel-container *,
+.admin-layout-wrapper * {
+  font-family: inherit !important;
+  line-height: inherit !important;
 }
