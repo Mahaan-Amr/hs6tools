@@ -7,6 +7,18 @@ const defaultLocale = 'fa';
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
+  // CRITICAL: Handle ZarinPal verification file BEFORE any other processing
+  // This must be checked first to prevent Next.js from treating it as a locale
+  if (pathname === '/28569823.txt' || 
+      pathname === '/fa/28569823.txt' || 
+      pathname === '/en/28569823.txt' || 
+      pathname === '/ar/28569823.txt') {
+    // Rewrite to API route
+    const url = request.nextUrl.clone();
+    url.pathname = '/api/verify/28569823';
+    return NextResponse.rewrite(url);
+  }
+  
   // Skip middleware for static files (files with extensions)
   // This includes .txt, .jpg, .png, .svg, etc. from public folder
   if (pathname.includes('.')) {
@@ -27,19 +39,19 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Exclude API routes, Next.js internals, and files with extensions (static files)
-  // IMPORTANT: The matcher regex must NOT match files with extensions
-  // Files in public folder should be served directly by Next.js
+  // IMPORTANT: Matcher must include the verification file paths so middleware can handle them
+  // We handle them in middleware BEFORE Next.js tries to match routes
   matcher: [
     /*
      * Match all request paths except for:
-     * - api (API routes)
+     * - api (API routes) - handled separately
      * - _next/static (Next.js static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - files with extensions (.*\.*) - static files from public folder
-     * - 28569823.txt (ZarinPal verification file - explicitly excluded)
+     * 
+     * NOTE: We DO match 28569823.txt paths so middleware can rewrite them to API route
+     * This prevents Next.js from treating them as locale routes
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|28569823\\.txt|.*\\..*).*)'
+    '/((?!api|_next/static|_next/image|favicon.ico).*)'
   ]
 };
