@@ -131,6 +131,23 @@ pull_changes() {
     CURRENT_BRANCH=$(git branch --show-current)
     info "Current branch: ${CURRENT_BRANCH}"
     
+    # Check for local changes
+    if ! git diff-index --quiet HEAD --; then
+        warning "Local changes detected. Stashing them before pulling..."
+        git stash push -m "Auto-stashed by update script at $(date +'%Y-%m-%d %H:%M:%S')"
+        log "Local changes stashed successfully"
+    fi
+    
+    # Check if there are any untracked files that might conflict
+    UNTRACKED=$(git ls-files --others --exclude-standard)
+    if [ -n "$UNTRACKED" ]; then
+        info "Untracked files detected (will be preserved):"
+        echo "$UNTRACKED" | head -5
+        if [ $(echo "$UNTRACKED" | wc -l) -gt 5 ]; then
+            info "... and $(($(echo "$UNTRACKED" | wc -l) - 5)) more"
+        fi
+    fi
+    
     info "Pulling latest changes from ${CURRENT_BRANCH}..."
     if git pull origin ${CURRENT_BRANCH}; then
         log "Successfully pulled latest changes"
@@ -140,6 +157,11 @@ pull_changes() {
         info "Recent commits:"
         git log --oneline -5
         echo ""
+        
+        # Check if there's a stash and inform user
+        if git stash list | grep -q "Auto-stashed by update script"; then
+            info "Note: Local changes were stashed. To restore them, run: git stash pop"
+        fi
     else
         error "Failed to pull latest changes. Please check your Git configuration and network connection."
     fi
