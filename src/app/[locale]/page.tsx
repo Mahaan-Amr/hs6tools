@@ -16,22 +16,6 @@ export default async function HomePage({ params }: HomePageProps) {
       <main className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-16">
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-          {/* Wood background image with overlays and graceful fallback */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(/wood-hero.jpg), repeating-linear-gradient(90deg, rgba(192,138,92,0.08) 0px, rgba(192,138,92,0.08) 2px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 10px)`,
-              backgroundSize: 'cover, auto',
-              backgroundPosition: 'center',
-              backgroundBlendMode: 'normal, overlay'
-            }}
-          />
-          {/* dark overlay for readability */}
-          <div className="absolute inset-0 bg-black/45" />
-          {/* soft vignette */}
-          <div className="absolute inset-0 pointer-events-none" style={{
-            background: 'radial-gradient(120% 60% at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 72%)'
-          }} />
           {/* bottom fade into next section */}
           <div className="pointer-events-none absolute bottom-0 inset-x-0 h-40 bg-gradient-to-b from-transparent to-black/70" />
 
