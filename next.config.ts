@@ -16,15 +16,6 @@ const nextConfig: NextConfig = {
   generateEtags: false,
   // Enable static exports for better performance
   trailingSlash: false,
-  // Rewrites for special files (like ZarinPal verification)
-  async rewrites() {
-    return [
-      {
-        source: '/28569823.txt',
-        destination: '/28569823.txt',
-      },
-    ];
-  },
   // Security headers
   async headers() {
     return [
