@@ -21,54 +21,64 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call to fetch recent orders
+    // Fetch real recent orders from API
     const fetchOrders = async () => {
       setIsLoading(true);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock data - replace with actual API call
-      setOrders([
-        {
-          id: "1",
-          orderNumber: "HS6-12345",
-          customerName: "احمد محمدی",
-          amount: 2500000,
-          status: "delivered",
-          createdAt: "2 روز پیش"
-        },
-        {
-          id: "2",
-          orderNumber: "HS6-12344",
-          customerName: "علی رضایی",
-          amount: 1800000,
-          status: "shipped",
-          createdAt: "1 هفته پیش"
-        },
-        {
-          id: "3",
-          orderNumber: "HS6-12343",
-          customerName: "مریم کریمی",
-          amount: 3200000,
-          status: "pending",
-          createdAt: "3 روز پیش"
-        },
-        {
-          id: "4",
-          orderNumber: "HS6-12342",
-          customerName: "حسن احمدی",
-          amount: 950000,
-          status: "processing",
-          createdAt: "5 روز پیش"
+      try {
+        const response = await fetch('/api/orders?limit=5&sortBy=createdAt&sortOrder=desc');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const ordersData = result.data.data.map((order: {
+            id: string;
+            orderNumber: string;
+            customer?: { name?: string; email?: string };
+            totalAmount: number;
+            status: string;
+            createdAt: string;
+          }) => ({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            customerName: order.customer?.name || order.customer?.email || 'نامشخص',
+            amount: order.totalAmount,
+            status: order.status.toLowerCase(),
+            createdAt: formatRelativeTime(order.createdAt)
+          }));
+          setOrders(ordersData);
+        } else {
+          console.error('Error fetching recent orders:', result.error);
+          setOrders([]);
         }
-      ]);
-      
-      setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching recent orders:', error);
+        setOrders([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchOrders();
   }, []);
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+    if (diffInDays > 0) {
+      return `${diffInDays} روز پیش`;
+    } else if (diffInHours > 0) {
+      return `${diffInHours} ساعت پیش`;
+    } else if (diffInMinutes > 0) {
+      return `${diffInMinutes} دقیقه پیش`;
+    } else {
+      return 'همین الان';
+    }
+  };
 
   const getStatusInfo = (status: string) => {
     const statusMap = {

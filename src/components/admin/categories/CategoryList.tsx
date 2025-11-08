@@ -79,7 +79,7 @@ export default function CategoryList({
     }
     
     return (
-      <span className="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded-full">
+      <span className="px-2 py-1 text-xs font-medium bg-primary-orange/20 text-primary-orange rounded-full">
         فعال
       </span>
     );
@@ -112,7 +112,7 @@ export default function CategoryList({
     return (
       <div className="flex items-center space-x-1 space-x-reverse">
         {translations.map(lang => (
-          <span key={lang} className="px-1 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded">
+          <span key={lang} className="px-1 py-0.5 text-xs bg-primary-orange/20 text-primary-orange rounded">
             {lang}
           </span>
         ))}
@@ -203,7 +203,7 @@ export default function CategoryList({
           <div className="flex items-center space-x-3 space-x-reverse">
             <button
               onClick={() => handleBulkAction("activate")}
-              className="px-3 py-1 text-sm bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-colors"
+              className="px-3 py-1 text-sm bg-primary-orange/20 text-primary-orange rounded hover:bg-primary-orange/30 transition-colors"
             >
               فعال‌سازی
             </button>
@@ -365,7 +365,7 @@ export default function CategoryList({
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <button
                         onClick={() => onView(category)}
-                        className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded-lg transition-colors"
+                        className="p-2 text-primary-orange hover:text-orange-300 hover:bg-primary-orange/20 rounded-lg transition-colors"
                         title="مشاهده"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

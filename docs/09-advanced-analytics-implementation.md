@@ -149,6 +149,13 @@ GET /api/analytics?type=products&period={7|30|90|365}
 // Geographic Analytics
 GET /api/analytics?type=geographic&period={7|30|90|365}
 ```
+The Overview tab fetches real data from:
+
+```
+GET /api/analytics?type=overview&period={7|30|90|365}
+```
+
+It returns: `overview`, `dailySales`, `topProducts`, `topCategories`, `recentOrders` objects bound in `AnalyticsTab.tsx`.
 
 #### **Database Queries**
 - **Customer Analytics**: User aggregation with order metrics
@@ -213,12 +220,12 @@ AnalyticsTab.tsx (Main Container)
 - **Interactive Elements**: Tabbed navigation and sorting
 - **Visual Hierarchy**: Clear information organization
 
-### **Color Scheme**
-- **Primary**: Orange (#FF6B35) for active elements
-- **Success**: Green (#10B981) for positive metrics
-- **Warning**: Orange (#F59E0B) for attention items
-- **Error**: Red (#EF4444) for critical alerts
-- **Info**: Blue (#3B82F6) for informational content
+### **Color Scheme** (Updated 2025-09)
+- Primary: Orange-only palette
+  - `primary.orange` #FF6B35
+  - `primary.orange-light` #FF8A65, `primary.orange-soft` #FFA07A
+  - `primary.orange-deep` #F4511E, `primary.orange-dark` #E64A19
+- Admin UI accents previously using green/blue have been unified to orange tones.
 
 ### **Typography**
 - **Headers**: Bold, large text for section titles

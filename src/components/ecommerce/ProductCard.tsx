@@ -149,7 +149,7 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
         <div className="absolute bottom-3 left-3">
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
             product.isInStock 
-              ? "bg-green-500/20 text-green-400" 
+              ? "bg-primary-orange/20 text-primary-orange" 
               : "bg-red-500/20 text-red-400"
           }`}>
             {product.isInStock ? "موجود" : "ناموجود"}

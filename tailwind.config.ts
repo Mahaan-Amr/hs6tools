@@ -14,6 +14,11 @@ const config: Config = {
           orange: "#FF6B35",
           black: "#1A1A1A",
           white: "#FFFFFF",
+          // Orange theme shades
+          "orange-light": "#FF8A65",
+          "orange-soft": "#FFA07A",
+          "orange-deep": "#F4511E",
+          "orange-dark": "#E64A19",
         },
         // Secondary Colors
         secondary: {

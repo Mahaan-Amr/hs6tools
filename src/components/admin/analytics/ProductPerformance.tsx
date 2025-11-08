@@ -114,7 +114,7 @@ export default function ProductPerformance({ locale, period }: ProductPerformanc
       case "low":
         return "text-red-400";
       case "normal":
-        return "text-green-400";
+        return "text-primary-orange";
       default:
         return "text-gray-400";
     }
@@ -125,7 +125,7 @@ export default function ProductPerformance({ locale, period }: ProductPerformanc
       case "low":
         return "bg-red-500/20";
       case "normal":
-        return "bg-green-500/20";
+        return "bg-primary-orange/20";
       default:
         return "bg-gray-500/20";
     }
@@ -164,8 +164,8 @@ export default function ProductPerformance({ locale, period }: ProductPerformanc
               <p className="text-gray-400 text-sm">کل محصولات</p>
               <p className="text-3xl font-bold text-white">{products.summary.totalProducts}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-primary-orange/20 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
@@ -190,7 +190,7 @@ export default function ProductPerformance({ locale, period }: ProductPerformanc
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">کل درآمد</p>
-              <p className="text-3xl font-bold text-green-400">{formatCurrency(products.summary.totalRevenue)}</p>
+              <p className="text-3xl font-bold text-primary-orange">{formatCurrency(products.summary.totalRevenue)}</p>
             </div>
             <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

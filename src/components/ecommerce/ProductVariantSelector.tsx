@@ -169,7 +169,7 @@ export default function ProductVariantSelector({
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-400">موجودی:</span>
             <span className={`text-sm font-medium ${
-              selectedVariant.isInStock ? "text-green-400" : "text-red-400"
+              selectedVariant.isInStock ? "text-primary-orange" : "text-red-400"
             }`}>
               {selectedVariant.isInStock 
                 ? `${selectedVariant.stockQuantity} عدد موجود` 

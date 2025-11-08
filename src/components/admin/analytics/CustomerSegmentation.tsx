@@ -82,7 +82,7 @@ export default function CustomerSegmentation({ locale, period }: CustomerSegment
       case "high-value":
         return "bg-gradient-to-r from-emerald-500 to-teal-500";
       case "frequent":
-        return "bg-gradient-to-r from-blue-500 to-indigo-500";
+        return "bg-gradient-to-r from-primary-orange to-primary-orange-dark";
       case "dormant":
         return "bg-gradient-to-r from-orange-500 to-red-500";
       case "regular":
@@ -146,8 +146,8 @@ export default function CustomerSegmentation({ locale, period }: CustomerSegment
               <p className="text-gray-400 text-sm">کل مشتریان</p>
               <p className="text-3xl font-bold text-white">{customers.summary.totalCustomers}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-primary-orange/20 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
@@ -172,10 +172,10 @@ export default function CustomerSegmentation({ locale, period }: CustomerSegment
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">مشتریان پرتکرار</p>
-              <p className="text-3xl font-bold text-blue-400">{customers.summary.frequentCount}</p>
+              <p className="text-3xl font-bold text-primary-orange">{customers.summary.frequentCount}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-primary-orange/20 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>

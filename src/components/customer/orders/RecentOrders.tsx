@@ -83,11 +83,11 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DELIVERED':
-        return 'bg-green-500/20 text-green-400';
+        return 'bg-primary-orange/20 text-primary-orange';
       case 'SHIPPED':
-        return 'bg-blue-500/20 text-blue-400';
+        return 'bg-primary-orange/20 text-primary-orange';
       case 'PROCESSING':
-        return 'bg-yellow-500/20 text-yellow-400';
+        return 'bg-primary-orange/20 text-primary-orange';
       case 'PENDING':
         return 'bg-gray-500/20 text-gray-400';
       default:

@@ -105,7 +105,7 @@ HS6Tools is a modern, scalable e-commerce platform designed to serve Persian, En
 ### **Frontend**
 - **Next.js 15** ✅ App Router with TypeScript
 - **React 18** ✅ Latest React features
-- **Tailwind CSS v4** ✅ Custom glassmorphism design system
+- **Tailwind CSS v4** ✅ Custom glassmorphism design system with orange-only brand palette and wood theme utilities (bg-wood-grain, bg-wood-polish, border-wood)
 - **Zustand** ✅ Client-side state management
 - **Responsive Design** ✅ Mobile-first approach
 
@@ -193,6 +193,7 @@ npm run dev
 - **Project Overview** 📖 This document
 - **Technical Requirements** 📖 Development specifications
 - **Design System** 📖 UI/UX guidelines
+  - Updated: orange palette (`primary.orange*`) and wood hero background usage (public/wood-hero.jpg)
 - **Database Schema** 📖 Data model documentation
 - **Feature Requirements** 📖 Detailed feature specifications
 - **Implementation Checklist** 📖 Development tracking

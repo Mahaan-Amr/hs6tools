@@ -10,6 +10,14 @@ interface OverviewStatsProps {
     monthlyRevenue: number;
     pendingOrders: number;
     lowStockProducts: number;
+    productsChange?: number;
+    categoriesChange?: number;
+    usersChange?: number;
+    ordersChange?: number;
+    revenueChange?: number;
+    monthlyRevenueChange?: number;
+    pendingOrdersChange?: number;
+    lowStockChange?: number;
   };
   locale: string;
 }
@@ -44,7 +52,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-blue-500 to-blue-600",
-      change: "+5.2%"
+      change: data.productsChange ? `${data.productsChange >= 0 ? '+' : ''}${data.productsChange.toFixed(1)}%` : "0%"
     },
     {
       title: "کل دسته‌بندی‌ها",
@@ -55,7 +63,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-green-500 to-green-600",
-      change: "+2.1%"
+      change: data.categoriesChange ? `${data.categoriesChange >= 0 ? '+' : ''}${data.categoriesChange.toFixed(1)}%` : "0%"
     },
     {
       title: "کل کاربران",
@@ -66,7 +74,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-purple-500 to-purple-600",
-      change: "+12.5%"
+      change: data.usersChange ? `${data.usersChange >= 0 ? '+' : ''}${data.usersChange.toFixed(1)}%` : "0%"
     },
     {
       title: "سفارشات این دوره",
@@ -77,7 +85,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-primary-orange to-orange-500",
-      change: "+8.7%"
+      change: data.ordersChange ? `${data.ordersChange >= 0 ? '+' : ''}${data.ordersChange.toFixed(1)}%` : "0%"
     },
     {
       title: "درآمد کل دوره",
@@ -88,7 +96,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-emerald-500 to-emerald-600",
-      change: "+15.3%"
+      change: data.revenueChange ? `${data.revenueChange >= 0 ? '+' : ''}${data.revenueChange.toFixed(1)}%` : "0%"
     },
     {
       title: "درآمد ماهانه",
@@ -99,7 +107,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-indigo-500 to-indigo-600",
-      change: "+22.1%"
+      change: data.monthlyRevenueChange ? `${data.monthlyRevenueChange >= 0 ? '+' : ''}${data.monthlyRevenueChange.toFixed(1)}%` : "0%"
     },
     {
       title: "سفارشات در انتظار",
@@ -110,7 +118,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-yellow-500 to-yellow-600",
-      change: "-3.2%"
+      change: data.pendingOrdersChange ? `${data.pendingOrdersChange >= 0 ? '+' : ''}${data.pendingOrdersChange.toFixed(1)}%` : "0%"
     },
     {
       title: "محصولات کم‌موجودی",
@@ -121,7 +129,7 @@ export default function OverviewStats({ data, locale }: OverviewStatsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-red-500 to-red-600",
-      change: "+1.8%"
+      change: data.lowStockChange ? `${data.lowStockChange >= 0 ? '+' : ''}${data.lowStockChange.toFixed(1)}%` : "0%"
     }
   ];
 

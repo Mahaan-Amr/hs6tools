@@ -16,11 +16,28 @@ export default async function HomePage({ params }: HomePageProps) {
       <main className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-16">
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-          {/* Background Pattern - Removed grid-pattern.svg reference */}
-          
+          {/* Wood background image with overlays and graceful fallback */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(/wood-hero.jpg), repeating-linear-gradient(90deg, rgba(192,138,92,0.08) 0px, rgba(192,138,92,0.08) 2px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 10px)`,
+              backgroundSize: 'cover, auto',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'normal, overlay'
+            }}
+          />
+          {/* dark overlay for readability */}
+          <div className="absolute inset-0 bg-black/45" />
+          {/* soft vignette */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: 'radial-gradient(120% 60% at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 72%)'
+          }} />
+          {/* bottom fade into next section */}
+          <div className="pointer-events-none absolute bottom-0 inset-x-0 h-40 bg-gradient-to-b from-transparent to-black/70" />
+
           {/* Floating Elements */}
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary-orange/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary-orange/10 rounded-full blur-3xl animate-pulse delay-1000" />
           
           {/* Hero Content */}
           <div className="relative z-10 text-center px-4 max-w-6xl mx-auto">
@@ -66,7 +83,7 @@ export default async function HomePage({ params }: HomePageProps) {
         </section>
 
         {/* Features Section */}
-        <section className="py-24 px-4">
+        <section className="relative z-10 -mt-12 rounded-t-3xl bg-gray-900/80 backdrop-blur-sm border-t border-white/10 py-24 px-4 shadow-2xl shadow-black/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -91,7 +108,7 @@ export default async function HomePage({ params }: HomePageProps) {
               
               {/* Feature 2 */}
               <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-6 flex items-center justify-center">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
@@ -102,7 +119,7 @@ export default async function HomePage({ params }: HomePageProps) {
               
               {/* Feature 3 */}
               <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-6 flex items-center justify-center">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
                   </svg>
@@ -129,10 +146,10 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Category 1 */}
               <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300">
-                <div className="aspect-square bg-gradient-to-br from-primary-orange/20 to-orange-500/20 flex items-center justify-center">
+                <div className="aspect-square bg-gradient-to-br from-primary-orange/15 to-primary-orange/25 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-primary-orange/30 rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-10 h-10 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center ring-2 ring-white/30 shadow-glass-orange group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
@@ -144,10 +161,10 @@ export default async function HomePage({ params }: HomePageProps) {
               
               {/* Category 2 */}
               <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300">
-                <div className="aspect-square bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
+                <div className="aspect-square bg-gradient-to-br from-primary-orange/15 to-primary-orange/25 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-blue-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
                       </svg>
                     </div>
@@ -159,10 +176,10 @@ export default async function HomePage({ params }: HomePageProps) {
               
               {/* Category 3 */}
               <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300">
-                <div className="aspect-square bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center">
+                <div className="aspect-square bg-gradient-to-br from-primary-orange/15 to-primary-orange/25 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-green-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                       </svg>
                     </div>

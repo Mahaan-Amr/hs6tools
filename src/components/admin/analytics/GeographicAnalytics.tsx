@@ -103,13 +103,13 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
     switch (activeView) {
       case "cities":
         return (
-          <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
         );
       case "states":
         return (
-          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
         );
@@ -155,10 +155,10 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">کل شهرها</p>
-              <p className="text-3xl font-bold text-blue-400">{geographicData.summary.totalCities}</p>
+              <p className="text-3xl font-bold text-primary-orange">{geographicData.summary.totalCities}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-primary-orange/20 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
@@ -169,10 +169,10 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">کل استان‌ها</p>
-              <p className="text-3xl font-bold text-green-400">{geographicData.summary.totalStates}</p>
+              <p className="text-3xl font-bold text-primary-orange">{geographicData.summary.totalStates}</p>
             </div>
-            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-primary-orange/20 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
             </div>
@@ -255,7 +255,7 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
             <div key={index} className="glass rounded-xl p-4 border border-white/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4 space-x-reverse">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-full flex items-center justify-center">
                     {getViewIcon()}
                   </div>
                   <div>
@@ -267,7 +267,7 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
                     <div className="flex items-center space-x-4 space-x-reverse text-sm text-gray-400">
                       <span>رتبه: {index + 1}</span>
                       {activeView === "cities" && (
-                        <span className="text-blue-400">
+                        <span className="text-primary-orange">
                           {(item as CityAnalytics).percentage.toFixed(1)}% از کل فروش
                         </span>
                       )}
@@ -300,7 +300,7 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-primary-orange to-primary-orange-dark h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(item as CityAnalytics).percentage}%` }}
                     ></div>
                   </div>
@@ -329,11 +329,11 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
               <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-white font-semibold">{city.city}</h4>
-                  <span className="text-blue-400 font-bold">{city.percentage.toFixed(1)}%</span>
+                  <span className="text-primary-orange font-bold">{city.percentage.toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2 mb-2">
                   <div 
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-primary-orange to-primary-orange-dark h-2 rounded-full transition-all duration-300"
                     style={{ width: `${city.percentage}%` }}
                   ></div>
                 </div>

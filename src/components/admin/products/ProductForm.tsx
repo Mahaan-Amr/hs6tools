@@ -423,7 +423,7 @@ export default function ProductForm({
               {/* English */}
               <div className="border border-white/10 rounded-lg p-4">
                 <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2 space-x-reverse">
-                  <span className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">EN</span>
+                  <span className="w-6 h-6 bg-primary-orange/20 text-primary-orange rounded-full flex items-center justify-center text-sm font-bold">EN</span>
                   <span>انگلیسی</span>
                 </h4>
 
@@ -472,7 +472,7 @@ export default function ProductForm({
               {/* Arabic */}
               <div className="border border-white/10 rounded-lg p-4">
                 <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2 space-x-reverse">
-                  <span className="w-6 h-6 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-sm font-bold">AR</span>
+                  <span className="w-6 h-6 bg-primary-orange/20 text-primary-orange rounded-full flex items-center justify-center text-sm font-bold">AR</span>
                   <span>عربی</span>
                 </h4>
 

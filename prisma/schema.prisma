@@ -27,12 +27,33 @@ model User {
   updatedAt     DateTime       @updatedAt
   lastLoginAt   DateTime?
   deletedAt     DateTime?
+  
+  // CRM Enhancement Fields
+  customerType        CustomerType?
+  industry           String?
+  companySize        CompanySize?
+  customerTier       CustomerTier?
+  healthScore        Int?
+  tags               String[]
+  notes              String?
+  assignedSalesRep   String?
+  leadSource         String?
+  lifecycleStage     LifecycleStage?
+  lastInteraction    DateTime?
+  nextFollowUp       DateTime?
+  
   addresses     Address[]
   articles      Article[]
   orders        Order[]
   reviews       Review[]
   wishlistItems WishlistItem[]
   settings      UserSettings?
+  
+  // CRM Relations
+  interactions  CustomerInteraction[]
+  opportunities Opportunity[]
+  quotes        Quote[]
+  campaigns     CustomerCampaign[]
 
   @@map("users")
 }
@@ -417,6 +438,86 @@ enum ArticleStatus {
   ARCHIVED
 }
 
+// ============================================================================
+// CRM ENUMS
+// ============================================================================
+
+enum CustomerType {
+  B2C
+  B2B
+  MIXED
+}
+
+enum CompanySize {
+  STARTUP
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum CustomerTier {
+  PLATINUM
+  GOLD
+  SILVER
+  BRONZE
+}
+
+enum LifecycleStage {
+  LEAD
+  PROSPECT
+  CUSTOMER
+  LOYAL_CUSTOMER
+  AT_RISK
+  CHURNED
+}
+
+enum InteractionType {
+  EMAIL
+  PHONE
+  MEETING
+  DEMO
+  SUPPORT
+  MARKETING
+  SALES
+  FOLLOW_UP
+}
+
+enum OpportunityStage {
+  PROSPECTING
+  QUALIFICATION
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum CampaignType {
+  EMAIL
+  SMS
+  SOCIAL
+  DIRECT_MAIL
+  PUSH_NOTIFICATION
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  COMPLETED
+  CANCELLED
+}
+
 model UserSettings {
   id            String   @id @default(cuid())
   userId        String   @unique
@@ -432,4 +533,227 @@ model UserSettings {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
+}
+
+// ============================================================================
+// CRM MODELS
+// ============================================================================
+
+model CustomerInteraction {
+  id          String   @id @default(cuid())
+  customerId  String
+  type        InteractionType
+  subject     String?
+  content     String
+  outcome     String?
+  nextAction  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_interactions")
+}
+
+model Opportunity {
+  id              String   @id @default(cuid())
+  customerId      String
+  title           String
+  description     String?
+  value           Decimal  @db.Decimal(10, 2)
+  stage           OpportunityStage
+  probability     Int      @default(0)
+  expectedClose   DateTime?
+  assignedTo      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  customer        User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  activities      OpportunityActivity[]
+  quotes          Quote[]
+
+  @@map("opportunities")
+}
+
+model OpportunityActivity {
+  id              String   @id @default(cuid())
+  opportunityId   String
+  type            String
+  description     String
+  outcome         String?
+  nextAction      String?
+  scheduledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@map("opportunity_activities")
+}
+
+model Quote {
+  id              String   @id @default(cuid())
+  customerId      String
+  opportunityId   String?
+  quoteNumber     String   @unique
+  items           Json
+  subtotal        Decimal  @db.Decimal(10, 2)
+  tax             Decimal  @db.Decimal(10, 2)
+  total           Decimal  @db.Decimal(10, 2)
+  validUntil      DateTime
+  status          QuoteStatus
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  customer        User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  @@map("quotes")
+}
+
+model Campaign {
+  id              String   @id @default(cuid())
+  name            String
+  type            CampaignType
+  status          CampaignStatus
+  targetAudience  Json
+  content         Json
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  customers       CustomerCampaign[]
+  analytics       CampaignAnalytics[]
+
+  @@map("campaigns")
+}
+
+model CustomerCampaign {
+  id          String   @id @default(cuid())
+  customerId  String
+  campaignId  String
+  status      String   @default("pending")
+  sentAt      DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  createdAt   DateTime @default(now())
+  
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, campaignId])
+  @@map("customer_campaigns")
+}
+
+model CampaignAnalytics {
+  id          String   @id @default(cuid())
+  campaignId  String
+  metric      String
+  value       Decimal  @db.Decimal(10, 2)
+  date        DateTime
+  createdAt   DateTime @default(now())
+  
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_analytics")
+}
+
+// Lead Management Models
+model Lead {
+  id              String   @id @default(cuid())
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  company         String?
+  position        String?
+  industry        String?
+  companySize     CompanySize?
+  source          LeadSource
+  status          LeadStatus
+  score           Int      @default(0)
+  assignedTo      String?
+  notes           String?
+  tags            String[]
+  expectedValue   Decimal? @db.Decimal(10, 2)
+  expectedClose   DateTime?
+  lastContact     DateTime?
+  nextFollowUp    DateTime?
+  convertedAt     DateTime?
+  convertedTo     String?  // User ID if converted to customer
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  activities      LeadActivity[]
+  interactions    LeadInteraction[]
+
+  @@map("leads")
+}
+
+model LeadActivity {
+  id          String   @id @default(cuid())
+  leadId      String
+  type        ActivityType
+  subject     String
+  description String
+  outcome     String?
+  nextAction  String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("lead_activities")
+}
+
+model LeadInteraction {
+  id          String   @id @default(cuid())
+  leadId      String
+  type        InteractionType
+  subject     String?
+  content     String
+  outcome     String?
+  nextAction  String?
+  createdAt   DateTime @default(now())
+  
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("lead_interactions")
+}
+
+// Lead Management Enums
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  SOCIAL_MEDIA
+  EMAIL_CAMPAIGN
+  TRADE_SHOW
+  COLD_CALL
+  PARTNER
+  ADVERTISING
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CONVERTED
+  LOST
+  UNQUALIFIED
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  DEMO
+  PROPOSAL
+  FOLLOW_UP
+  QUALIFICATION
+  NURTURING
 }

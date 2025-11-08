@@ -3,6 +3,7 @@
 import { useCartStore } from "@/contexts/CartContext";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import CheckoutAddressSelector from "@/components/checkout/CheckoutAddressSelector";
 
 interface CheckoutPageClientProps {
   locale: string;
@@ -16,6 +17,25 @@ interface Address {
   city: string;
   address: string;
   postalCode: string;
+}
+
+interface CustomerAddress {
+  id: string;
+  type: string;
+  title: string;
+  firstName: string;
+  lastName: string;
+  company: string | null;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ShippingMethod {
@@ -58,6 +78,9 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
   });
   const [selectedShipping, setSelectedShipping] = useState<string>("post");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [useSavedAddresses, setUseSavedAddresses] = useState(false);
+  const [selectedBillingAddress, setSelectedBillingAddress] = useState<CustomerAddress | null>(null);
+  const [selectedShippingAddress, setSelectedShippingAddress] = useState<CustomerAddress | null>(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
@@ -77,9 +100,19 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
   };
 
   const handleNextStep = () => {
-    if (currentStep === 1 && !isAddressValid()) {
-      alert("لطفاً تمام فیلدهای آدرس را تکمیل کنید");
-      return;
+    if (currentStep === 1) {
+      // Check if using saved addresses or manual form
+      if (useSavedAddresses) {
+        if (!selectedBillingAddress || !selectedShippingAddress) {
+          alert("لطفاً آدرس صورتحساب و ارسال را انتخاب کنید");
+          return;
+        }
+      } else {
+        if (!isAddressValid()) {
+          alert("لطفاً تمام فیلدهای آدرس را تکمیل کنید");
+          return;
+        }
+      }
     }
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
@@ -96,19 +129,112 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     return Object.values(address).every(value => value.trim() !== "");
   };
 
+  const handleAddressSelect = (address: CustomerAddress, type: 'billing' | 'shipping') => {
+    if (type === 'billing') {
+      setSelectedBillingAddress(address);
+    } else {
+      setSelectedShippingAddress(address);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
     
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare order data - use saved addresses or manual form
+      let shippingAddressData, billingAddressData;
       
+      if (useSavedAddresses && selectedBillingAddress && selectedShippingAddress) {
+        // Use saved addresses
+        shippingAddressData = {
+          firstName: selectedShippingAddress.firstName,
+          lastName: selectedShippingAddress.lastName,
+          phone: selectedShippingAddress.phone,
+          province: selectedShippingAddress.state,
+          city: selectedShippingAddress.city,
+          address: selectedShippingAddress.addressLine1,
+          postalCode: selectedShippingAddress.postalCode
+        };
+        billingAddressData = {
+          firstName: selectedBillingAddress.firstName,
+          lastName: selectedBillingAddress.lastName,
+          phone: selectedBillingAddress.phone,
+          province: selectedBillingAddress.state,
+          city: selectedBillingAddress.city,
+          address: selectedBillingAddress.addressLine1,
+          postalCode: selectedBillingAddress.postalCode
+        };
+      } else {
+        // Use manual form data
+        shippingAddressData = {
+          firstName: address.firstName,
+          lastName: address.lastName,
+          phone: address.phone,
+          province: address.province,
+          city: address.city,
+          address: address.address,
+          postalCode: address.postalCode
+        };
+        billingAddressData = {
+          firstName: address.firstName,
+          lastName: address.lastName,
+          phone: address.phone,
+          province: address.province,
+          city: address.city,
+          address: address.address,
+          postalCode: address.postalCode
+        };
+      }
+
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.id,
+          variantId: null, // TODO: Add variant support if needed
+          sku: item.sku,
+          name: item.name,
+          description: item.category,
+          image: item.image,
+          price: item.price,
+          quantity: item.quantity,
+          attributes: {}
+        })),
+        shippingAddress: shippingAddressData,
+        billingAddress: billingAddressData,
+        shippingMethod: selectedShipping,
+        paymentMethod: "ZARINPAL", // Default to ZarinPal
+        customerNote: "",
+        subtotal: totalPrice,
+        shippingAmount: shippingCost,
+        taxAmount: 0, // TODO: Add tax calculation
+        discountAmount: 0, // TODO: Add discount support
+        totalAmount: totalWithShipping
+      };
+
+      console.log('🛒 Creating order with data:', orderData);
+
+      // Create order via API
+      const response = await fetch('/api/customer/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to create order');
+      }
+
+      console.log('🛒 Order created successfully:', result.data);
+
       // Clear cart and redirect to success page
       clearCart();
-      router.push(`/${locale}/checkout/success`);
+      router.push(`/${locale}/checkout/success?orderNumber=${result.data.orderNumber}`);
     } catch (error) {
       console.error("Error placing order:", error);
-      alert("خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.");
+      alert(`خطا در ثبت سفارش: ${error instanceof Error ? error.message : 'لطفاً دوباره تلاش کنید.'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -179,7 +305,41 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
               <div className="glass rounded-3xl p-8">
                 <h2 className="text-2xl font-bold text-white mb-6">اطلاعات ارسال</h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Address Selection Toggle */}
+                <div className="mb-6">
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setUseSavedAddresses(false)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                        !useSavedAddresses
+                          ? "bg-primary-orange text-white"
+                          : "bg-white/10 text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      وارد کردن آدرس جدید
+                    </button>
+                    <button
+                      onClick={() => setUseSavedAddresses(true)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                        useSavedAddresses
+                          ? "bg-primary-orange text-white"
+                          : "bg-white/10 text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      انتخاب از آدرس‌های ذخیره شده
+                    </button>
+                  </div>
+                </div>
+
+                {useSavedAddresses ? (
+                  <CheckoutAddressSelector
+                    locale={locale}
+                    onAddressSelect={handleAddressSelect}
+                    selectedBillingAddress={selectedBillingAddress}
+                    selectedShippingAddress={selectedShippingAddress}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-white font-medium mb-2">نام</label>
                     <input
@@ -257,6 +417,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                     />
                   </div>
                 </div>
+                )}
               </div>
             )}
 
@@ -316,11 +477,24 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 <div className="mb-8 p-6 bg-white/5 rounded-2xl">
                   <h3 className="text-lg font-semibold text-white mb-4">اطلاعات ارسال</h3>
                   <div className="text-gray-300">
-                    <p>{address.firstName} {address.lastName}</p>
-                    <p>{address.phone}</p>
-                    <p>{address.province}، {address.city}</p>
-                    <p>{address.address}</p>
-                    <p>کد پستی: {address.postalCode}</p>
+                    {useSavedAddresses && selectedShippingAddress ? (
+                      <>
+                        <p>{selectedShippingAddress.firstName} {selectedShippingAddress.lastName}</p>
+                        <p>{selectedShippingAddress.phone}</p>
+                        <p>{selectedShippingAddress.state}، {selectedShippingAddress.city}</p>
+                        <p>{selectedShippingAddress.addressLine1}</p>
+                        {selectedShippingAddress.addressLine2 && <p>{selectedShippingAddress.addressLine2}</p>}
+                        <p>کد پستی: {selectedShippingAddress.postalCode}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>{address.firstName} {address.lastName}</p>
+                        <p>{address.phone}</p>
+                        <p>{address.province}، {address.city}</p>
+                        <p>{address.address}</p>
+                        <p>کد پستی: {address.postalCode}</p>
+                      </>
+                    )}
                   </div>
                 </div>
 

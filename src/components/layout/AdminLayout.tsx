@@ -15,23 +15,45 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
   const { data: session } = useSession();
   const router = useRouter();
 
+
+  // Prevent body scroll when sidebar is open on mobile
   useEffect(() => {
-    // Auto-collapse sidebar on mobile
+    if (typeof window !== 'undefined') {
+      if (!isRightSidebarCollapsed && window.innerWidth < 1024) {
+        document.body.classList.add('sidebar-open');
+      } else {
+        document.body.classList.remove('sidebar-open');
+      }
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        document.body.classList.remove('sidebar-open');
+      }
+    };
+  }, [isRightSidebarCollapsed]);
+
+  useEffect(() => {
+    // Auto-collapse sidebar on mobile only on initial load
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setIsRightSidebarCollapsed(true);
       }
     };
 
-    // Keyboard shortcut to toggle sidebar (Ctrl+M or Cmd+M)
+    // Keyboard shortcut to toggle sidebar (Ctrl+M or Cmd+M) - Desktop only
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'm' && window.innerWidth >= 1024) {
         e.preventDefault();
-        setIsRightSidebarCollapsed(!isRightSidebarCollapsed);
+        setIsRightSidebarCollapsed(prev => !prev);
       }
     };
 
-    handleResize(); // Initial check
+    // Initialize sidebar state based on screen size only once
+    if (window.innerWidth < 1024) {
+      setIsRightSidebarCollapsed(true);
+    }
+    
     window.addEventListener('resize', handleResize);
     window.addEventListener('keydown', handleKeyDown);
     
@@ -39,7 +61,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isRightSidebarCollapsed]);
+  }, []); // Empty dependency array - only run once on mount
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -86,22 +108,46 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
         .admin-panel-container * {
           font-family: inherit !important;
         }
+        
+        /* Fix sidebar positioning to prevent scrolling issues */
+        .admin-panel-container [data-sidebar] {
+          position: fixed !important;
+          top: 0 !important;
+          bottom: 0 !important;
+          right: 0 !important;
+          height: 100vh !important;
+          transform-origin: right center !important;
+          z-index: 10001 !important;
+        }
+        
+        /* Ensure sidebar content doesn't cause scrolling issues */
+        .admin-panel-container [data-sidebar] > div {
+          height: 100vh !important;
+          overflow: hidden !important;
+        }
+        
+        /* Prevent body scroll when sidebar is open on mobile */
+        body.sidebar-open {
+          overflow: hidden !important;
+          position: fixed !important;
+          width: 100% !important;
+        }
       `}</style>
       
       {/* Main Content */}
       <div className="flex flex-col min-h-screen">
         {/* Header */}
         <header className="glass border-b border-white/10 backdrop-blur-xl relative admin-header shadow-2xl border-l-4 border-l-primary-orange" style={{ zIndex: 10000 }}>
-          <div className="flex items-center justify-between h-16 px-6">
+          <div className="flex items-center justify-between h-16 px-4 sm:px-6">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-white">پنل مدیریت</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-white">پنل مدیریت</h1>
             </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Right Sidebar Toggle */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Desktop Right Sidebar Toggle */}
               <button
                 onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
-                className="p-2 text-white/80 hover:text-white transition-colors duration-200"
+                className="hidden lg:block p-2 text-white/80 hover:text-white transition-colors duration-200"
                 title={`${isRightSidebarCollapsed ? 'باز کردن منو' : 'بستن منو'} (Ctrl+M)`}
               >
                 <svg 
@@ -148,24 +194,40 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>
       </div>
 
+      {/* Mobile Overlay */}
+      {!isRightSidebarCollapsed && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          onClick={() => setIsRightSidebarCollapsed(true)}
+        />
+      )}
+
       {/* Right Sidebar - Collapsible */}
       <div 
         data-sidebar="main-admin-sidebar"
-        className={`fixed inset-y-0 right-0 bg-black/20 backdrop-blur-xl border-l border-white/10 transform transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 bottom-0 right-0 bg-black/20 backdrop-blur-xl border-l border-white/10 transform transition-all duration-300 ease-in-out ${
           isRightSidebarCollapsed ? 'translate-x-full' : 'translate-x-0'
-        }`}
-        style={{ zIndex: 10001 }}
+        } lg:w-64 w-80`}
+        style={{ 
+          zIndex: 10001,
+          position: 'fixed',
+          top: 0,
+          bottom: 0,
+          right: 0,
+          height: '100vh',
+          overflow: 'hidden'
+        }}
       >
-        <div className="flex flex-col h-full w-64">
+        <div className="flex flex-col h-full w-full lg:w-64" style={{ height: '100vh', overflow: 'hidden' }}>
           {/* Right Sidebar Header */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-white/10">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-white/10 flex-shrink-0">
             <h2 className="text-white font-bold text-lg">منوی مدیریت</h2>
             <button
               onClick={() => setIsRightSidebarCollapsed(true)}
@@ -178,7 +240,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
           </div>
 
           {/* Right Sidebar Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
             <Link
               href={`/${locale}/admin`}
               className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
@@ -282,6 +344,76 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
             </Link>
 
             <Link
+              href={`/${locale}/admin/crm/customers`}
+              className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 group-hover:text-primary-orange transition-colors duration-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <span className="font-medium">مدیریت مشتریان</span>
+              </div>
+            </Link>
+
+            <Link
+              href={`/${locale}/admin/crm/lifecycle`}
+              className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 group-hover:text-primary-orange transition-colors duration-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <span className="font-medium">چرخه زندگی مشتری</span>
+              </div>
+            </Link>
+
+            <Link
+              href={`/${locale}/admin/crm/leads`}
+              className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 group-hover:text-primary-orange transition-colors duration-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                </div>
+                <span className="font-medium">مدیریت لیدها</span>
+              </div>
+            </Link>
+
+            <Link
+              href={`/${locale}/admin/crm/opportunities`}
+              className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 group-hover:text-primary-orange transition-colors duration-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <span className="font-medium">فرصت‌های فروش</span>
+              </div>
+            </Link>
+
+            <Link
+              href={`/${locale}/admin/crm/quotes`}
+              className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 group-hover:text-primary-orange transition-colors duration-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <span className="font-medium">پیشنهادات</span>
+              </div>
+            </Link>
+
+            <Link
               href={`/${locale}/admin/settings`}
               className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
             >
@@ -318,11 +450,11 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
         </div>
       </div>
 
-      {/* Floating Action Button to Show Sidebar */}
+      {/* Floating Action Button to Show Sidebar - Desktop Only */}
       {isRightSidebarCollapsed && (
         <button
           onClick={() => setIsRightSidebarCollapsed(false)}
-          className="fixed right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-primary-orange hover:bg-orange-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+          className="hidden lg:block fixed right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-primary-orange hover:bg-orange-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
           title="نمایش منو"
           style={{ zIndex: 10002 }}
         >
@@ -331,6 +463,26 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
           </svg>
         </button>
       )}
+
+      {/* Mobile Floating Action Button - Only visible when sidebar is collapsed */}
+      {isRightSidebarCollapsed && (
+        <button
+          onClick={() => setIsRightSidebarCollapsed(false)}
+          className="lg:hidden fixed right-4 top-20 w-14 h-14 bg-primary-orange hover:bg-orange-600 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50"
+          title="باز کردن منو"
+          style={{ zIndex: 10003 }}
+        >
+          <svg 
+            className="w-7 h-7 mx-auto" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
+
     </div>
   );
 }

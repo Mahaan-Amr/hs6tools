@@ -209,7 +209,7 @@ export default function ImageUpload({
                 {multiple && (
                   <button
                     onClick={() => setPrimaryImage(image.id)}
-                    className="p-2 bg-blue-500/80 hover:bg-blue-500 rounded-lg transition-colors"
+                    className="p-2 bg-primary-orange hover:bg-primary-orange-dark rounded-lg transition-colors"
                     title="تنظیم به عنوان تصویر اصلی"
                   >
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,7 +237,7 @@ export default function ImageUpload({
 
               {/* Primary Badge */}
               {multiple && image.isPrimary && (
-                <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                <div className="absolute top-2 right-2 bg-primary-orange text-white text-xs px-2 py-1 rounded-full">
                   اصلی
                 </div>
               )}

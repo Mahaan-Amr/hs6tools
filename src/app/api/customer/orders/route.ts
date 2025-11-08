@@ -185,3 +185,195 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// POST /api/customer/orders - Create new order
+export async function POST(request: NextRequest) {
+  try {
+    console.log('🛒 API: /api/customer/orders POST - Creating new order');
+    
+    const session = await getServerSession(authOptions);
+    
+    // Check if user is authenticated
+    if (!session?.user?.id) {
+      console.log('❌ API: No session or user ID');
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    console.log('🛒 API: Order data received:', body);
+    
+    const {
+      items,
+      shippingAddress,
+      billingAddress,
+      shippingMethod,
+      paymentMethod,
+      customerNote,
+      subtotal,
+      shippingAmount,
+      taxAmount,
+      discountAmount,
+      totalAmount
+    } = body;
+
+    // Validation
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Order items are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!shippingAddress || !billingAddress) {
+      return NextResponse.json(
+        { success: false, error: "Shipping and billing addresses are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!shippingMethod || !paymentMethod) {
+      return NextResponse.json(
+        { success: false, error: "Shipping method and payment method are required" },
+        { status: 400 }
+      );
+    }
+
+    // Generate order number
+    const orderNumber = `HS6-${Date.now().toString().slice(-6)}`;
+    console.log('🛒 API: Generated order number:', orderNumber);
+
+    // Create order in transaction
+    const order = await prisma.$transaction(async (tx) => {
+      // Create shipping address
+      const shippingAddr = await tx.address.create({
+        data: {
+          userId: session.user.id,
+          type: "SHIPPING",
+          title: "آدرس ارسال",
+          firstName: shippingAddress.firstName,
+          lastName: shippingAddress.lastName,
+          addressLine1: shippingAddress.address,
+          city: shippingAddress.city,
+          state: shippingAddress.province,
+          postalCode: shippingAddress.postalCode,
+          country: "Iran",
+          phone: shippingAddress.phone,
+          isDefault: false
+        }
+      });
+
+      // Create billing address
+      const billingAddr = await tx.address.create({
+        data: {
+          userId: session.user.id,
+          type: "BILLING",
+          title: "آدرس صورتحساب",
+          firstName: billingAddress.firstName,
+          lastName: billingAddress.lastName,
+          addressLine1: billingAddress.address,
+          city: billingAddress.city,
+          state: billingAddress.province,
+          postalCode: billingAddress.postalCode,
+          country: "Iran",
+          phone: billingAddress.phone,
+          isDefault: false
+        }
+      });
+
+      // Create order
+      const newOrder = await tx.order.create({
+        data: {
+          orderNumber,
+          userId: session.user.id,
+          status: "PENDING",
+          paymentStatus: "PENDING",
+          paymentMethod,
+          shippingMethod,
+          subtotal: subtotal || 0,
+          taxAmount: taxAmount || 0,
+          shippingAmount: shippingAmount || 0,
+          discountAmount: discountAmount || 0,
+          totalAmount: totalAmount || 0,
+          customerNote: customerNote || null,
+          billingAddressId: billingAddr.id,
+          shippingAddressId: shippingAddr.id,
+          customerEmail: session.user.email || "",
+          customerPhone: shippingAddress.phone
+        }
+      });
+
+      // Create order items and update product stock
+      for (const item of items) {
+        // Create order item
+        await tx.orderItem.create({
+          data: {
+            orderId: newOrder.id,
+            productId: item.productId,
+            variantId: item.variantId || null,
+            sku: item.sku,
+            name: item.name,
+            description: item.description || null,
+            image: item.image || null,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+            quantity: item.quantity,
+            attributes: item.attributes || {}
+          }
+        });
+
+        // Update product stock
+        if (item.productId) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stockQuantity: {
+                decrement: item.quantity
+              }
+            }
+          });
+
+          // Check if stock is now low and update isInStock
+          const updatedProduct = await tx.product.findUnique({
+            where: { id: item.productId },
+            select: { stockQuantity: true, lowStockThreshold: true }
+          });
+
+          if (updatedProduct && updatedProduct.stockQuantity <= updatedProduct.lowStockThreshold) {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                isInStock: updatedProduct.stockQuantity > 0
+              }
+            });
+          }
+        }
+      }
+
+      return newOrder;
+    });
+
+    console.log('🛒 API: Order created successfully:', order.id);
+
+    // Return order with basic info
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        totalAmount: order.totalAmount,
+        message: "Order created successfully"
+      }
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error("Error creating order:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to create order" },
+      { status: 500 }
+    );
+  }
+}

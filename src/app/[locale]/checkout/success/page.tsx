@@ -2,10 +2,12 @@ import Link from "next/link";
 
 interface CheckoutSuccessPageProps {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ orderNumber?: string }>;
 }
 
-export default async function CheckoutSuccessPage({ params }: CheckoutSuccessPageProps) {
+export default async function CheckoutSuccessPage({ params, searchParams }: CheckoutSuccessPageProps) {
   const { locale } = await params;
+  const { orderNumber } = await searchParams;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
@@ -34,7 +36,7 @@ export default async function CheckoutSuccessPage({ params }: CheckoutSuccessPag
             <div className="space-y-3 text-left">
               <div className="flex justify-between">
                 <span className="text-gray-400">شماره سفارش:</span>
-                <span className="text-white font-medium">#HS6-{Date.now().toString().slice(-6)}</span>
+                <span className="text-white font-medium">#{orderNumber || `HS6-${Date.now().toString().slice(-6)}`}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">تاریخ ثبت:</span>

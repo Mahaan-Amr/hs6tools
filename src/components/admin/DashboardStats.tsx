@@ -25,22 +25,56 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call to fetch stats
+    // Fetch real stats from API
     const fetchStats = async () => {
       setIsLoading(true);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data - replace with actual API call
-      setStats({
-        orders: { value: 125, change: 12.5 },
-        products: { value: 2450, change: 8.2 },
-        users: { value: 8720, change: 15.3 },
-        revenue: { value: 125450000, change: 22.1 }
-      });
-      
-      setIsLoading(false);
+      try {
+        const response = await fetch('/api/analytics?type=overview&period=30');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const data = result.data.overview;
+          setStats({
+            orders: { 
+              value: data.totalOrders || 0, 
+              change: data.ordersChange || 0 
+            },
+            products: { 
+              value: data.totalProducts || 0, 
+              change: data.productsChange || 0 
+            },
+            users: { 
+              value: data.totalUsers || 0, 
+              change: data.usersChange || 0 
+            },
+            revenue: { 
+              value: data.totalRevenue || 0, 
+              change: data.revenueChange || 0 
+            }
+          });
+        } else {
+          console.error('Error fetching dashboard stats:', result.error);
+          // Fallback to zero values
+          setStats({
+            orders: { value: 0, change: 0 },
+            products: { value: 0, change: 0 },
+            users: { value: 0, change: 0 },
+            revenue: { value: 0, change: 0 }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        // Fallback to zero values
+        setStats({
+          orders: { value: 0, change: 0 },
+          products: { value: 0, change: 0 },
+          users: { value: 0, change: 0 },
+          revenue: { value: 0, change: 0 }
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchStats();
@@ -66,28 +100,28 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
   };
 
   const StatCard = ({ title, value, change, icon, color }: StatCardProps) => (
-    <div className="glass rounded-3xl p-6 hover:scale-105 transition-transform duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center`}>
+    <div className="glass rounded-3xl p-4 sm:p-6 hover:scale-105 transition-transform duration-300">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 ${color} rounded-2xl flex items-center justify-center`}>
           {icon}
         </div>
-        <div className={`text-right ${change >= 0 ? 'text-green-400' : 'text-red-400'} text-sm`}>
+        <div className={`text-right ${change >= 0 ? 'text-green-400' : 'text-red-400'} text-xs sm:text-sm`}>
           <span className="font-medium">
             {change >= 0 ? '+' : ''}{change}%
           </span>
-          <div className="text-gray-400">از ماه گذشته</div>
+          <div className="text-gray-400 text-xs">از ماه گذشته</div>
         </div>
       </div>
       
       <div className="text-center">
-        <h3 className="text-3xl font-bold text-white mb-2">
+        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">
           {isLoading ? (
-            <div className="w-20 h-8 bg-white/10 rounded animate-pulse mx-auto"></div>
+            <div className="w-16 sm:w-20 h-6 sm:h-8 bg-white/10 rounded animate-pulse mx-auto"></div>
           ) : (
             title === 'درآمد ماهانه' ? formatCurrency(value as number) : formatNumber(value as number)
           )}
         </h3>
-        <p className="text-gray-300">{title}</p>
+        <p className="text-gray-300 text-sm sm:text-base">{title}</p>
       </div>
     </div>
   );
