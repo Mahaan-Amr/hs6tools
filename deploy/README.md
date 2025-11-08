@@ -194,7 +194,28 @@ The deployment script creates a cron job for daily backups at 2 AM.
 
 ### Manual Updates
 
-To update the application:
+**Recommended: Use the automated update script**
+
+To update the application quickly:
+
+```bash
+cd /var/www/hs6tools
+chmod +x update.sh  # First time only
+./update.sh
+```
+
+This script will automatically:
+- Pull latest changes from GitHub
+- Install new dependencies
+- Generate Prisma client
+- Run database migrations
+- Build the application
+- Restart PM2
+- Show status and logs
+
+**Alternative: Full deployment script**
+
+For a complete rebuild (first time deployment):
 
 ```bash
 cd /var/www/hs6tools

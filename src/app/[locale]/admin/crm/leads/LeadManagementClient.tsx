@@ -382,10 +382,6 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
           currentPage={currentPage}
           totalPages={totalPages}
           totalCount={totalCount}
-          search={search}
-          status={status}
-          source={source}
-          assignedTo={assignedTo}
           locale={locale}
         />
       )}

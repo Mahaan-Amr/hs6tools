@@ -25,7 +25,8 @@ export async function GET() {
     }
 
     // Don't return the password in the response
-    const { smtpPassword: _, ...safeSettings } = settings;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { smtpPassword: _unused, ...safeSettings } = settings;
     return NextResponse.json({ success: true, data: safeSettings });
   } catch (error) {
     console.error("Error fetching email settings:", error);
@@ -101,7 +102,8 @@ export async function PUT(request: NextRequest) {
     });
 
     // Don't return the password in the response
-    const { smtpPassword: _, ...safeSettings } = settings;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { smtpPassword: _unused, ...safeSettings } = settings;
     return NextResponse.json({ success: true, data: safeSettings });
   } catch (error) {
     console.error("Error updating email settings:", error);

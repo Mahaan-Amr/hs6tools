@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import CustomerList from "@/components/admin/crm/CustomerList";
+import { Prisma } from "@prisma/client";
 
 interface CustomersPageProps {
   params: Promise<{
@@ -31,7 +32,7 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
   const skip = (currentPage - 1) * limit;
 
   // Build where clause for filtering
-  const where: any = {
+  const where: Prisma.UserWhereInput = {
     isActive: true,
     deletedAt: null,
     role: "CUSTOMER"
@@ -47,11 +48,11 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
   }
 
   if (tier) {
-    where.customerTier = tier;
+    where.customerTier = { equals: tier as "BRONZE" | "SILVER" | "GOLD" | "PLATINUM" } as Prisma.EnumCustomerTierNullableFilter<"User">;
   }
 
   if (stage) {
-    where.lifecycleStage = stage;
+    where.lifecycleStage = { equals: stage as "LEAD" | "PROSPECT" | "CUSTOMER" | "CHAMPION" | "ADVOCATE" | "INACTIVE" | "LOST" } as Prisma.EnumLifecycleStageNullableFilter<"User">;
   }
 
   // Get customers with pagination
@@ -68,6 +69,13 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
         position: true,
         lastLoginAt: true,
         createdAt: true,
+        customerType: true,
+        industry: true,
+        companySize: true,
+        customerTier: true,
+        healthScore: true,
+        tags: true,
+        lifecycleStage: true,
         orders: {
           select: {
             totalAmount: true,
@@ -85,16 +93,17 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
 
   // Calculate customer metrics
   const customersWithMetrics = customers.map(customer => {
-    const totalOrders = customer.orders?.length || 0;
-    const totalSpent = customer.orders?.reduce((sum: number, order: any) => 
-      sum + Number(order.totalAmount), 0) || 0;
-    const paidOrders = customer.orders?.filter((order: any) => 
-      order.paymentStatus === "PAID").length || 0;
+    const orders = customer.orders || [];
+    const totalOrders = orders.length;
+    const totalSpent = orders.reduce((sum: number, order) => 
+      sum + Number(order.totalAmount), 0);
+    const paidOrders = orders.filter((order) => 
+      order.paymentStatus === "PAID").length;
     const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
     
     // Calculate days since last order
-    const lastOrderDate = customer.orders && customer.orders.length > 0 
-      ? Math.max(...customer.orders.map((o: any) => o.createdAt.getTime()))
+    const lastOrderDate = orders.length > 0 
+      ? Math.max(...orders.map((o) => o.createdAt.getTime()))
       : null;
     const daysSinceLastOrder = lastOrderDate 
       ? Math.floor((Date.now() - lastOrderDate) / (1000 * 60 * 60 * 24))
@@ -113,13 +122,13 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
       lastLoginAt: customer.lastLoginAt?.toISOString() || undefined,
       createdAt: customer.createdAt.toISOString(),
       // Add CRM fields with fallback values
-      customerType: (customer as any).customerType || "B2C",
-      industry: (customer as any).industry || undefined,
-      companySize: (customer as any).companySize || undefined,
-      customerTier: (customer as any).customerTier || "BRONZE",
-      healthScore: (customer as any).healthScore || 0,
-      tags: (customer as any).tags || [],
-      lifecycleStage: (customer as any).lifecycleStage || "CUSTOMER",
+      customerType: customer.customerType || "B2C",
+      industry: customer.industry || undefined,
+      companySize: customer.companySize || undefined,
+      customerTier: customer.customerTier || "BRONZE",
+      healthScore: customer.healthScore || 0,
+      tags: customer.tags || [],
+      lifecycleStage: customer.lifecycleStage || "CUSTOMER",
       metrics: {
         totalOrders,
         totalSpent,

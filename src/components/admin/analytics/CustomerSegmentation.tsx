@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface CustomerSegment {
   id: string;
@@ -21,7 +21,7 @@ interface CustomerSegmentationProps {
   period: string;
 }
 
-export default function CustomerSegmentation({ locale, period }: CustomerSegmentationProps) {
+export default function CustomerSegmentation({ period }: CustomerSegmentationProps) {
   const [customers, setCustomers] = useState<{
     customerSegments: {
       highValue: CustomerSegment[];
@@ -40,11 +40,7 @@ export default function CustomerSegmentation({ locale, period }: CustomerSegment
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("high-value");
 
-  useEffect(() => {
-    fetchCustomerData();
-  }, [period]);
-
-  const fetchCustomerData = async () => {
+  const fetchCustomerData = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/analytics?type=customers&period=${period}`);
@@ -60,22 +56,11 @@ export default function CustomerSegmentation({ locale, period }: CustomerSegment
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [period]);
 
-  const getCustomerTypeLabel = (type: string) => {
-    switch (type) {
-      case "high-value":
-        return "مشتریان با ارزش بالا";
-      case "frequent":
-        return "مشتریان پرتکرار";
-      case "dormant":
-        return "مشتریان غیرفعال";
-      case "regular":
-        return "مشتریان عادی";
-      default:
-        return type;
-    }
-  };
+  useEffect(() => {
+    fetchCustomerData();
+  }, [fetchCustomerData]);
 
   const getCustomerTypeColor = (type: string) => {
     switch (type) {

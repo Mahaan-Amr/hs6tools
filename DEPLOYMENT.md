@@ -148,6 +148,42 @@ If you prefer manual deployment, follow the detailed steps in `deploy/README.md`
 - **Log Rotation**: Automatic log management
 - **PM2 Monitoring**: Process health monitoring
 - **Auto-restart**: Application restart on failures
+- **Update Script**: Automated update process with `update.sh`
+
+### Quick Update Process
+The `update.sh` script automates the entire update process:
+
+1. **Pull latest changes** from GitHub
+2. **Install dependencies** (npm install)
+3. **Generate Prisma client** (npx prisma generate)
+4. **Run database migrations** (npx prisma migrate deploy)
+5. **Build application** (npm run build)
+6. **Restart PM2** application
+7. **Health check** and status verification
+8. **Show logs** for troubleshooting
+
+**Usage:**
+```bash
+# SSH into your server
+ssh root@87.107.73.10
+
+# Navigate to project directory
+cd /var/www/hs6tools
+
+# Make script executable (first time only)
+chmod +x update.sh
+
+# Run update script
+./update.sh
+```
+
+The script includes:
+- ✅ Pre-flight checks (Git, Node.js, PM2)
+- ✅ Optional backup before update
+- ✅ Error handling and rollback support
+- ✅ Colored output for better readability
+- ✅ Health checks after update
+- ✅ Automatic log display
 
 ### Manual Commands
 ```bash
@@ -160,7 +196,13 @@ ssh root@87.107.73.10 'pm2 logs hs6tools'
 # Restart application
 ssh root@87.107.73.10 'pm2 restart hs6tools'
 
-# Update application
+# Update application (Recommended - Automated)
+ssh root@87.107.73.10 'cd /var/www/hs6tools && chmod +x update.sh && ./update.sh'
+
+# Update application (Manual)
+ssh root@87.107.73.10 'cd /var/www/hs6tools && git pull && npm install && npx prisma generate && npx prisma migrate deploy && npm run build && pm2 restart hs6tools'
+
+# Full deployment (First time or complete rebuild)
 ssh root@87.107.73.10 'cd /var/www/hs6tools && ./deploy.sh'
 
 # Manual backup

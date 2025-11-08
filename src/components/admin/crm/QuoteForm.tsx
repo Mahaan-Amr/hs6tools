@@ -125,8 +125,23 @@ export default function QuoteForm({
   }, []);
 
   useEffect(() => {
-    calculateTotals();
-  }, [formData.items, formData.tax]);
+    const subtotal = formData.items.reduce((sum, item) => sum + item.total, 0);
+    const tax = subtotal * 0.09; // 9% tax rate
+    const total = subtotal + tax;
+
+    setFormData(prev => {
+      // Only update if values changed to avoid infinite loop
+      if (prev.subtotal === subtotal && prev.tax === tax && prev.total === total) {
+        return prev;
+      }
+      return {
+        ...prev,
+        subtotal,
+        tax,
+        total
+      };
+    });
+  }, [formData.items]);
 
   const fetchCustomers = async () => {
     try {
@@ -176,18 +191,6 @@ export default function QuoteForm({
     }
   };
 
-  const calculateTotals = () => {
-    const subtotal = formData.items.reduce((sum, item) => sum + item.total, 0);
-    const tax = subtotal * 0.09; // 9% tax rate
-    const total = subtotal + tax;
-
-    setFormData(prev => ({
-      ...prev,
-      subtotal,
-      tax,
-      total
-    }));
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

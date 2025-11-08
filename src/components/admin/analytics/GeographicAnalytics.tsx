@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface CityAnalytics {
   city: string;
@@ -29,7 +29,7 @@ interface GeographicAnalyticsProps {
   period: string;
 }
 
-export default function GeographicAnalytics({ locale, period }: GeographicAnalyticsProps) {
+export default function GeographicAnalytics({ period }: GeographicAnalyticsProps) {
   const [geographicData, setGeographicData] = useState<{
     cityAnalytics: CityAnalytics[];
     stateAnalytics: StateAnalytics[];
@@ -45,11 +45,7 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState("cities");
 
-  useEffect(() => {
-    fetchGeographicData();
-  }, [period]);
-
-  const fetchGeographicData = async () => {
+  const fetchGeographicData = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/analytics?type=geographic&period=${period}`);
@@ -65,7 +61,11 @@ export default function GeographicAnalytics({ locale, period }: GeographicAnalyt
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchGeographicData();
+  }, [fetchGeographicData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fa-IR").format(amount) + " ریال";

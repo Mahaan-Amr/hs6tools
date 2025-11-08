@@ -24,7 +24,8 @@ export async function GET() {
     }
 
     // Don't return the API key in the response
-    const { zarinpalApiKey: _, ...safeSettings } = settings;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { zarinpalApiKey: _unused, ...safeSettings } = settings;
     return NextResponse.json({ success: true, data: safeSettings });
   } catch (error) {
     console.error("Error fetching payment settings:", error);
@@ -89,7 +90,8 @@ export async function PUT(request: NextRequest) {
     });
 
     // Don't return the API key in the response
-    const { zarinpalApiKey: _, ...safeSettings } = settings;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { zarinpalApiKey: _unused, ...safeSettings } = settings;
     return NextResponse.json({ success: true, data: safeSettings });
   } catch (error) {
     console.error("Error updating payment settings:", error);

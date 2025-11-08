@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface ProductPerformance {
   id: string;
@@ -27,7 +27,7 @@ interface ProductPerformanceProps {
   period: string;
 }
 
-export default function ProductPerformance({ locale, period }: ProductPerformanceProps) {
+export default function ProductPerformance({ period }: ProductPerformanceProps) {
   const [products, setProducts] = useState<{
     products: ProductPerformance[];
     topSelling: ProductPerformance[];
@@ -46,11 +46,7 @@ export default function ProductPerformance({ locale, period }: ProductPerformanc
   const [activeTab, setActiveTab] = useState("top-selling");
   const [sortBy, setSortBy] = useState("totalSales");
 
-  useEffect(() => {
-    fetchProductData();
-  }, [period]);
-
-  const fetchProductData = async () => {
+  const fetchProductData = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/analytics?type=products&period=${period}`);
@@ -66,7 +62,11 @@ export default function ProductPerformance({ locale, period }: ProductPerformanc
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchProductData();
+  }, [fetchProductData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fa-IR").format(amount) + " ریال";

@@ -1,7 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+
+interface LeadActivity {
+  id: string;
+  type: string;
+  subject?: string;
+  description?: string;
+  content?: string;
+  outcome?: string;
+  nextAction?: string;
+  scheduledAt?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+interface LeadInteraction {
+  id: string;
+  type: string;
+  subject?: string;
+  content?: string;
+  description?: string;
+  outcome?: string;
+  nextAction?: string;
+  createdAt: string;
+}
 
 interface Lead {
   id: string;
@@ -19,8 +43,8 @@ interface Lead {
   expectedClose?: string;
   nextFollowUp?: string;
   createdAt: string;
-  activities: any[];
-  interactions: any[];
+  activities: LeadActivity[];
+  interactions: LeadInteraction[];
 }
 
 interface LeadListProps {
@@ -28,10 +52,6 @@ interface LeadListProps {
   currentPage: number;
   totalPages: number;
   totalCount: number;
-  search: string;
-  status: string;
-  source: string;
-  assignedTo: string;
   locale: string;
 }
 
@@ -40,10 +60,6 @@ export default function LeadList({
   currentPage,
   totalPages,
   totalCount,
-  search,
-  status,
-  source,
-  assignedTo,
   locale
 }: LeadListProps) {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
