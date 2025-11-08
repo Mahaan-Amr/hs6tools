@@ -16,6 +16,15 @@ const nextConfig: NextConfig = {
   generateEtags: false,
   // Enable static exports for better performance
   trailingSlash: false,
+  // Rewrites: Map /28569823.txt to API route for ZarinPal verification
+  async rewrites() {
+    return [
+      {
+        source: '/28569823.txt',
+        destination: '/api/verify/28569823',
+      },
+    ];
+  },
   // Security headers
   async headers() {
     return [
