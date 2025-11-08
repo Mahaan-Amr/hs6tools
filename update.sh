@@ -188,9 +188,29 @@ run_migrations() {
 build_application() {
     section "🏗️  Building Application"
     
+    info "Cleaning previous build..."
+    rm -rf .next
+    
     info "Building Next.js application..."
     if npm run build; then
         log "Application built successfully"
+        
+        # Verify build output
+        if [ ! -d ".next/static" ]; then
+            error "Build completed but .next/static folder is missing!"
+        fi
+        
+        info "Verifying build output..."
+        if [ -d ".next/static/chunks" ]; then
+            log "Build output verified: chunks folder exists"
+        else
+            warning "Build output might be incomplete: chunks folder not found"
+        fi
+        
+        # Fix permissions
+        info "Setting correct permissions for .next folder..."
+        chown -R hs6tools:hs6tools .next || chown -R $(whoami):$(whoami) .next
+        chmod -R 755 .next
     else
         error "Build failed. Please check the error messages above."
     fi
