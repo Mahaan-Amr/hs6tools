@@ -7,6 +7,12 @@ const defaultLocale = 'fa';
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
+  // Skip middleware for static files (files with extensions)
+  // This includes .txt, .jpg, .png, .svg, etc. from public folder
+  if (pathname.includes('.')) {
+    return;
+  }
+  
   // Check if the pathname has a locale
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
