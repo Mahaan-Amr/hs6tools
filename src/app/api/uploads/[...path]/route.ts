@@ -44,15 +44,30 @@ export async function GET(
       case "avif":
         contentType = "image/avif";
         break;
+      case "mp4":
+        contentType = "video/mp4";
+        break;
+      case "mov":
+        contentType = "video/quicktime";
+        break;
+      case "avi":
+        contentType = "video/x-msvideo";
+        break;
     }
 
     // Return file with appropriate headers
-    return new Response(new Uint8Array(fileBuffer), {
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000", // Cache for 1 year
-      },
-    });
+    const isVideo = contentType.startsWith('video/');
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=31536000", // Cache for 1 year
+    };
+    
+    // Enable range requests for video streaming
+    if (isVideo) {
+      headers["Accept-Ranges"] = "bytes";
+    }
+    
+    return new Response(new Uint8Array(fileBuffer), { headers });
   } catch (error) {
     console.error("Error serving file:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

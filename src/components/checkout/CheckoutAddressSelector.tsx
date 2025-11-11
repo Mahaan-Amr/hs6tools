@@ -87,7 +87,7 @@ export default function CheckoutAddressSelector({
     <div className="space-y-6">
       {/* Billing Address Section */}
       <div className="glass rounded-xl p-6">
-        <h3 className="text-xl font-semibold text-white mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           {messages?.checkout?.billingAddress || 'آدرس صورتحساب'}
         </h3>
         
@@ -99,14 +99,14 @@ export default function CheckoutAddressSelector({
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                   selectedBillingAddress?.id === address.id
                     ? 'border-primary-orange bg-primary-orange/10'
-                    : 'border-white/20 hover:border-white/40'
+                    : 'border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/40'
                 }`}
                 onClick={() => handleAddressSelect(address, 'billing')}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {address.title}
                       </span>
                       {address.isDefault && (
@@ -115,21 +115,21 @@ export default function CheckoutAddressSelector({
                         </span>
                       )}
                     </div>
-                    <p className="text-white font-medium">
+                    <p className="text-gray-900 dark:text-white font-medium">
                       {address.firstName} {address.lastName}
                     </p>
                     {address.company && (
-                      <p className="text-sm text-gray-300">{address.company}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{address.company}</p>
                     )}
-                    <p className="text-sm text-gray-300 mt-1">{address.addressLine1}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{address.addressLine1}</p>
                     {address.addressLine2 && (
-                      <p className="text-sm text-gray-300">{address.addressLine2}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{address.addressLine2}</p>
                     )}
-                    <p className="text-sm text-gray-300 mt-1">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                       {address.city}، {address.state} {address.postalCode}
                     </p>
-                    <p className="text-sm text-gray-300">{address.country}</p>
-                    <p className="text-sm text-gray-300 mt-1">{address.phone}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{address.country}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{address.phone}</p>
                   </div>
                   <div className="ml-4">
                     <input
@@ -146,7 +146,7 @@ export default function CheckoutAddressSelector({
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               {messages?.customer?.addresses?.noAddresses || 'هنوز آدرسی ندارید'}
             </p>
           </div>
@@ -154,7 +154,7 @@ export default function CheckoutAddressSelector({
         
         <button
           onClick={() => handleAddNewAddress('billing')}
-          className="mt-4 w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg hover:bg-white/20 transition-colors duration-200"
+          className="mt-4 w-full px-4 py-3 bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white border border-gray-300 dark:border-white/20 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors duration-200"
         >
           + {messages?.customer?.addresses?.addNewAddress || 'افزودن آدرس جدید'}
         </button>
@@ -162,7 +162,7 @@ export default function CheckoutAddressSelector({
 
       {/* Shipping Address Section */}
       <div className="glass rounded-xl p-6">
-        <h3 className="text-xl font-semibold text-white mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           {messages?.checkout?.shippingAddress || 'آدرس ارسال'}
         </h3>
         
@@ -174,14 +174,14 @@ export default function CheckoutAddressSelector({
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                   selectedShippingAddress?.id === address.id
                     ? 'border-primary-orange bg-primary-orange/10'
-                    : 'border-white/20 hover:border-white/40'
+                    : 'border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/40'
                 }`}
                 onClick={() => handleAddressSelect(address, 'shipping')}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {address.title}
                       </span>
                       {address.isDefault && (
@@ -190,21 +190,21 @@ export default function CheckoutAddressSelector({
                         </span>
                       )}
                     </div>
-                    <p className="text-white font-medium">
+                    <p className="text-gray-900 dark:text-white font-medium">
                       {address.firstName} {address.lastName}
                     </p>
                     {address.company && (
-                      <p className="text-sm text-gray-300">{address.company}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{address.company}</p>
                     )}
-                    <p className="text-sm text-gray-300 mt-1">{address.addressLine1}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{address.addressLine1}</p>
                     {address.addressLine2 && (
-                      <p className="text-sm text-gray-300">{address.addressLine2}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{address.addressLine2}</p>
                     )}
-                    <p className="text-sm text-gray-300 mt-1">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                       {address.city}، {address.state} {address.postalCode}
                     </p>
-                    <p className="text-sm text-gray-300">{address.country}</p>
-                    <p className="text-sm text-gray-300 mt-1">{address.phone}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{address.country}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{address.phone}</p>
                   </div>
                   <div className="ml-4">
                     <input
@@ -221,7 +221,7 @@ export default function CheckoutAddressSelector({
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               {messages?.customer?.addresses?.noAddresses || 'هنوز آدرسی ندارید'}
             </p>
           </div>
@@ -229,7 +229,7 @@ export default function CheckoutAddressSelector({
         
         <button
           onClick={() => handleAddNewAddress('shipping')}
-          className="mt-4 w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg hover:bg-white/20 transition-colors duration-200"
+          className="mt-4 w-full px-4 py-3 bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white border border-gray-300 dark:border-white/20 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors duration-200"
         >
           + {messages?.customer?.addresses?.addNewAddress || 'افزودن آدرس جدید'}
         </button>
@@ -241,9 +241,9 @@ export default function CheckoutAddressSelector({
           <input
             type="checkbox"
             id="useSameAddress"
-            className="w-4 h-4 text-primary-orange bg-white/10 border-white/20 rounded focus:ring-primary-orange focus:ring-2"
+            className="w-4 h-4 text-primary-orange bg-gray-100 dark:bg-white/10 border-gray-300 dark:border-white/20 rounded focus:ring-primary-orange focus:ring-2"
           />
-          <label htmlFor="useSameAddress" className="ml-2 text-sm text-white">
+          <label htmlFor="useSameAddress" className="ml-2 text-sm text-gray-900 dark:text-white">
             {messages?.checkout?.useSameAddress || 'استفاده از همان آدرس برای ارسال'}
           </label>
         </div>

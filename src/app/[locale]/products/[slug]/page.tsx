@@ -141,30 +141,30 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const hasDiscount = product.comparePrice && product.comparePrice > product.price;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Breadcrumbs */}
         <nav className="mb-8">
-          <ol className="flex items-center space-x-2 text-sm text-gray-400">
+          <ol className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <li>
-              <Link href={`/${locale}`} className="hover:text-white transition-colors duration-200">
+              <Link href={`/${locale}`} className="hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
                 {t.navigation.home}
               </Link>
             </li>
             <li className="text-gray-500">/</li>
             <li>
-              <Link href={`/${locale}/categories`} className="hover:text-white transition-colors duration-200">
+              <Link href={`/${locale}/categories`} className="hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
                 {t.products.categories}
               </Link>
             </li>
             <li className="text-gray-500">/</li>
             <li>
-              <Link href={`/${locale}/categories/${product.category.slug}`} className="hover:text-white transition-colors duration-200">
+              <Link href={`/${locale}/categories/${product.category.slug}`} className="hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
                 {product.category.name}
               </Link>
             </li>
             <li className="text-gray-500">/</li>
-            <li className="text-white">{product.name}</li>
+            <li className="text-gray-900 dark:text-white">{product.name}</li>
           </ol>
         </nav>
 
@@ -183,7 +183,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                  <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-16 h-16 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
@@ -229,18 +229,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Product Name */}
-            <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
               {product.name}
             </h1>
 
             {/* Price */}
             <div className="space-y-2">
               <div className="flex items-center space-x-4">
-                <span className="text-3xl font-bold text-white">
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">
                   {formatPrice(product.price)}
                 </span>
                 {hasDiscount && (
-                  <span className="text-xl text-gray-400 line-through">
+                  <span className="text-xl text-gray-600 dark:text-gray-400 line-through">
                     {formatPrice(product.comparePrice!)}
                   </span>
                 )}
@@ -259,7 +259,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.isInStock ? 'موجود' : 'ناموجود'}
               </span>
               {product.isInStock && (
-                <span className="text-sm text-gray-400">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   ({product.stockQuantity} عدد)
                 </span>
               )}
@@ -267,7 +267,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Short Description */}
             {product.shortDescription && (
-              <p className="text-gray-300 text-lg leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
                 {product.shortDescription}
               </p>
             )}
@@ -275,15 +275,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Variants */}
             {hasVariants && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">انتخاب گزینه</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">انتخاب گزینه</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {product.variants.map((variant) => (
                     <div key={variant.id} className="glass rounded-xl p-4 cursor-pointer hover:ring-2 ring-primary-orange transition-all duration-200">
-                      <div className="text-sm text-gray-400 mb-2">{variant.name}</div>
-                      <div className="font-semibold text-white mb-2">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{variant.name}</div>
+                      <div className="font-semibold text-gray-900 dark:text-white mb-2">
                         {formatPrice(variant.price)}
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         موجودی: {variant.stockQuantity} عدد
                       </div>
                     </div>
@@ -305,38 +305,38 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.isInStock ? "افزودن به سبد خرید" : "ناموجود"}
               </button>
               
-              <button className="w-full py-4 px-6 glass border border-white/20 text-white rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-200">
+              <button className="w-full py-4 px-6 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-200">
                 افزودن به لیست علاقه‌مندی
               </button>
             </div>
 
             {/* Product Details */}
             <div className="glass rounded-2xl p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-white">مشخصات محصول</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">مشخصات محصول</h3>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {product.brand && (
                   <div>
-                    <span className="text-gray-400">برند:</span>
-                    <span className="text-white ml-2">{product.brand}</span>
+                    <span className="text-gray-600 dark:text-gray-400">برند:</span>
+                    <span className="text-gray-900 dark:text-white ml-2">{product.brand}</span>
                   </div>
                 )}
                 {product.material && (
                   <div>
-                    <span className="text-gray-400">جنس:</span>
-                    <span className="text-white ml-2">{product.material}</span>
+                    <span className="text-gray-600 dark:text-gray-400">جنس:</span>
+                    <span className="text-gray-900 dark:text-white ml-2">{product.material}</span>
                   </div>
                 )}
                 {product.weight && (
                   <div>
-                    <span className="text-gray-400">وزن:</span>
-                    <span className="text-white ml-2">{product.weight} گرم</span>
+                    <span className="text-gray-600 dark:text-gray-400">وزن:</span>
+                    <span className="text-gray-900 dark:text-white ml-2">{product.weight} گرم</span>
                   </div>
                 )}
                 {product.warranty && (
                   <div>
-                    <span className="text-gray-400">گارانتی:</span>
-                    <span className="text-white ml-2">{product.warranty}</span>
+                    <span className="text-gray-600 dark:text-gray-400">گارانتی:</span>
+                    <span className="text-gray-900 dark:text-white ml-2">{product.warranty}</span>
                   </div>
                 )}
               </div>
@@ -347,7 +347,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Product Description */}
         {product.description && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-white mb-6">توضیحات محصول</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">توضیحات محصول</h2>
             <div className="glass rounded-3xl p-8">
               <div className="prose prose-invert max-w-none">
                 <div dangerouslySetInnerHTML={{ __html: product.description }} />
@@ -359,7 +359,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Reviews */}
         {product.reviews.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               نظرات ({product._count.reviews})
             </h2>
             <div className="space-y-4">
@@ -373,10 +373,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         </span>
                       </div>
                       <div>
-                        <div className="font-semibold text-white">
+                        <div className="font-semibold text-gray-900 dark:text-white">
                           {review.user.firstName} {review.user.lastName}
                         </div>
-                        <div className="text-sm text-gray-400">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
                           {formatDate(review.createdAt)}
                         </div>
                       </div>
@@ -390,9 +390,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </div>
                   </div>
                   {review.title && (
-                    <h4 className="font-semibold text-white mb-2">{review.title}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{review.title}</h4>
                   )}
-                  <p className="text-gray-300 leading-relaxed">{review.content}</p>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{review.content}</p>
                 </div>
               ))}
             </div>
@@ -402,7 +402,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-white mb-6">محصولات مرتبط</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">محصولات مرتبط</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
                 <Link key={relatedProduct.id} href={`/${locale}/products/${relatedProduct.slug}`}>
@@ -418,7 +418,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-white mb-2 line-clamp-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                         {relatedProduct.name}
                       </h3>
                       <div className="text-primary-orange font-bold">

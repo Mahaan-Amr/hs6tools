@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -124,24 +125,38 @@ const config: Config = {
     },
   },
   plugins: [
-    // Custom plugin for glassmorphism effects
+    // Custom plugin for glassmorphism effects with theme support
     function({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
-      const newUtilities = {
+      const newUtilities: Record<string, Record<string, string>> = {
         ".glass": {
           background: "rgba(255, 255, 255, 0.1)",
           "backdrop-filter": "blur(20px)",
           border: "1px solid rgba(255, 255, 255, 0.2)",
         },
-        ".glass-dark": {
+        ".dark .glass": {
           background: "rgba(0, 0, 0, 0.1)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+        },
+        ".glass-light": {
+          background: "rgba(255, 255, 255, 0.8)",
           "backdrop-filter": "blur(20px)",
+          border: "1px solid rgba(0, 0, 0, 0.1)",
+        },
+        ".dark .glass-light": {
+          background: "rgba(0, 0, 0, 0.1)",
           border: "1px solid rgba(255, 255, 255, 0.1)",
         },
         ".text-shadow": {
           "text-shadow": "0 2px 4px rgba(0, 0, 0, 0.1)",
         },
+        ".dark .text-shadow": {
+          "text-shadow": "0 2px 4px rgba(0, 0, 0, 0.3)",
+        },
         ".text-shadow-lg": {
           "text-shadow": "0 4px 8px rgba(0, 0, 0, 0.15)",
+        },
+        ".dark .text-shadow-lg": {
+          "text-shadow": "0 4px 8px rgba(0, 0, 0, 0.4)",
         },
       };
       addUtilities(newUtilities);

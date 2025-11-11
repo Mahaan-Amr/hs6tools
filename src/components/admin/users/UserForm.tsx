@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AdminUser, CreateUserData, UpdateUserData } from "@/types/admin";
 import { UserRole } from "@prisma/client";
 
@@ -34,6 +35,25 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
       });
     }
   }, [user]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onCancel]);
 
   const handleInputChange = (field: keyof (CreateUserData | UpdateUserData), value: string | UserRole) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -87,16 +107,33 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
 
 
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="glass rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
+  };
+
+  const modalContent = (
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      onClick={handleBackdropClick}
+    >
+      <div 
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+        style={{ 
+          maxHeight: '90vh',
+          margin: 'auto'
+        }}
+      >
+        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             {isEditing ? "ویرایش کاربر" : "ایجاد کاربر جدید"}
           </h2>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -106,48 +143,48 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">اطلاعات پایه</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات پایه</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   نام *
                 </label>
                 <input
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange("firstName", e.target.value)}
-                  className={`w-full px-4 py-3 bg-white/10 text-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                    errors.firstName ? "border-red-500" : "border-white/20"
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.firstName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
                   placeholder="نام کاربر"
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-400">{errors.firstName}</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.firstName}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   نام خانوادگی *
                 </label>
                 <input
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange("lastName", e.target.value)}
-                  className={`w-full px-4 py-3 bg-white/10 text-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                    errors.lastName ? "border-red-500" : "border-white/20"
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.lastName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
                   placeholder="نام خانوادگی کاربر"
                 />
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-400">{errors.lastName}</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.lastName}</p>
                 )}
               </div>
 
               {!isEditing && (
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                     ایمیل *
                   </label>
                   <input
@@ -158,19 +195,19 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                       createData.email = e.target.value;
                       setFormData({ ...createData });
                     }}
-                    className={`w-full px-4 py-3 bg-white/10 text-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                      errors.email ? "border-red-500" : "border-white/20"
+                    className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                      errors.email ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="ایمیل کاربر"
                   />
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+                    <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.email}</p>
                   )}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   شماره تلفن
                 </label>
                 <input
@@ -181,30 +218,30 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                     createData.phone = e.target.value;
                     setFormData({ ...createData });
                   }}
-                  className={`w-full px-4 py-3 bg-white/10 text-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                    errors.phone ? "border-red-500" : "border-white/20"
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.phone ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
                   placeholder="شماره تلفن (اختیاری)"
                 />
                 {errors.phone && (
-                  <p className="mt-1 text-sm text-red-400">{errors.phone}</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.phone}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Account Settings */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">تنظیمات حساب</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تنظیمات حساب</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   نقش *
                 </label>
                 <select
                   value={formData.role}
                   onChange={(e) => handleInputChange("role", e.target.value as UserRole)}
-                  className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                 >
                   <option value="CUSTOMER">مشتری</option>
                   <option value="ADMIN">مدیر</option>
@@ -214,7 +251,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
 
               {!isEditing && (
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                     رمز عبور *
                   </label>
                   <input
@@ -225,13 +262,13 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                       createData.password = e.target.value;
                       setFormData({ ...createData });
                     }}
-                    className={`w-full px-4 py-3 bg-white/10 text-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                      errors.password ? "border-red-500" : "border-white/20"
+                    className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                      errors.password ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="رمز عبور (حداقل 8 کاراکتر)"
                   />
                   {errors.password && (
-                    <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+                    <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.password}</p>
                   )}
                 </div>
               )}
@@ -239,31 +276,31 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
           </div>
 
           {/* Company Information */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">اطلاعات شرکت</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات شرکت</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   نام شرکت
                 </label>
                 <input
                   type="text"
                   value={formData.company}
                   onChange={(e) => handleInputChange("company", e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                   placeholder="نام شرکت (اختیاری)"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   سمت
                 </label>
                 <input
                   type="text"
                   value={formData.position}
                   onChange={(e) => handleInputChange("position", e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                   placeholder="سمت شغلی (اختیاری)"
                 />
               </div>
@@ -271,24 +308,31 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end space-x-4 space-x-reverse">
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
+              className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
             >
               انصراف
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
             >
-              {isSaving ? "در حال ذخیره..." : (isEditing ? "ذخیره تغییرات" : "ایجاد کاربر")}
+              {isSaving ? "در حال ذخیره..." : (isEditing ? "به‌روزرسانی" : "ایجاد")}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
+
+  // Render modal using portal to document.body
+  if (typeof window !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return null;
 }

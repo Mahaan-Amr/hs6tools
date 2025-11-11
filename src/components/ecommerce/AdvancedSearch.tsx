@@ -216,7 +216,7 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
           onKeyDown={handleKeyDown}
           onFocus={() => setShowSuggestions(true)}
           placeholder="جستجو در محصولات..."
-          className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent text-lg"
+          className="w-full pl-16 pr-14 py-4 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent text-lg"
         />
         
         {/* Search Button */}
@@ -232,7 +232,11 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
         {/* Filter Toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-white/80 hover:text-white transition-colors duration-200"
+          className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-2 rounded-xl transition-colors duration-200 ${
+            showFilters 
+              ? "bg-primary-orange text-white hover:bg-orange-600" 
+              : "bg-gray-200 dark:bg-gray-700 text-primary-orange hover:bg-gray-300 dark:hover:bg-gray-600"
+          }`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
@@ -248,14 +252,14 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
         >
           {/* Search Suggestions */}
           {suggestions.length > 0 && (
-            <div className="p-4 border-b border-white/10">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">پیشنهادات جستجو</h3>
+            <div className="p-4 border-b border-gray-200 dark:border-white/10">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">پیشنهادات جستجو</h3>
               <div className="space-y-2">
                 {suggestions.map((suggestion, index) => (
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full text-right p-3 text-white hover:bg-white/10 rounded-xl transition-colors duration-200 text-sm"
+                    className="w-full text-right p-3 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-colors duration-200 text-sm"
                   >
                     {suggestion}
                   </button>
@@ -267,16 +271,16 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
           {/* Search History */}
           {searchHistory.length > 0 && (
             <div className="p-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">تاریخچه جستجو</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">تاریخچه جستجو</h3>
               <div className="space-y-2">
                 {searchHistory.map((historyItem, index) => (
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(historyItem)}
-                    className="w-full text-right p-3 text-white hover:bg-white/10 rounded-xl transition-colors duration-200 text-sm flex items-center justify-between"
+                    className="w-full text-right p-3 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-colors duration-200 text-sm flex items-center justify-between"
                   >
                     <span>{historyItem}</span>
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </button>
@@ -291,10 +295,10 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
       {showFilters && (
         <div className="mt-6 glass rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">فیلترهای پیشرفته</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">فیلترهای پیشرفته</h3>
             <button
               onClick={clearFilters}
-              className="text-sm text-gray-400 hover:text-white transition-colors duration-200"
+              className="text-sm text-primary-orange hover:text-orange-600 dark:hover:text-orange-400 font-medium transition-colors duration-200"
             >
               پاک کردن همه
             </button>
@@ -303,11 +307,11 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">دسته‌بندی</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">دسته‌بندی</label>
               <select
                 value={filters.categoryId}
                 onChange={(e) => handleFilterChange("categoryId", e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
                 <option value="">همه دسته‌ها</option>
                 {/* Categories would be loaded from API */}
@@ -316,32 +320,32 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Price Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">محدوده قیمت</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">محدوده قیمت</label>
               <div className="flex space-x-2">
                 <input
                   type="number"
                   placeholder="از"
                   value={filters.minPrice}
                   onChange={(e) => handleFilterChange("minPrice", e.target.value)}
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
                 />
                 <input
                   type="number"
                   placeholder="تا"
                   value={filters.maxPrice}
                   onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
                 />
               </div>
             </div>
 
             {/* Brand Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">برند</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">برند</label>
               <select
                 value={filters.brand}
                 onChange={(e) => handleFilterChange("brand", e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
                 <option value="">همه برندها</option>
                 {filterOptions.brands.map((brand) => (
@@ -354,11 +358,11 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Material Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">جنس</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">جنس</label>
               <select
                 value={filters.material}
                 onChange={(e) => handleFilterChange("material", e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
                 <option value="">همه جنس‌ها</option>
                 {filterOptions.materials.map((material) => (
@@ -371,11 +375,11 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Stock Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">وضعیت موجودی</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">وضعیت موجودی</label>
               <select
                 value={filters.inStock}
                 onChange={(e) => handleFilterChange("inStock", e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
                 <option value="">همه</option>
                 <option value="true">موجود</option>
@@ -385,11 +389,11 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Featured Products */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">محصولات ویژه</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">محصولات ویژه</label>
               <select
                 value={filters.featured}
                 onChange={(e) => handleFilterChange("featured", e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
                 <option value="">همه</option>
                 <option value="true">فقط ویژه</option>
@@ -398,11 +402,11 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Rating Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">حداقل امتیاز</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">حداقل امتیاز</label>
               <select
                 value={filters.rating}
                 onChange={(e) => handleFilterChange("rating", e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
                 <option value="">همه</option>
                 <option value="5">5 ستاره</option>

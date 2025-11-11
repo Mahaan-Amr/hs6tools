@@ -98,7 +98,7 @@ export default function ProductVariantSelector({
       {/* Variant Attributes */}
       {attributeKeys.map((key) => (
         <div key={key} className="space-y-3">
-          <label className="block text-sm font-medium text-gray-300 capitalize">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
             {key === "color" ? "رنگ" : 
              key === "size" ? "سایز" : 
              key === "material" ? "جنس" : 
@@ -121,8 +121,8 @@ export default function ProductVariantSelector({
                     ${isSelected 
                       ? "bg-primary-orange text-white ring-2 ring-primary-orange/50" 
                       : isAvailable 
-                        ? "bg-white/10 text-white hover:bg-white/20 border border-white/20" 
-                        : "bg-gray-600/50 text-gray-400 cursor-not-allowed border border-gray-600"
+                        ? "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 border border-gray-300 dark:border-white/20" 
+                        : "bg-gray-300 dark:bg-gray-600/50 text-gray-500 dark:text-gray-400 cursor-not-allowed border border-gray-400 dark:border-gray-600"
                     }
                   `}
                 >
@@ -148,18 +148,18 @@ export default function ProductVariantSelector({
       {selectedVariant && (
         <div className="glass rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-400">SKU:</span>
-            <span className="text-sm text-white font-mono">{selectedVariant.sku}</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">SKU:</span>
+            <span className="text-sm text-gray-900 dark:text-white font-mono">{selectedVariant.sku}</span>
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-400">قیمت:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">قیمت:</span>
             <div className="text-right">
-              <div className="text-lg font-bold text-white">
+              <div className="text-lg font-bold text-gray-900 dark:text-white">
                 {formatPrice(selectedVariant.price)}
               </div>
               {selectedVariant.comparePrice && selectedVariant.comparePrice > selectedVariant.price && (
-                <div className="text-sm text-gray-400 line-through">
+                <div className="text-sm text-gray-500 dark:text-gray-400 line-through">
                   {formatPrice(selectedVariant.comparePrice)}
                 </div>
               )}
@@ -167,7 +167,7 @@ export default function ProductVariantSelector({
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-400">موجودی:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">موجودی:</span>
             <span className={`text-sm font-medium ${
               selectedVariant.isInStock ? "text-primary-orange" : "text-red-400"
             }`}>

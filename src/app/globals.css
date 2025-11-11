@@ -3,9 +3,20 @@
 @tailwind utilities;
 
 :root {
+  /* Light mode colors (default) */
   --background: #ffffff;
   --foreground: #171717;
+  --background-secondary: #f9fafb;
+  --foreground-secondary: #6b7280;
+  --border: #e5e7eb;
+  --border-secondary: #d1d5db;
+  --card-background: #ffffff;
+  --card-foreground: #171717;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  
   --font-vazirmatn: 'Vazirmatn', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  
   /* Wood theme tokens */
   --wood-grain-dark: #2b2118; /* dark walnut */
   --wood-grain-mid: #3a2b20;
@@ -13,11 +24,18 @@
   --wood-accent: #c08a5c; /* warm highlight */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  /* Dark mode colors */
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --background-secondary: #1a1a1a;
+  --foreground-secondary: #9ca3af;
+  --border: #374151;
+  --border-secondary: #4b5563;
+  --card-background: #1a1a1a;
+  --card-foreground: #ededed;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
 }
 
 /* Persian/Arabic text rendering optimization */
@@ -34,6 +52,7 @@ body {
   font-family: var(--font-vazirmatn), system-ui, sans-serif;
   font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* RTL text optimization */
@@ -153,3 +172,40 @@ body {
 
 .text-wood-accent { color: var(--wood-accent); }
 .bg-wood-accent { background-color: var(--wood-accent); }
+
+/* =============================================================================
+   Select and Option Styling for Better Readability
+   ------------------------------------------------------------------------- */
+select {
+  /* Ensure proper background and text colors */
+  background-color: white;
+  color: #111827;
+  /* Ensure select dropdown arrow is visible */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+select:focus {
+  outline: none;
+}
+
+.dark select {
+  background-color: #1f2937;
+  color: #f9fafb;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%9ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Option elements styling */
+option {
+  background-color: white;
+  color: #111827;
+  padding: 0.5rem;
+}
+
+.dark option {
+  background-color: #1f2937;
+  color: #f9fafb;
+}

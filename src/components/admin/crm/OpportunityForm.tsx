@@ -128,14 +128,14 @@ export default function OpportunityForm({
   ];
 
   return (
-    <div className="glass rounded-3xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-white">
+    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           {opportunity ? "ویرایش فرصت" : "ایجاد فرصت جدید"}
         </h2>
         <button
           onClick={onCancel}
-          className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -144,165 +144,176 @@ export default function OpportunityForm({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Customer Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            مشتری *
-          </label>
-          <select
-            name="customerId"
-            value={formData.customerId}
-            onChange={handleInputChange}
-            required
-            disabled={loadingCustomers}
-            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-          >
-            <option value="">
-              {loadingCustomers ? "در حال بارگذاری..." : "انتخاب مشتری"}
-            </option>
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.firstName} {customer.lastName} - {customer.email}
-                {customer.company && ` (${customer.company})`}
-              </option>
-            ))}
-          </select>
+        {/* Opportunity Details */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">جزئیات فرصت</h3>
+          <div className="space-y-6">
+            {/* Customer Selection */}
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                مشتری *
+              </label>
+              <select
+                name="customerId"
+                value={formData.customerId}
+                onChange={handleInputChange}
+                required
+                disabled={loadingCustomers}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {loadingCustomers ? "در حال بارگذاری..." : "انتخاب مشتری"}
+                </option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.firstName} {customer.lastName} - {customer.email}
+                    {customer.company && ` (${customer.company})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                عنوان فرصت *
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="عنوان فرصت فروش"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                توضیحات
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
+                placeholder="توضیحات فرصت فروش"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            عنوان فرصت *
-          </label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            required
-            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            placeholder="عنوان فرصت فروش"
-          />
+        {/* Financial Information */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات مالی</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                ارزش فرصت (ریال) *
+              </label>
+              <input
+                type="number"
+                name="value"
+                value={formData.value}
+                onChange={handleInputChange}
+                required
+                min="0"
+                step="1000"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                احتمال موفقیت
+              </label>
+              <select
+                name="probability"
+                value={formData.probability}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+              >
+                {probabilityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            توضیحات
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            rows={4}
-            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent resize-none"
-            placeholder="توضیحات فرصت فروش"
-          />
-        </div>
+        {/* Sales Pipeline */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">خط فروش</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                مرحله *
+              </label>
+              <select
+                name="stage"
+                value={formData.stage}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+              >
+                {stageOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Value and Stage */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              ارزش فرصت (ریال) *
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                تاریخ بسته شدن مورد انتظار
+              </label>
+              <input
+                type="date"
+                name="expectedClose"
+                value={formData.expectedClose}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+              واگذار شده به
             </label>
             <input
-              type="number"
-              name="value"
-              value={formData.value}
+              type="text"
+              name="assignedTo"
+              value={formData.assignedTo}
               onChange={handleInputChange}
-              required
-              min="0"
-              step="1000"
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="0"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+              placeholder="نام نماینده فروش"
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              مرحله *
-            </label>
-            <select
-              name="stage"
-              value={formData.stage}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            >
-              {stageOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Probability and Expected Close */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              احتمال موفقیت
-            </label>
-            <select
-              name="probability"
-              value={formData.probability}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            >
-              {probabilityOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              تاریخ بسته شدن مورد انتظار
-            </label>
-            <input
-              type="date"
-              name="expectedClose"
-              value={formData.expectedClose}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Assigned To */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            واگذار شده به
-          </label>
-          <input
-            type="text"
-            name="assignedTo"
-            value={formData.assignedTo}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            placeholder="نام نماینده فروش"
-          />
         </div>
 
         {/* Form Actions */}
-        <div className="flex items-center justify-end space-x-4 space-x-reverse pt-6 border-t border-white/10">
+        <div className="flex items-center justify-end space-x-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors"
+            className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
           >
             انصراف
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-3 bg-primary-orange text-white rounded-xl hover:bg-primary-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
           >
-            {isLoading ? "در حال ذخیره..." : opportunity ? "به‌روزرسانی" : "ایجاد فرصت"}
+            {isLoading ? "در حال ذخیره..." : opportunity ? "به‌روزرسانی" : "ایجاد"}
           </button>
         </div>
       </form>

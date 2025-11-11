@@ -13,11 +13,11 @@ export default async function HomePage({ params }: HomePageProps) {
     const t = await getMessages(locale);
     
     return (
-      <main className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-16">
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-16">
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
           {/* bottom fade into next section */}
-          <div className="pointer-events-none absolute bottom-0 inset-x-0 h-40 bg-gradient-to-b from-transparent to-black/70" />
+          <div className="pointer-events-none absolute bottom-0 inset-x-0 h-40 bg-gradient-to-b from-transparent to-gray-50/70 dark:to-black/70" />
 
           {/* Floating Elements */}
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary-orange/20 rounded-full blur-3xl animate-pulse" />
@@ -34,10 +34,10 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
             
             {/* Main Tagline */}
-            <h2 className="text-2xl md:text-4xl font-semibold text-white mb-6 animate-slide-up">
+            <h2 className="text-2xl md:text-4xl font-semibold text-gray-900 dark:text-white mb-6 animate-slide-up">
               {t.homepage.hero.tagline}
             </h2>
-            <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-3xl mx-auto animate-slide-up delay-200">
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-slide-up delay-200">
               {t.homepage.hero.description}
             </p>
             
@@ -51,7 +51,7 @@ export default async function HomePage({ params }: HomePageProps) {
               </Link>
               <Link 
                 href={`/${locale}/about`}
-                className="px-8 py-4 glass text-white font-semibold rounded-2xl border border-white/20 hover:bg-white/10 transition-all duration-300"
+                className="px-8 py-4 glass text-gray-900 dark:text-white font-semibold rounded-2xl border border-gray-300 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-300"
               >
                 {t.homepage.hero.aboutUs}
               </Link>
@@ -60,20 +60,20 @@ export default async function HomePage({ params }: HomePageProps) {
           
           {/* Scroll Indicator */}
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce-gentle">
-            <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-              <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse" />
+            <div className="w-6 h-10 border-2 border-gray-400 dark:border-white/30 rounded-full flex justify-center">
+              <div className="w-1 h-3 bg-gray-600 dark:bg-white/60 rounded-full mt-2 animate-pulse" />
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="relative z-10 -mt-12 rounded-t-3xl bg-gray-900/80 backdrop-blur-sm border-t border-white/10 py-24 px-4 shadow-2xl shadow-black/30">
+        <section className="relative z-10 -mt-12 rounded-t-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-t border-gray-200 dark:border-white/10 py-24 px-4 shadow-2xl shadow-gray-200/50 dark:shadow-black/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 {t.homepage.features.title}
               </h2>
-              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
                 {t.homepage.features.subtitle}
               </p>
             </div>
@@ -86,8 +86,8 @@ export default async function HomePage({ params }: HomePageProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-4">{t.homepage.features.quality.title}</h3>
-                <p className="text-gray-300">{t.homepage.features.quality.description}</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{t.homepage.features.quality.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300">{t.homepage.features.quality.description}</p>
               </div>
               
               {/* Feature 2 */}
@@ -97,8 +97,8 @@ export default async function HomePage({ params }: HomePageProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-4">{t.homepage.features.technology.title}</h3>
-                <p className="text-gray-300">{t.homepage.features.technology.description}</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{t.homepage.features.technology.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300">{t.homepage.features.technology.description}</p>
               </div>
               
               {/* Feature 3 */}
@@ -108,21 +108,21 @@ export default async function HomePage({ params }: HomePageProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-4">{t.homepage.features.support.title}</h3>
-                <p className="text-gray-300">{t.homepage.features.support.description}</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{t.homepage.features.support.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300">{t.homepage.features.support.description}</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Product Categories Preview */}
-        <section className="py-24 px-4 bg-gradient-to-t from-gray-900 to-transparent">
+        <section className="py-24 px-4 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 {t.homepage.categories.title}
               </h2>
-              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
                 {t.homepage.categories.subtitle}
               </p>
             </div>
@@ -132,13 +132,13 @@ export default async function HomePage({ params }: HomePageProps) {
               <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300">
                 <div className="aspect-square bg-gradient-to-br from-primary-orange/15 to-primary-orange/25 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center ring-2 ring-white/30 shadow-glass-orange group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center ring-2 ring-gray-300 dark:ring-white/30 shadow-glass-orange group-hover:scale-110 transition-transform duration-300">
                       <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{t.homepage.categories.diamondDiscs.title}</h3>
-                    <p className="text-gray-300 text-sm">{t.homepage.categories.diamondDiscs.description}</p>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t.homepage.categories.diamondDiscs.title}</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">{t.homepage.categories.diamondDiscs.description}</p>
                   </div>
                 </div>
               </div>
@@ -152,8 +152,8 @@ export default async function HomePage({ params }: HomePageProps) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{t.homepage.categories.cylindricalCutters.title}</h3>
-                    <p className="text-gray-300 text-sm">{t.homepage.categories.cylindricalCutters.description}</p>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t.homepage.categories.cylindricalCutters.title}</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">{t.homepage.categories.cylindricalCutters.description}</p>
                   </div>
                 </div>
               </div>
@@ -167,8 +167,8 @@ export default async function HomePage({ params }: HomePageProps) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{t.homepage.categories.holdingClamps.title}</h3>
-                    <p className="text-gray-300 text-sm">{t.homepage.categories.holdingClamps.description}</p>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t.homepage.categories.holdingClamps.title}</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">{t.homepage.categories.holdingClamps.description}</p>
                   </div>
                 </div>
               </div>
@@ -177,7 +177,7 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="text-center mt-12">
               <Link 
                 href={`/${locale}/shop`}
-                className="inline-flex items-center px-8 py-4 glass text-white font-semibold rounded-2xl border border-white/20 hover:bg-white/10 transition-all duration-300 group"
+                className="inline-flex items-center px-8 py-4 glass text-gray-900 dark:text-white font-semibold rounded-2xl border border-gray-300 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-300 group"
               >
                 {t.homepage.categories.viewAllProducts}
                 <svg className="w-5 h-5 mr-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,9 +193,9 @@ export default async function HomePage({ params }: HomePageProps) {
     console.error('Failed to load messages:', error);
     // Fallback to default content
     return (
-      <main className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-16">
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-16">
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center text-white">
+          <div className="text-center text-gray-900 dark:text-white">
             <h1 className="text-4xl font-bold mb-4">HS6Tools</h1>
             <p className="text-xl">Loading...</p>
           </div>

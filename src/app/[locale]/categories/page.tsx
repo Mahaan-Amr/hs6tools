@@ -45,14 +45,14 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
   const childCategories = categories.filter((cat: Category) => cat.parentId);
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             دسته‌بندی محصولات
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             دسته‌بندی کامل ابزارهای صنعتی و نجاری برای انتخاب آسان
           </p>
         </div>
@@ -60,7 +60,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
         {/* Parent Categories */}
         {parentCategories.length > 0 && (
           <div className="mb-16">
-            <h2 className="text-2xl font-bold text-white mb-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
               دسته‌های اصلی
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -86,7 +86,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
         {/* Child Categories */}
         {childCategories.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-white mb-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
               زیردسته‌ها
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -118,8 +118,8 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">دسته‌بندی‌ای یافت نشد</h3>
-              <p className="text-gray-300 text-sm">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">دسته‌بندی‌ای یافت نشد</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
                 در حال حاضر هیچ دسته‌بندی محصولی موجود نیست.
               </p>
             </div>

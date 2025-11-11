@@ -75,9 +75,9 @@ export default function LoginPage({ params }: LoginPageProps) {
 
   if (!messages) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center text-white">
+          <div className="text-center text-gray-900 dark:text-white">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-orange mx-auto"></div>
             <p className="mt-4 text-xl">Loading...</p>
           </div>
@@ -87,15 +87,15 @@ export default function LoginPage({ params }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
               {messages.auth?.login || "Login"}
             </h1>
-            <p className="text-gray-300">
+            <p className="text-gray-600 dark:text-gray-300">
               {messages.auth?.login || "Welcome back to HS6Tools"}
             </p>
           </div>
@@ -105,42 +105,42 @@ export default function LoginPage({ params }: LoginPageProps) {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   {messages.auth?.email || "Email"}
                 </label>
                 <input
                   {...register("email")}
                   type="email"
                   id="email"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
                   placeholder={messages.auth?.email || "Enter your email"}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
                 )}
               </div>
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   {messages.auth?.password || "Password"}
                 </label>
                 <input
                   {...register("password")}
                   type="password"
                   id="password"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
                   placeholder={messages.auth?.password || "Enter your password"}
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
                 )}
               </div>
 
               {/* Error Message */}
               {error && (
-                <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-xl">
-                  <p className="text-red-400 text-sm text-center">{error}</p>
+                <div className="p-3 bg-red-50 dark:bg-red-500/20 border border-red-200 dark:border-red-500/30 rounded-xl">
+                  <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
                 </div>
               )}
 
@@ -165,13 +165,13 @@ export default function LoginPage({ params }: LoginPageProps) {
             <div className="mt-6 text-center space-y-3">
               <Link
                 href={`/${messages?.common?.locale || 'fa'}/auth/register`}
-                className="block text-primary-orange hover:text-orange-400 transition-colors duration-200"
+                className="block text-primary-orange hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200"
               >
                 {messages.auth?.register || "Don't have an account? Sign up"}
               </Link>
               <Link
                 href={`/${messages?.common?.locale || 'fa'}/auth/forgot-password`}
-                className="block text-gray-400 hover:text-white transition-colors duration-200"
+                className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
               >
                 {messages.auth?.forgotPassword || "Forgot your password?"}
               </Link>

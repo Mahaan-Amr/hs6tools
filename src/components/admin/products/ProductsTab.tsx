@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { AdminProduct, AdminCategory, CreateProductData, UpdateProductData } from "@/types/admin";
 import { formatPrice } from "@/utils/format";
@@ -18,11 +19,34 @@ export default function ProductsTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const handleCreateProduct = () => {
+    setEditingProduct(null);
+    setViewingProduct(null);
+    setShowForm(true);
+    // Scroll to top to show the form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, []);
+    
+    // Check if we should open the create form from URL params
+    const action = searchParams.get("action");
+    if (action === "create") {
+      setEditingProduct(null);
+      setViewingProduct(null);
+      setShowForm(true);
+      // Clean up the URL by removing the query parameter
+      const url = new URL(window.location.href);
+      url.searchParams.delete("action");
+      router.replace(url.pathname + url.search);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const fetchProducts = async () => {
     try {
@@ -49,12 +73,6 @@ export default function ProductsTab() {
     } catch (error) {
       console.error("Failed to fetch categories:", error);
     }
-  };
-
-  const handleCreateProduct = () => {
-    setEditingProduct(null);
-    setViewingProduct(null);
-    setShowForm(true);
   };
 
   const handleEditProduct = (product: AdminProduct) => {

@@ -228,11 +228,11 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
             <select
               value={settings.language}
               onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
-              className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="fa">فارسی</option>
-              <option value="en">English</option>
-              <option value="ar">العربية</option>
+              <option value="fa" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">فارسی</option>
+              <option value="en" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">English</option>
+              <option value="ar" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">العربية</option>
             </select>
           </div>
 
@@ -243,11 +243,11 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
             <select
               value={settings.currency}
               onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
-              className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="IRR">ریال ایران (IRR)</option>
-              <option value="USD">دلار آمریکا (USD)</option>
-              <option value="EUR">یورو (EUR)</option>
+              <option value="IRR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">ریال ایران (IRR)</option>
+              <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">دلار آمریکا (USD)</option>
+              <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">یورو (EUR)</option>
             </select>
           </div>
 
@@ -258,11 +258,11 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
             <select
               value={settings.timezone}
               onChange={(e) => setSettings(prev => ({ ...prev, timezone: e.target.value }))}
-              className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="Asia/Tehran">تهران (UTC+3:30)</option>
-              <option value="UTC">UTC</option>
-              <option value="Europe/London">لندن (UTC+0)</option>
+              <option value="Asia/Tehran" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">تهران (UTC+3:30)</option>
+              <option value="UTC" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">UTC</option>
+              <option value="Europe/London" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">لندن (UTC+0)</option>
             </select>
           </div>
         </div>
@@ -453,12 +453,12 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
             <select
               value={settings.display.itemsPerPage}
               onChange={(e) => handleDisplayChange('itemsPerPage', parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
+              <option value={5} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">5</option>
+              <option value={10} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">10</option>
+              <option value={20} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">20</option>
+              <option value={50} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">50</option>
             </select>
           </div>
 
@@ -469,11 +469,11 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
             <select
               value={settings.display.dateFormat}
               onChange={(e) => handleDisplayChange('dateFormat', e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="persian">فارسی (۱۴۰۳/۱۲/۲۹)</option>
-              <option value="gregorian">میلادی (2024/12/29)</option>
-              <option value="islamic">هجری قمری</option>
+              <option value="persian" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">فارسی (۱۴۰۳/۱۲/۲۹)</option>
+              <option value="gregorian" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">میلادی (2024/12/29)</option>
+              <option value="islamic" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">هجری قمری</option>
             </select>
           </div>
 
@@ -484,11 +484,11 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
             <select
               value={settings.display.theme}
               onChange={(e) => handleDisplayChange('theme', e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="auto">{messages?.customer?.settings?.themeAuto || 'خودکار'}</option>
-              <option value="light">{messages?.customer?.settings?.themeLight || 'روشن'}</option>
-              <option value="dark">{messages?.customer?.settings?.themeDark || 'تیره'}</option>
+              <option value="auto" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{messages?.customer?.settings?.themeAuto || 'خودکار'}</option>
+              <option value="light" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{messages?.customer?.settings?.themeLight || 'روشن'}</option>
+              <option value="dark" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{messages?.customer?.settings?.themeDark || 'تیره'}</option>
             </select>
           </div>
         </div>

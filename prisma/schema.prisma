@@ -8,47 +8,48 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  phone         String?        @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
+  phone         String?   @unique
   firstName     String
   lastName      String
   passwordHash  String
-  role          UserRole       @default(CUSTOMER)
-  isActive      Boolean        @default(true)
-  emailVerified Boolean        @default(false)
-  phoneVerified Boolean        @default(false)
+  role          UserRole  @default(CUSTOMER)
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
   avatar        String?
   dateOfBirth   DateTime?
   gender        Gender?
   company       String?
   position      String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   lastLoginAt   DateTime?
   deletedAt     DateTime?
-  
+
   // CRM Enhancement Fields
-  customerType        CustomerType?
-  industry           String?
-  companySize        CompanySize?
-  customerTier       CustomerTier?
-  healthScore        Int?
-  tags               String[]
-  notes              String?
-  assignedSalesRep   String?
-  leadSource         String?
-  lifecycleStage     LifecycleStage?
-  lastInteraction    DateTime?
-  nextFollowUp       DateTime?
-  
-  addresses     Address[]
-  articles      Article[]
-  orders        Order[]
-  reviews       Review[]
-  wishlistItems WishlistItem[]
-  settings      UserSettings?
-  
+  customerType     CustomerType?
+  industry         String?
+  companySize      CompanySize?
+  customerTier     CustomerTier?
+  healthScore      Int?
+  tags             String[]
+  notes            String?
+  assignedSalesRep String?
+  leadSource       String?
+  lifecycleStage   LifecycleStage?
+  lastInteraction  DateTime?
+  nextFollowUp     DateTime?
+
+  addresses        Address[]
+  articles         Article[]
+  educationLessons EducationLesson[]
+  orders           Order[]
+  reviews          Review[]
+  wishlistItems    WishlistItem[]
+  settings         UserSettings?
+
   // CRM Relations
   interactions  CustomerInteraction[]
   opportunities Opportunity[]
@@ -84,50 +85,50 @@ model Address {
 }
 
 model Category {
-  id              String     @id @default(cuid())
-  name            String     // Persian name (for admin)
-  slug            String     @unique
-  description     String?    // Persian description (for admin)
+  id              String    @id @default(cuid())
+  name            String // Persian name (for admin)
+  slug            String    @unique
+  description     String? // Persian description (for admin)
   image           String?
   icon            String?
   parentId        String?
   metaTitle       String?
   metaDescription String?
   metaKeywords    String?
-  isActive        Boolean    @default(true)
-  sortOrder       Int        @default(0)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
-  
+
   // Multilingual fields for customer-facing website
-  nameEn          String?    // English name
-  nameAr          String?    // Arabic name
-  descriptionEn   String?    // English description
-  descriptionAr   String?    // Arabic description
-  
-  parent          Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children        Category[] @relation("CategoryHierarchy")
-  products        Product[]
+  nameEn        String? // English name
+  nameAr        String? // Arabic name
+  descriptionEn String? // English description
+  descriptionAr String? // Arabic description
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id                String           @id @default(cuid())
-  sku               String           @unique
-  name              String           // Persian name (for admin)
-  slug              String           @unique
-  description       String?          // Persian description (for admin)
-  shortDescription  String?          // Persian short description (for admin)
-  price             Decimal          @db.Decimal(10, 2)
-  comparePrice      Decimal?         @db.Decimal(10, 2)
-  costPrice         Decimal?         @db.Decimal(10, 2)
-  stockQuantity     Int              @default(0)
-  lowStockThreshold Int              @default(5)
-  isInStock         Boolean          @default(true)
-  allowBackorders   Boolean          @default(false)
-  weight            Decimal?         @db.Decimal(8, 3)
+  id                String    @id @default(cuid())
+  sku               String    @unique
+  name              String // Persian name (for admin)
+  slug              String    @unique
+  description       String? // Persian description (for admin)
+  shortDescription  String? // Persian short description (for admin)
+  price             Decimal   @db.Decimal(10, 2)
+  comparePrice      Decimal?  @db.Decimal(10, 2)
+  costPrice         Decimal?  @db.Decimal(10, 2)
+  stockQuantity     Int       @default(0)
+  lowStockThreshold Int       @default(5)
+  isInStock         Boolean   @default(true)
+  allowBackorders   Boolean   @default(false)
+  weight            Decimal?  @db.Decimal(8, 3)
   dimensions        Json?
   material          String?
   warranty          String?
@@ -136,27 +137,27 @@ model Product {
   metaTitle         String?
   metaDescription   String?
   metaKeywords      String?
-  isActive          Boolean          @default(true)
-  isFeatured        Boolean          @default(false)
-  sortOrder         Int              @default(0)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  isActive          Boolean   @default(true)
+  isFeatured        Boolean   @default(false)
+  sortOrder         Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
-  
+
   // Multilingual fields for customer-facing website
-  nameEn            String?          // English name
-  nameAr            String?          // Arabic name
-  descriptionEn     String?          // English description
-  descriptionAr     String?          // Arabic description
-  shortDescriptionEn String?         // English short description
-  shortDescriptionAr String?         // Arabic short description
-  
-  orderItems        OrderItem[]
-  images            ProductImage[]
-  variants          ProductVariant[]
-  category          Category         @relation(fields: [categoryId], references: [id])
-  reviews           Review[]
-  wishlistItems     WishlistItem[]
+  nameEn             String? // English name
+  nameAr             String? // Arabic name
+  descriptionEn      String? // English description
+  descriptionAr      String? // Arabic description
+  shortDescriptionEn String? // English short description
+  shortDescriptionAr String? // Arabic short description
+
+  orderItems    OrderItem[]
+  images        ProductImage[]
+  variants      ProductVariant[]
+  category      Category         @relation(fields: [categoryId], references: [id])
+  reviews       Review[]
+  wishlistItems WishlistItem[]
 
   @@map("products")
 }
@@ -294,6 +295,60 @@ model Article {
   @@map("articles")
 }
 
+model EducationCategory {
+  id              String              @id @default(cuid())
+  name            String
+  slug            String              @unique
+  description     String?
+  image           String?
+  icon            String?
+  parentId        String?
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  isActive        Boolean             @default(true)
+  sortOrder       Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  lessons         EducationLesson[]
+  parent          EducationCategory?  @relation("EducationCategoryHierarchy", fields: [parentId], references: [id])
+  children        EducationCategory[] @relation("EducationCategoryHierarchy")
+
+  @@map("education_categories")
+}
+
+model EducationLesson {
+  id              String             @id @default(cuid())
+  title           String
+  slug            String             @unique
+  excerpt         String?
+  content         String? // Text content (for text-based lessons)
+  videoUrl        String? // Video URL (for video-based lessons)
+  videoDuration   Int? // Video duration in seconds
+  thumbnail       String? // Thumbnail image for video
+  contentType     LessonContentType  @default(TEXT) // TEXT or VIDEO
+  categoryId      String?
+  authorId        String?
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  status          ArticleStatus      @default(DRAFT)
+  publishedAt     DateTime?
+  isFeatured      Boolean            @default(false)
+  viewCount       Int                @default(0)
+  likeCount       Int                @default(0)
+  difficulty      LessonDifficulty   @default(BEGINNER)
+  estimatedTime   Int? // Estimated time in minutes
+  sortOrder       Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  deletedAt       DateTime?
+  author          User?              @relation(fields: [authorId], references: [id])
+  category        EducationCategory? @relation(fields: [categoryId], references: [id])
+
+  @@map("education_lessons")
+}
+
 model Review {
   id         String   @id @default(cuid())
   productId  String
@@ -328,53 +383,53 @@ model WishlistItem {
 // ============================================================================
 
 model SystemSettings {
-  id                      String   @id @default(cuid())
-  siteName                String   @default("HS6Tools")
-  siteDescription         String?  @db.Text
-  siteUrl                 String   @default("http://localhost:3000")
-  contactEmail            String   @default("support@hs6tools.com")
-  contactPhone            String   @default("+98-21-12345678")
-  businessAddress         String?  @db.Text
-  currency                String   @default("IRR")
-  language                String   @default("fa")
-  timezone                String   @default("Asia/Tehran")
-  maintenanceMode         Boolean  @default(false)
-  allowRegistration       Boolean  @default(true)
-  requireEmailVerification Boolean @default(false)
-  requirePhoneVerification Boolean @default(false)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  siteName                 String   @default("HS6Tools")
+  siteDescription          String?  @db.Text
+  siteUrl                  String   @default("http://localhost:3000")
+  contactEmail             String   @default("support@hs6tools.com")
+  contactPhone             String   @default("+98-21-12345678")
+  businessAddress          String?  @db.Text
+  currency                 String   @default("IRR")
+  language                 String   @default("fa")
+  timezone                 String   @default("Asia/Tehran")
+  maintenanceMode          Boolean  @default(false)
+  allowRegistration        Boolean  @default(true)
+  requireEmailVerification Boolean  @default(false)
+  requirePhoneVerification Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   @@map("system_settings")
 }
 
 model EmailSettings {
-  id          String   @id @default(cuid())
-  smtpHost    String   @default("smtp.gmail.com")
-  smtpPort    Int      @default(587)
-  smtpUser    String   @default("")
-  smtpPassword String  @default("")
-  fromEmail   String   @default("noreply@hs6tools.com")
-  fromName    String   @default("HS6Tools")
-  enableSSL   Boolean  @default(true)
-  isActive    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  smtpHost     String   @default("smtp.gmail.com")
+  smtpPort     Int      @default(587)
+  smtpUser     String   @default("")
+  smtpPassword String   @default("")
+  fromEmail    String   @default("noreply@hs6tools.com")
+  fromName     String   @default("HS6Tools")
+  enableSSL    Boolean  @default(true)
+  isActive     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("email_settings")
 }
 
 model PaymentSettings {
-  id                    String   @id @default(cuid())
-  zarinpalMerchantId    String   @default("")
-  zarinpalApiKey        String   @default("")
-  zarinpalSandbox       Boolean  @default(true)
-  allowBankTransfer     Boolean  @default(true)
-  allowCashOnDelivery   Boolean  @default(true)
-  minimumOrderAmount    Int      @default(0)
-  maximumOrderAmount    Int      @default(1000000000)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  zarinpalMerchantId  String   @default("")
+  zarinpalApiKey      String   @default("")
+  zarinpalSandbox     Boolean  @default(true)
+  allowBankTransfer   Boolean  @default(true)
+  allowCashOnDelivery Boolean  @default(true)
+  minimumOrderAmount  Int      @default(0)
+  maximumOrderAmount  Int      @default(1000000000)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@map("payment_settings")
 }
@@ -436,6 +491,19 @@ enum ArticleStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+enum LessonContentType {
+  TEXT
+  VIDEO
+  MIXED
+}
+
+enum LessonDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
 }
 
 // ============================================================================
@@ -529,8 +597,8 @@ model UserSettings {
   display       Json     @default("{\"itemsPerPage\":10,\"dateFormat\":\"persian\",\"theme\":\"auto\"}")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
 }
@@ -540,159 +608,159 @@ model UserSettings {
 // ============================================================================
 
 model CustomerInteraction {
-  id          String   @id @default(cuid())
-  customerId  String
-  type        InteractionType
-  subject     String?
-  content     String
-  outcome     String?
-  nextAction  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id         String          @id @default(cuid())
+  customerId String
+  type       InteractionType
+  subject    String?
+  content    String
+  outcome    String?
+  nextAction String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  customer User @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@map("customer_interactions")
 }
 
 model Opportunity {
-  id              String   @id @default(cuid())
-  customerId      String
-  title           String
-  description     String?
-  value           Decimal  @db.Decimal(10, 2)
-  stage           OpportunityStage
-  probability     Int      @default(0)
-  expectedClose   DateTime?
-  assignedTo      String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  customer        User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  activities      OpportunityActivity[]
-  quotes          Quote[]
+  id            String           @id @default(cuid())
+  customerId    String
+  title         String
+  description   String?
+  value         Decimal          @db.Decimal(10, 2)
+  stage         OpportunityStage
+  probability   Int              @default(0)
+  expectedClose DateTime?
+  assignedTo    String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  customer   User                  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  activities OpportunityActivity[]
+  quotes     Quote[]
 
   @@map("opportunities")
 }
 
 model OpportunityActivity {
-  id              String   @id @default(cuid())
-  opportunityId   String
-  type            String
-  description     String
-  outcome         String?
-  nextAction      String?
-  scheduledAt     DateTime?
-  completedAt     DateTime?
-  createdAt       DateTime @default(now())
-  
-  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  opportunityId String
+  type          String
+  description   String
+  outcome       String?
+  nextAction    String?
+  scheduledAt   DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
   @@map("opportunity_activities")
 }
 
 model Quote {
-  id              String   @id @default(cuid())
-  customerId      String
-  opportunityId   String?
-  quoteNumber     String   @unique
-  items           Json
-  subtotal        Decimal  @db.Decimal(10, 2)
-  tax             Decimal  @db.Decimal(10, 2)
-  total           Decimal  @db.Decimal(10, 2)
-  validUntil      DateTime
-  status          QuoteStatus
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  customer        User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id])
+  id            String      @id @default(cuid())
+  customerId    String
+  opportunityId String?
+  quoteNumber   String      @unique
+  items         Json
+  subtotal      Decimal     @db.Decimal(10, 2)
+  tax           Decimal     @db.Decimal(10, 2)
+  total         Decimal     @db.Decimal(10, 2)
+  validUntil    DateTime
+  status        QuoteStatus
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  customer    User         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
 
   @@map("quotes")
 }
 
 model Campaign {
-  id              String   @id @default(cuid())
-  name            String
-  type            CampaignType
-  status          CampaignStatus
-  targetAudience  Json
-  content         Json
-  scheduledAt     DateTime?
-  sentAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  customers       CustomerCampaign[]
-  analytics       CampaignAnalytics[]
+  id             String         @id @default(cuid())
+  name           String
+  type           CampaignType
+  status         CampaignStatus
+  targetAudience Json
+  content        Json
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  customers CustomerCampaign[]
+  analytics CampaignAnalytics[]
 
   @@map("campaigns")
 }
 
 model CustomerCampaign {
-  id          String   @id @default(cuid())
-  customerId  String
-  campaignId  String
-  status      String   @default("pending")
-  sentAt      DateTime?
-  openedAt    DateTime?
-  clickedAt   DateTime?
-  createdAt   DateTime @default(now())
-  
-  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  customerId String
+  campaignId String
+  status     String    @default("pending")
+  sentAt     DateTime?
+  openedAt   DateTime?
+  clickedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  customer User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@unique([customerId, campaignId])
   @@map("customer_campaigns")
 }
 
 model CampaignAnalytics {
-  id          String   @id @default(cuid())
-  campaignId  String
-  metric      String
-  value       Decimal  @db.Decimal(10, 2)
-  date        DateTime
-  createdAt   DateTime @default(now())
-  
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  campaignId String
+  metric     String
+  value      Decimal  @db.Decimal(10, 2)
+  date       DateTime
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("campaign_analytics")
 }
 
 // Lead Management Models
 model Lead {
-  id              String   @id @default(cuid())
-  firstName       String
-  lastName        String
-  email           String
-  phone           String?
-  company         String?
-  position        String?
-  industry        String?
-  companySize     CompanySize?
-  source          LeadSource
-  status          LeadStatus
-  score           Int      @default(0)
-  assignedTo      String?
-  notes           String?
-  tags            String[]
-  expectedValue   Decimal? @db.Decimal(10, 2)
-  expectedClose   DateTime?
-  lastContact     DateTime?
-  nextFollowUp    DateTime?
-  convertedAt     DateTime?
-  convertedTo     String?  // User ID if converted to customer
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  activities      LeadActivity[]
-  interactions    LeadInteraction[]
+  id            String       @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String
+  phone         String?
+  company       String?
+  position      String?
+  industry      String?
+  companySize   CompanySize?
+  source        LeadSource
+  status        LeadStatus
+  score         Int          @default(0)
+  assignedTo    String?
+  notes         String?
+  tags          String[]
+  expectedValue Decimal?     @db.Decimal(10, 2)
+  expectedClose DateTime?
+  lastContact   DateTime?
+  nextFollowUp  DateTime?
+  convertedAt   DateTime?
+  convertedTo   String? // User ID if converted to customer
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  activities   LeadActivity[]
+  interactions LeadInteraction[]
 
   @@map("leads")
 }
 
 model LeadActivity {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   leadId      String
   type        ActivityType
   subject     String
@@ -701,24 +769,24 @@ model LeadActivity {
   nextAction  String?
   scheduledAt DateTime?
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  
-  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@map("lead_activities")
 }
 
 model LeadInteraction {
-  id          String   @id @default(cuid())
-  leadId      String
-  type        InteractionType
-  subject     String?
-  content     String
-  outcome     String?
-  nextAction  String?
-  createdAt   DateTime @default(now())
-  
-  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  id         String          @id @default(cuid())
+  leadId     String
+  type       InteractionType
+  subject    String?
+  content    String
+  outcome    String?
+  nextAction String?
+  createdAt  DateTime        @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@map("lead_interactions")
 }

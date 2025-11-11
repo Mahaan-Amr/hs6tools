@@ -95,12 +95,12 @@ export default function SystemSettingsForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white">تنظیمات عمومی سیستم</h2>
+      <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">تنظیمات عمومی سیستم</h2>
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
         >
           {isLoading ? "در حال ذخیره..." : "ذخیره تنظیمات"}
         </button>
@@ -108,198 +108,212 @@ export default function SystemSettingsForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Site Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white border-b border-gray-600 pb-2">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             اطلاعات سایت
           </h3>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              نام سایت *
-            </label>
-            <input
-              type="text"
-              value={formData.siteName}
-              onChange={(e) => handleInputChange("siteName", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="نام سایت"
-              required
-            />
-          </div>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                نام سایت *
+              </label>
+              <input
+                type="text"
+                value={formData.siteName}
+                onChange={(e) => handleInputChange("siteName", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="نام سایت"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              توضیحات سایت
-            </label>
-            <textarea
-              value={formData.siteDescription}
-              onChange={(e) => handleInputChange("siteDescription", e.target.value)}
-              rows={3}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="توضیحات سایت"
-            />
-          </div>
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                توضیحات سایت
+              </label>
+              <textarea
+                value={formData.siteDescription}
+                onChange={(e) => handleInputChange("siteDescription", e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
+                placeholder="توضیحات سایت"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              آدرس سایت *
-            </label>
-            <input
-              type="url"
-              value={formData.siteUrl}
-              onChange={(e) => handleInputChange("siteUrl", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="https://example.com"
-              required
-            />
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                آدرس سایت *
+              </label>
+              <input
+                type="url"
+                value={formData.siteUrl}
+                onChange={(e) => handleInputChange("siteUrl", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="https://example.com"
+                required
+              />
+            </div>
           </div>
         </div>
 
         {/* Contact Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white border-b border-gray-600 pb-2">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             اطلاعات تماس
           </h3>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              ایمیل تماس *
-            </label>
-            <input
-              type="email"
-              value={formData.contactEmail}
-              onChange={(e) => handleInputChange("contactEmail", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="support@example.com"
-              required
-            />
-          </div>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                ایمیل تماس *
+              </label>
+              <input
+                type="email"
+                value={formData.contactEmail}
+                onChange={(e) => handleInputChange("contactEmail", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="support@example.com"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              شماره تماس
-            </label>
-            <input
-              type="tel"
-              value={formData.contactPhone}
-              onChange={(e) => handleInputChange("contactPhone", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="+98-21-12345678"
-            />
-          </div>
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                شماره تماس
+              </label>
+              <input
+                type="tel"
+                value={formData.contactPhone}
+                onChange={(e) => handleInputChange("contactPhone", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="+98-21-12345678"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              آدرس کسب و کار
-            </label>
-            <textarea
-              value={formData.businessAddress}
-              onChange={(e) => handleInputChange("businessAddress", e.target.value)}
-              rows={3}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="آدرس کامل کسب و کار"
-            />
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                آدرس کسب و کار
+              </label>
+              <textarea
+                value={formData.businessAddress}
+                onChange={(e) => handleInputChange("businessAddress", e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
+                placeholder="آدرس کامل کسب و کار"
+              />
+            </div>
           </div>
         </div>
 
         {/* System Configuration */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white border-b border-gray-600 pb-2">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             پیکربندی سیستم
           </h3>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              واحد پول
-            </label>
-            <select
-              value={formData.currency}
-              onChange={(e) => handleInputChange("currency", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            >
-              <option value="IRR">ریال ایران (IRR)</option>
-              <option value="USD">دلار آمریکا (USD)</option>
-              <option value="EUR">یورو (EUR)</option>
-            </select>
-          </div>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                واحد پول
+              </label>
+              <select
+                value={formData.currency}
+                onChange={(e) => handleInputChange("currency", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+              >
+                <option value="IRR">ریال ایران (IRR)</option>
+                <option value="USD">دلار آمریکا (USD)</option>
+                <option value="EUR">یورو (EUR)</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              زبان پیش‌فرض
-            </label>
-            <select
-              value={formData.language}
-              onChange={(e) => handleInputChange("language", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            >
-              <option value="fa">فارسی</option>
-              <option value="en">English</option>
-              <option value="ar">العربية</option>
-            </select>
-          </div>
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                زبان پیش‌فرض
+              </label>
+              <select
+                value={formData.language}
+                onChange={(e) => handleInputChange("language", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+              >
+                <option value="fa">فارسی</option>
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              منطقه زمانی
-            </label>
-            <select
-              value={formData.timezone}
-              onChange={(e) => handleInputChange("timezone", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-            >
-              <option value="Asia/Tehran">تهران (UTC+3:30)</option>
-              <option value="UTC">UTC</option>
-              <option value="Europe/London">لندن (UTC+0)</option>
-            </select>
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                منطقه زمانی
+              </label>
+              <select
+                value={formData.timezone}
+                onChange={(e) => handleInputChange("timezone", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+              >
+                <option value="Asia/Tehran">تهران (UTC+3:30)</option>
+                <option value="UTC">UTC</option>
+                <option value="Europe/London">لندن (UTC+0)</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* System Options */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white border-b border-gray-600 pb-2">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             گزینه‌های سیستم
           </h3>
-          
           <div className="space-y-4">
-            <label className="flex items-center space-x-3 space-x-reverse cursor-pointer">
+            <div className="flex items-center pt-2">
               <input
                 type="checkbox"
+                id="maintenanceMode"
                 checked={formData.maintenanceMode}
                 onChange={(e) => handleInputChange("maintenanceMode", e.target.checked)}
-                className="w-5 h-5 text-primary-orange bg-white/10 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
+                className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
               />
-              <span className="text-gray-300">حالت نگهداری</span>
-            </label>
+              <label htmlFor="maintenanceMode" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
+                حالت نگهداری
+              </label>
+            </div>
 
-            <label className="flex items-center space-x-3 space-x-reverse cursor-pointer">
+            <div className="flex items-center">
               <input
                 type="checkbox"
+                id="allowRegistration"
                 checked={formData.allowRegistration}
                 onChange={(e) => handleInputChange("allowRegistration", e.target.checked)}
-                className="w-5 h-5 text-primary-orange bg-white/10 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
+                className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
               />
-              <span className="text-gray-300">اجازه ثبت‌نام</span>
-            </label>
+              <label htmlFor="allowRegistration" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
+                اجازه ثبت‌نام
+              </label>
+            </div>
 
-            <label className="flex items-center space-x-3 space-x-reverse cursor-pointer">
+            <div className="flex items-center">
               <input
                 type="checkbox"
+                id="requireEmailVerification"
                 checked={formData.requireEmailVerification}
                 onChange={(e) => handleInputChange("requireEmailVerification", e.target.checked)}
-                className="w-5 h-5 text-primary-orange bg-white/10 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
+                className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
               />
-              <span className="text-gray-300">تأیید ایمیل اجباری</span>
-            </label>
+              <label htmlFor="requireEmailVerification" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
+                تأیید ایمیل اجباری
+              </label>
+            </div>
 
-            <label className="flex items-center space-x-3 space-x-reverse cursor-pointer">
+            <div className="flex items-center">
               <input
                 type="checkbox"
+                id="requirePhoneVerification"
                 checked={formData.requirePhoneVerification}
                 onChange={(e) => handleInputChange("requirePhoneVerification", e.target.checked)}
-                className="w-5 h-5 text-primary-orange bg-white/10 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
+                className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
               />
-              <span className="text-gray-300">تأیید شماره تلفن اجباری</span>
-            </label>
+              <label htmlFor="requirePhoneVerification" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
+                تأیید شماره تلفن اجباری
+              </label>
+            </div>
           </div>
         </div>
       </div>

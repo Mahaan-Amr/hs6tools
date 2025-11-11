@@ -126,7 +126,7 @@ export default function ProductReviews({ productId, productName, locale }: Produ
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             ) : (
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             )}
@@ -152,17 +152,17 @@ export default function ProductReviews({ productId, productName, locale }: Produ
       {/* Reviews Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             نظرات کاربران
           </h3>
           <div className="flex items-center space-x-4 space-x-reverse">
             <div className="flex items-center space-x-2 space-x-reverse">
               {renderStars(stats.averageRating)}
-              <span className="text-gray-400 text-sm">
+              <span className="text-gray-600 dark:text-gray-400 text-sm">
                 {stats.averageRating.toFixed(1)} از 5
               </span>
             </div>
-            <span className="text-gray-400 text-sm">
+            <span className="text-gray-600 dark:text-gray-400 text-sm">
               {stats.totalReviews} نظر
             </span>
           </div>
@@ -181,27 +181,27 @@ export default function ProductReviews({ productId, productName, locale }: Produ
       {/* Review Form */}
       {showReviewForm && session?.user && (
         <div className="glass rounded-2xl p-6">
-          <h4 className="text-lg font-semibold text-white mb-4">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             نظر خود را درباره {productName} بنویسید
           </h4>
           
           <form onSubmit={handleSubmitReview} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 عنوان نظر
               </label>
               <input
                 type="text"
                 value={newReview.title}
                 onChange={(e) => setNewReview({ ...newReview, title: e.target.value })}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
                 placeholder="عنوان کوتاه برای نظر خود"
                 required
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 امتیاز
               </label>
               {renderStars(newReview.rating, true, (rating) => 
@@ -210,14 +210,14 @@ export default function ProductReviews({ productId, productName, locale }: Produ
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 متن نظر
               </label>
               <textarea
                 value={newReview.content}
                 onChange={(e) => setNewReview({ ...newReview, content: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange resize-none"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange resize-none"
                 placeholder="تجربه خود را از این محصول به اشتراک بگذارید..."
                 required
                 minLength={10}
@@ -228,7 +228,7 @@ export default function ProductReviews({ productId, productName, locale }: Produ
               <button
                 type="button"
                 onClick={() => setShowReviewForm(false)}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors duration-200"
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
               >
                 انصراف
               </button>
@@ -255,10 +255,10 @@ export default function ProductReviews({ productId, productName, locale }: Produ
                     {review.user.firstName.charAt(0)}{review.user.lastName.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-medium text-white">
+                    <div className="font-medium text-gray-900 dark:text-white">
                       {review.user.firstName} {review.user.lastName}
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
                       {formatDate(review.createdAt)}
                     </div>
                   </div>
@@ -270,12 +270,12 @@ export default function ProductReviews({ productId, productName, locale }: Produ
               </div>
               
               {review.title && (
-                <h5 className="font-semibold text-white mb-2">
+                <h5 className="font-semibold text-gray-900 dark:text-white mb-2">
                   {review.title}
                 </h5>
               )}
               
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 {review.content}
               </p>
             </div>
@@ -283,12 +283,12 @@ export default function ProductReviews({ productId, productName, locale }: Produ
         </div>
       ) : (
         <div className="text-center py-8">
-          <div className="text-gray-400 mb-2">
+          <div className="text-gray-600 dark:text-gray-400 mb-2">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <p className="text-gray-400 mb-4">
+          <p className="text-gray-700 dark:text-gray-400 mb-4">
             هنوز نظری برای این محصول ثبت نشده است
           </p>
           {session?.user && (

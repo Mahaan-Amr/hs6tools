@@ -31,7 +31,7 @@ export default function BlogCard({ article }: BlogCardProps) {
       "تست": "bg-primary-orange/20 text-primary-orange",
     };
     
-    return colors[categoryName as keyof typeof colors] || "bg-gray-500/20 text-gray-400";
+    return colors[categoryName as keyof typeof colors] || "bg-gray-200 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400";
   };
 
   const getCategoryIcon = (categoryName: string) => {
@@ -100,19 +100,19 @@ export default function BlogCard({ article }: BlogCardProps) {
               {article.category.name}
             </span>
           )}
-          <span className="text-gray-400 text-sm">
+          <span className="text-gray-600 dark:text-gray-400 text-sm">
             {formatDate(article.publishedAt || article.createdAt)}
           </span>
         </div>
         
         {/* Title */}
-        <h3 className="text-xl font-semibold text-white mb-3 line-clamp-2">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
           {article.title}
         </h3>
         
         {/* Excerpt */}
         {article.excerpt && (
-          <p className="text-gray-300 text-sm mb-4 line-clamp-2">
+          <p className="text-gray-700 dark:text-gray-300 text-sm mb-4 line-clamp-2">
             {article.excerpt}
           </p>
         )}

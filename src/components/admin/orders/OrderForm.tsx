@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AdminOrder, UpdateOrderData } from "@/types/admin";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
@@ -40,6 +41,25 @@ export default function OrderForm({
       deliveredAt: order.deliveredAt || ""
     });
   }, [order]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onCancel]);
 
   const handleInputChange = (field: keyof UpdateOrderData, value: string | OrderStatus | PaymentStatus) => {
     setFormData(prev => ({
@@ -100,14 +120,31 @@ export default function OrderForm({
     }).format(date);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="glass rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">ویرایش سفارش</h2>
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
+  };
+
+  const modalContent = (
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      onClick={handleBackdropClick}
+    >
+      <div 
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+        style={{ 
+          maxHeight: '90vh',
+          margin: 'auto'
+        }}
+      >
+        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">ویرایش سفارش</h2>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -117,69 +154,69 @@ export default function OrderForm({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Order Information */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">اطلاعات سفارش</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات سفارش</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">شماره سفارش</label>
-                <div className="text-white font-medium">{order.orderNumber}</div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">شماره سفارش</label>
+                <div className="text-gray-900 dark:text-white font-medium">{order.orderNumber}</div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-white mb-2">تاریخ ایجاد</label>
-                <div className="text-gray-300">{formatDate(order.createdAt)}</div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تاریخ ایجاد</label>
+                <div className="text-gray-600 dark:text-gray-400">{formatDate(order.createdAt)}</div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-white mb-2">مبلغ کل</label>
-                <div className="text-white font-medium">{formatPrice(order.totalAmount)}</div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">مبلغ کل</label>
+                <div className="text-gray-900 dark:text-white font-medium">{formatPrice(order.totalAmount)}</div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-white mb-2">تعداد آیتم‌ها</label>
-                <div className="text-gray-300">{order._count.orderItems} آیتم</div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تعداد آیتم‌ها</label>
+                <div className="text-gray-600 dark:text-gray-400">{order._count.orderItems} آیتم</div>
               </div>
             </div>
           </div>
 
           {/* Customer Information */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">اطلاعات مشتری</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات مشتری</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">نام و نام خانوادگی</label>
-                <div className="text-white">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">نام و نام خانوادگی</label>
+                <div className="text-gray-900 dark:text-white">
                   {order.user.firstName} {order.user.lastName}
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-white mb-2">ایمیل</label>
-                <div className="text-gray-300">{order.customerEmail}</div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">ایمیل</label>
+                <div className="text-gray-600 dark:text-gray-400">{order.customerEmail}</div>
               </div>
               
               {order.customerPhone && (
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">شماره تلفن</label>
-                  <div className="text-gray-300">{order.customerPhone}</div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">شماره تلفن</label>
+                  <div className="text-gray-600 dark:text-gray-400">{order.customerPhone}</div>
                 </div>
               )}
               
               {order.customerNote && (
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-white mb-2">یادداشت مشتری</label>
-                  <div className="text-gray-300 bg-white/5 p-3 rounded-lg">{order.customerNote}</div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">یادداشت مشتری</label>
+                  <div className="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">{order.customerNote}</div>
                 </div>
               )}
             </div>
           </div>
 
           {/* Order Items */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">آیتم‌های سفارش</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">آیتم‌های سفارش</h3>
             <div className="space-y-4">
               {order.orderItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div key={item.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center space-x-4 space-x-reverse">
                     {item.image && (
                       <Image
@@ -191,17 +228,17 @@ export default function OrderForm({
                       />
                     )}
                     <div>
-                      <div className="text-white font-medium">{item.name}</div>
-                      <div className="text-gray-400 text-sm">SKU: {item.sku}</div>
+                      <div className="text-gray-900 dark:text-white font-medium">{item.name}</div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm">SKU: {item.sku}</div>
                       {item.variant && (
-                        <div className="text-gray-400 text-sm">تنوع: {item.variant.name}</div>
+                        <div className="text-gray-600 dark:text-gray-400 text-sm">تنوع: {item.variant.name}</div>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-white font-medium">{formatPrice(item.totalPrice)}</div>
-                    <div className="text-gray-400 text-sm">تعداد: {item.quantity}</div>
-                    <div className="text-gray-400 text-sm">قیمت واحد: {formatPrice(item.unitPrice)}</div>
+                    <div className="text-gray-900 dark:text-white font-medium">{formatPrice(item.totalPrice)}</div>
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">تعداد: {item.quantity}</div>
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">قیمت واحد: {formatPrice(item.unitPrice)}</div>
                   </div>
                 </div>
               ))}
@@ -209,16 +246,16 @@ export default function OrderForm({
           </div>
 
           {/* Order Management */}
-          <div className="glass rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">مدیریت سفارش</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">مدیریت سفارش</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Order Status */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">وضعیت سفارش</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">وضعیت سفارش</label>
                 <select
                   value={formData.status}
                   onChange={(e) => handleInputChange("status", e.target.value as OrderStatus)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                 >
                   <option value="PENDING">در انتظار</option>
                   <option value="CONFIRMED">تأیید شده</option>
@@ -232,11 +269,11 @@ export default function OrderForm({
 
               {/* Payment Status */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">وضعیت پرداخت</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">وضعیت پرداخت</label>
                 <select
                   value={formData.paymentStatus}
                   onChange={(e) => handleInputChange("paymentStatus", e.target.value as PaymentStatus)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                 >
                   <option value="PENDING">در انتظار</option>
                   <option value="PAID">پرداخت شده</option>
@@ -248,72 +285,79 @@ export default function OrderForm({
 
               {/* Tracking Number */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   شماره پیگیری
-                  {formData.status === "SHIPPED" && <span className="text-red-400">*</span>}
+                  {formData.status === "SHIPPED" && <span className="text-red-500 mr-1">*</span>}
                 </label>
                 <input
                   type="text"
                   value={formData.trackingNumber}
                   onChange={(e) => handleInputChange("trackingNumber", e.target.value)}
-                  className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                    errors.trackingNumber ? "border-red-400" : "border-white/20"
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.trackingNumber ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
                   placeholder="شماره پیگیری ارسال"
                 />
                 {errors.trackingNumber && (
-                  <p className="text-red-400 text-sm mt-1">{errors.trackingNumber}</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.trackingNumber}</p>
                 )}
               </div>
 
               {/* Shipped Date */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">تاریخ ارسال</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تاریخ ارسال</label>
                 <input
                   type="datetime-local"
                   value={formData.shippedAt ? formData.shippedAt.slice(0, 16) : ""}
                   onChange={(e) => handleInputChange("shippedAt", e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                 />
               </div>
 
               {/* Delivered Date */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">تاریخ تحویل</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تاریخ تحویل</label>
                 <input
                   type="datetime-local"
                   value={formData.deliveredAt ? formData.deliveredAt.slice(0, 16) : ""}
                   onChange={(e) => handleInputChange("deliveredAt", e.target.value)}
-                  className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                    errors.deliveredAt ? "border-red-400" : "border-white/20"
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.deliveredAt ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
                 />
                 {errors.deliveredAt && (
-                  <p className="text-red-400 text-sm mt-1">{errors.deliveredAt}</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.deliveredAt}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end space-x-4 space-x-reverse">
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
+              className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
             >
               انصراف
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
             >
-              {isSaving ? "در حال ذخیره..." : "ذخیره تغییرات"}
+              {isSaving ? "در حال ذخیره..." : "به‌روزرسانی"}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
+
+  // Render modal using portal to document.body
+  if (typeof window !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return null;
 }

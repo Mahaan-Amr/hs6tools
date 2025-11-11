@@ -89,7 +89,7 @@ export default function WishlistButton({ productId, className = "" }: WishlistBu
   if (!session?.user) {
     return (
       <button
-        className={`p-2 text-gray-400 hover:text-red-400 transition-colors duration-200 ${className}`}
+        className={`p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 ${className}`}
         title="ورود برای افزودن به لیست علاقه‌مندی"
         disabled
       >
@@ -107,8 +107,8 @@ export default function WishlistButton({ productId, className = "" }: WishlistBu
       className={`
         p-2 transition-all duration-200 rounded-full hover:bg-red-500/20 
         ${isInWishlist 
-          ? "text-red-500 hover:text-red-600" 
-          : "text-gray-400 hover:text-red-400"
+          ? "text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-600" 
+          : "text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
         } 
         ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
         ${className}

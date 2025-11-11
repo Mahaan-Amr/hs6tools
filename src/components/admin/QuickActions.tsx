@@ -10,7 +10,7 @@ export default function QuickActions({ locale }: QuickActionsProps) {
   const actions = [
     {
       name: "افزودن محصول",
-      href: `/${locale}/admin/products/create`,
+      href: `/${locale}/admin/products`,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -27,7 +27,7 @@ export default function QuickActions({ locale }: QuickActionsProps) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
       ),
-      color: "bg-gradient-to-r from-blue-500 to-blue-600",
+      color: "bg-gradient-to-r from-primary-orange to-orange-500",
       description: "سازماندهی دسته‌بندی محصولات"
     },
     {
@@ -38,7 +38,7 @@ export default function QuickActions({ locale }: QuickActionsProps) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
-      color: "bg-gradient-to-r from-green-500 to-green-600",
+      color: "bg-gradient-to-r from-primary-orange to-orange-500",
       description: "مدیریت حساب‌های کاربری"
     },
     {
@@ -122,11 +122,11 @@ export default function QuickActions({ locale }: QuickActionsProps) {
             <div className="text-gray-400 text-sm">سفارشات جدید</div>
           </div>
           <div className="text-center p-4 bg-white/5 rounded-xl">
-            <div className="text-2xl font-bold text-blue-400 mb-1">۸</div>
+            <div className="text-2xl font-bold text-primary-orange mb-1">۸</div>
             <div className="text-gray-400 text-sm">محصولات کم‌موجود</div>
           </div>
           <div className="text-center p-4 bg-white/5 rounded-xl">
-            <div className="text-2xl font-bold text-green-400 mb-1">۲۴</div>
+            <div className="text-2xl font-bold text-primary-orange mb-1">۲۴</div>
             <div className="text-gray-400 text-sm">نظرات جدید</div>
           </div>
           <div className="text-center p-4 bg-white/5 rounded-xl">

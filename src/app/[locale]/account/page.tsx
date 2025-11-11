@@ -48,11 +48,11 @@ function AccountPageContent({ params }: AccountPageProps) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-orange mx-auto"></div>
-            <p className="text-white mt-4">در حال بارگذاری...</p>
+            <p className="text-gray-900 dark:text-white mt-4">در حال بارگذاری...</p>
           </div>
         </div>
       </div>
@@ -66,11 +66,11 @@ function AccountPageContent({ params }: AccountPageProps) {
 
   if (!messages) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-orange mx-auto"></div>
-            <p className="text-white mt-4">در حال بارگذاری...</p>
+            <p className="text-gray-900 dark:text-white mt-4">در حال بارگذاری...</p>
           </div>
         </div>
       </div>
@@ -83,13 +83,13 @@ function AccountPageContent({ params }: AccountPageProps) {
         return (
           <>
             <div className="glass rounded-xl p-6 mb-6">
-              <h2 className="text-2xl font-bold text-white mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 {messages?.customer?.profile?.title || 'اطلاعات شخصی'}
               </h2>
               <ProfileForm locale={locale} />
             </div>
             <div className="glass rounded-xl p-6">
-              <h2 className="text-2xl font-bold text-white mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 {messages?.customer?.orders?.recentOrders || 'سفارشات اخیر'}
               </h2>
               <RecentOrders locale={locale} />
@@ -99,7 +99,7 @@ function AccountPageContent({ params }: AccountPageProps) {
       case 'orders':
         return (
           <div className="glass rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {messages?.customer?.orders?.title || 'تاریخچه سفارشات'}
             </h2>
             <OrderHistory locale={locale} />
@@ -108,7 +108,7 @@ function AccountPageContent({ params }: AccountPageProps) {
       case 'addresses':
         return (
           <div className="glass rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {messages?.customer?.addresses?.title || 'آدرس‌ها'}
             </h2>
             <AddressesTab locale={locale} />
@@ -117,7 +117,7 @@ function AccountPageContent({ params }: AccountPageProps) {
       case 'wishlist':
         return (
           <div className="glass rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {messages?.customer?.wishlist?.title || 'علاقه‌مندی‌ها'}
             </h2>
             <WishlistTab locale={locale} />
@@ -126,7 +126,7 @@ function AccountPageContent({ params }: AccountPageProps) {
       case 'settings':
         return (
           <div className="glass rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {messages?.customer?.settings?.title || 'تنظیمات'}
             </h2>
             <SettingsTab locale={locale} />
@@ -135,7 +135,7 @@ function AccountPageContent({ params }: AccountPageProps) {
       case 'security':
         return (
           <div className="glass rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {messages?.customer?.security?.title || 'امنیت'}
             </h2>
             <SecurityTab locale={locale} />
@@ -147,11 +147,11 @@ function AccountPageContent({ params }: AccountPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             {messages?.customer?.account?.title || 'حساب کاربری'}
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6">
@@ -162,7 +162,7 @@ function AccountPageContent({ params }: AccountPageProps) {
           <div className="flex justify-center">
             <button
               onClick={() => signOut({ callbackUrl: `/${locale}/auth/login` })}
-              className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl"
+              className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-gray-900 dark:text-white font-medium rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl"
             >
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -183,7 +183,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                   className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${
                     activeTab === 'profile'
                       ? 'bg-primary-orange/20 text-primary-orange border border-primary-orange/30'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                      : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
                   {messages?.customer?.account?.personalInfo || 'اطلاعات شخصی'}
@@ -193,7 +193,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                   className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${
                     activeTab === 'orders'
                       ? 'bg-primary-orange/20 text-primary-orange border border-primary-orange/30'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                      : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
                   {messages?.customer?.account?.orders || 'سفارشات'}
@@ -203,7 +203,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                   className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${
                     activeTab === 'addresses'
                       ? 'bg-primary-orange/20 text-primary-orange border border-primary-orange/30'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                      : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
                   {messages?.customer?.account?.addresses || 'آدرس‌ها'}
@@ -213,7 +213,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                   className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${
                     activeTab === 'wishlist'
                       ? 'bg-primary-orange/20 text-primary-orange border border-primary-orange/30'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                      : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
                   {messages?.customer?.account?.wishlist || 'علاقه‌مندی‌ها'}
@@ -223,7 +223,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                   className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${
                     activeTab === 'settings'
                       ? 'bg-primary-orange/20 text-primary-orange border border-primary-orange/30'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                      : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
                   {messages?.customer?.account?.settings || 'تنظیمات'}
@@ -234,7 +234,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                   className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${
                     activeTab === 'security'
                       ? 'bg-primary-orange/20 text-primary-orange border border-primary-orange/30'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                      : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
                   {messages?.customer?.account?.security || 'امنیت'}

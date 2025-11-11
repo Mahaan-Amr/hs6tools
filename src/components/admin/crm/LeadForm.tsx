@@ -126,11 +126,11 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Personal Information */}
-      <div className="glass rounded-3xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">اطلاعات شخصی</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات شخصی</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               نام *
             </label>
             <input
@@ -138,18 +138,18 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              className={`w-full px-3 py-2 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                errors.firstName ? "border-red-500" : "border-white/20"
+              className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                errors.firstName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
               placeholder="نام"
             />
             {errors.firstName && (
-              <p className="text-red-400 text-sm mt-1">{errors.firstName}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.firstName}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               نام خانوادگی *
             </label>
             <input
@@ -157,18 +157,18 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              className={`w-full px-3 py-2 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                errors.lastName ? "border-red-500" : "border-white/20"
+              className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                errors.lastName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
               placeholder="نام خانوادگی"
             />
             {errors.lastName && (
-              <p className="text-red-400 text-sm mt-1">{errors.lastName}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.lastName}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               ایمیل *
             </label>
             <input
@@ -176,18 +176,18 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-3 py-2 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                errors.email ? "border-red-500" : "border-white/20"
+              className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                errors.email ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
               placeholder="example@domain.com"
             />
             {errors.email && (
-              <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.email}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               شماره تلفن
             </label>
             <input
@@ -195,24 +195,24 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className={`w-full px-3 py-2 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                errors.phone ? "border-red-500" : "border-white/20"
+              className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                errors.phone ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
               placeholder="09123456789"
             />
             {errors.phone && (
-              <p className="text-red-400 text-sm mt-1">{errors.phone}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.phone}</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Company Information */}
-      <div className="glass rounded-3xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">اطلاعات شرکت</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات شرکت</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               نام شرکت
             </label>
             <input
@@ -220,13 +220,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="company"
               value={formData.company}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               placeholder="نام شرکت"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               سمت
             </label>
             <input
@@ -234,13 +234,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="position"
               value={formData.position}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               placeholder="مدیر، مهندس، ..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               صنعت
             </label>
             <input
@@ -248,20 +248,20 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="industry"
               value={formData.industry}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               placeholder="صنعت"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               اندازه شرکت
             </label>
             <select
               name="companySize"
               value={formData.companySize}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             >
               <option value="">انتخاب کنید</option>
               <option value="STARTUP">استارتاپ (1-10 نفر)</option>
@@ -275,18 +275,18 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
       </div>
 
       {/* Lead Information */}
-      <div className="glass rounded-3xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">اطلاعات لید</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات لید</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               منبع لید *
             </label>
             <select
               name="source"
               value={formData.source}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             >
               <option value="WEBSITE">وب‌سایت</option>
               <option value="REFERRAL">معرفی</option>
@@ -301,14 +301,14 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               وضعیت
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             >
               <option value="NEW">جدید</option>
               <option value="CONTACTED">تماس گرفته شده</option>
@@ -322,7 +322,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               اختصاص داده شده به
             </label>
             <input
@@ -330,13 +330,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="assignedTo"
               value={formData.assignedTo}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               placeholder="نام فروشنده"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               ارزش مورد انتظار
             </label>
             <input
@@ -344,14 +344,14 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="expectedValue"
               value={formData.expectedValue}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               placeholder="0"
               min="0"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               تاریخ بسته شدن مورد انتظار
             </label>
             <input
@@ -359,12 +359,12 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="expectedClose"
               value={formData.expectedClose}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
               پیگیری بعدی
             </label>
             <input
@@ -372,13 +372,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               name="nextFollowUp"
               value={formData.nextFollowUp}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             />
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+        <div className="mt-6">
+          <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
             برچسب‌ها
           </label>
           <input
@@ -386,13 +386,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
             name="tags"
             value={formData.tags}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             placeholder="برچسب‌ها را با کاما جدا کنید"
           />
         </div>
 
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+        <div className="mt-6">
+          <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
             یادداشت‌ها
           </label>
           <textarea
@@ -400,27 +400,27 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
             value={formData.notes}
             onChange={handleChange}
             rows={4}
-            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
             placeholder="یادداشت‌های مربوط به لید..."
           />
         </div>
       </div>
 
       {/* Form Actions */}
-      <div className="flex items-center justify-end space-x-4 space-x-reverse">
+      <div className="flex items-center justify-end space-x-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
         >
           انصراف
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-2 bg-primary-orange text-white rounded-lg hover:bg-primary-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
         >
-          {isLoading ? "در حال ذخیره..." : lead ? "به‌روزرسانی" : "ایجاد لید"}
+          {isLoading ? "در حال ذخیره..." : lead ? "به‌روزرسانی" : "ایجاد"}
         </button>
       </div>
     </form>

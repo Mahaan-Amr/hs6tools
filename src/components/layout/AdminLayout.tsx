@@ -138,12 +138,28 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
       <div className="flex flex-col min-h-screen">
         {/* Header */}
         <header className="glass border-b border-white/10 backdrop-blur-xl relative admin-header shadow-2xl border-l-4 border-l-primary-orange" style={{ zIndex: 10000 }}>
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-lg sm:text-xl font-semibold text-white">پنل مدیریت</h1>
+          <div className="flex items-center justify-between h-16 px-4 sm:px-6 gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 min-w-0">
+              {/* Mobile Hamburger Menu Button */}
+              <button
+                onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+                className="lg:hidden p-2 text-white/80 hover:text-white transition-colors duration-200 flex-shrink-0"
+                title="باز کردن منو"
+              >
+                <svg 
+                  className="w-6 h-6" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              
+              <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-white truncate">پنل مدیریت</h1>
             </div>
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               {/* Desktop Right Sidebar Toggle */}
               <button
                 onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
@@ -464,11 +480,11 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
         </button>
       )}
 
-      {/* Mobile Floating Action Button - Only visible when sidebar is collapsed */}
+      {/* Mobile Floating Action Button - Only visible when sidebar is collapsed (optional quick access) */}
       {isRightSidebarCollapsed && (
         <button
           onClick={() => setIsRightSidebarCollapsed(false)}
-          className="lg:hidden fixed right-4 top-20 w-14 h-14 bg-primary-orange hover:bg-orange-600 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50"
+          className="lg:hidden fixed right-4 bottom-4 w-14 h-14 bg-primary-orange hover:bg-orange-600 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50"
           title="باز کردن منو"
           style={{ zIndex: 10003 }}
         >

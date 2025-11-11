@@ -113,15 +113,15 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
   if (!session?.user) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 mb-4">
+        <div className="text-gray-600 dark:text-gray-400 mb-4">
           <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </div>
-        <h3 className="text-xl font-semibold text-white mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           برای مشاهده لیست علاقه‌مندی وارد شوید
         </h3>
-        <p className="text-gray-400 mb-6">
+        <p className="text-gray-700 dark:text-gray-400 mb-6">
           محصولات مورد علاقه خود را ذخیره کنید و بعداً به آنها دسترسی داشته باشید
         </p>
         <Link
@@ -154,15 +154,15 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
   if (wishlistItems.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 mb-4">
+        <div className="text-gray-600 dark:text-gray-400 mb-4">
           <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </div>
-        <h3 className="text-xl font-semibold text-white mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           لیست علاقه‌مندی شما خالی است
         </h3>
-        <p className="text-gray-400 mb-6">
+        <p className="text-gray-700 dark:text-gray-400 mb-6">
           محصولات مورد علاقه خود را به لیست علاقه‌مندی اضافه کنید
         </p>
         <Link
@@ -189,8 +189,8 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                <svg className="w-16 h-16 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -227,7 +227,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
 
             {/* Product Name */}
             <Link href={`/${locale}/products/${item.product.slug}`}>
-              <h3 className="text-lg font-semibold text-white mb-3 line-clamp-2 hover:text-primary-orange transition-colors duration-200">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2 hover:text-primary-orange transition-colors duration-200">
                 {item.product.name}
               </h3>
             </Link>
@@ -235,11 +235,11 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
             {/* Price */}
             <div className="flex items-center justify-between mb-4">
               <div className="space-y-1">
-                <div className="text-xl font-bold text-white">
+                <div className="text-xl font-bold text-gray-900 dark:text-white">
                   {formatPrice(item.product.price)}
                 </div>
                 {item.product.comparePrice && item.product.comparePrice > item.product.price && (
-                  <div className="text-sm text-gray-400 line-through">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 line-through">
                     {formatPrice(item.product.comparePrice)}
                   </div>
                 )}
@@ -262,7 +262,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
               
               <Link
                 href={`/${locale}/products/${item.product.slug}`}
-                className="block w-full py-3 px-4 glass border border-white/20 text-white text-center rounded-xl font-semibold hover:bg-white/10 transition-all duration-200"
+                className="block w-full py-3 px-4 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-center rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200"
               >
                 مشاهده جزئیات
               </Link>

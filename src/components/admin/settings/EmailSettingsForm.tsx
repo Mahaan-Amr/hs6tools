@@ -96,20 +96,20 @@ export default function EmailSettingsForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white">تنظیمات ایمیل</h2>
+      <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">تنظیمات ایمیل</h2>
         <div className="flex space-x-3 space-x-reverse">
           <button
             type="button"
             onClick={testConnection}
-            className="px-6 py-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold rounded-xl hover:bg-blue-500/30 transition-colors duration-300"
+            className="px-6 py-3 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-2 border-blue-300 dark:border-blue-500/30 font-semibold rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors duration-200"
           >
             تست اتصال
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
           >
             {isLoading ? "در حال ذخیره..." : "ذخیره تنظیمات"}
           </button>
@@ -118,159 +118,167 @@ export default function EmailSettingsForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* SMTP Configuration */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white border-b border-gray-600 pb-2">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             تنظیمات SMTP
           </h3>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              سرور SMTP *
-            </label>
-            <input
-              type="text"
-              value={formData.smtpHost}
-              onChange={(e) => handleInputChange("smtpHost", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="smtp.gmail.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              پورت SMTP *
-            </label>
-            <input
-              type="number"
-              value={formData.smtpPort}
-              onChange={(e) => handleInputChange("smtpPort", parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="587"
-              min="1"
-              max="65535"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              نام کاربری SMTP
-            </label>
-            <input
-              type="text"
-              value={formData.smtpUser}
-              onChange={(e) => handleInputChange("smtpUser", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="your-email@gmail.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              رمز عبور SMTP
-            </label>
-            <div className="relative">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                سرور SMTP *
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                value={formData.smtpPassword}
-                onChange={(e) => handleInputChange("smtpPassword", e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent pr-12"
-                placeholder="رمز عبور"
+                type="text"
+                value={formData.smtpHost}
+                onChange={(e) => handleInputChange("smtpHost", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="smtp.gmail.com"
+                required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                {showPassword ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
             </div>
-          </div>
 
-          <div>
-            <label className="flex items-center space-x-3 space-x-reverse cursor-pointer">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                پورت SMTP *
+              </label>
               <input
-                type="checkbox"
-                checked={formData.enableSSL}
-                onChange={(e) => handleInputChange("enableSSL", e.target.checked)}
-                className="w-5 h-5 text-primary-orange bg-white/10 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
+                type="number"
+                value={formData.smtpPort}
+                onChange={(e) => handleInputChange("smtpPort", parseInt(e.target.value))}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="587"
+                min="1"
+                max="65535"
+                required
               />
-              <span className="text-gray-300">فعال‌سازی SSL/TLS</span>
-            </label>
+            </div>
+
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                نام کاربری SMTP
+              </label>
+              <input
+                type="text"
+                value={formData.smtpUser}
+                onChange={(e) => handleInputChange("smtpUser", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="your-email@gmail.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                رمز عبور SMTP
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={formData.smtpPassword}
+                  onChange={(e) => handleInputChange("smtpPassword", e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                  placeholder="رمز عبور"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  {showPassword ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center pt-2">
+                <input
+                  type="checkbox"
+                  id="enableSSL"
+                  checked={formData.enableSSL}
+                  onChange={(e) => handleInputChange("enableSSL", e.target.checked)}
+                  className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
+                />
+                <label htmlFor="enableSSL" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
+                  فعال‌سازی SSL/TLS
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Sender Configuration */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white border-b border-gray-600 pb-2">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             تنظیمات فرستنده
           </h3>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              ایمیل فرستنده *
-            </label>
-            <input
-              type="email"
-              value={formData.fromEmail}
-              onChange={(e) => handleInputChange("fromEmail", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="noreply@example.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              نام فرستنده *
-            </label>
-            <input
-              type="text"
-              value={formData.fromName}
-              onChange={(e) => handleInputChange("fromName", e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="نام شرکت"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="flex items-center space-x-3 space-x-reverse cursor-pointer">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                ایمیل فرستنده *
+              </label>
               <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => handleInputChange("isActive", e.target.checked)}
-                className="w-5 h-5 text-primary-orange bg-white/10 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
+                type="email"
+                value={formData.fromEmail}
+                onChange={(e) => handleInputChange("fromEmail", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="noreply@example.com"
+                required
               />
-              <span className="text-gray-300">فعال‌سازی سیستم ایمیل</span>
-            </label>
-          </div>
+            </div>
 
-          {/* Common SMTP Settings */}
-          <div className="pt-4">
-            <h4 className="text-md font-medium text-white mb-3">تنظیمات رایج SMTP</h4>
-            <div className="space-y-2 text-sm text-gray-400">
-              <div className="flex justify-between">
-                <span>Gmail:</span>
-                <span>smtp.gmail.com:587</span>
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                نام فرستنده *
+              </label>
+              <input
+                type="text"
+                value={formData.fromName}
+                onChange={(e) => handleInputChange("fromName", e.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                placeholder="نام شرکت"
+                required
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center pt-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                  className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
+                />
+                <label htmlFor="isActive" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
+                  فعال‌سازی سیستم ایمیل
+                </label>
               </div>
-              <div className="flex justify-between">
-                <span>Outlook:</span>
-                <span>smtp-mail.outlook.com:587</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Yahoo:</span>
-                <span>smtp.mail.yahoo.com:587</span>
+            </div>
+
+            {/* Common SMTP Settings */}
+            <div className="pt-4 mt-6 border-t border-gray-200 dark:border-gray-700">
+              <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-4">تنظیمات رایج SMTP</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                  <span className="font-medium">Gmail:</span>
+                  <span className="font-mono text-gray-600 dark:text-gray-400">smtp.gmail.com:587</span>
+                </div>
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                  <span className="font-medium">Outlook:</span>
+                  <span className="font-mono text-gray-600 dark:text-gray-400">smtp-mail.outlook.com:587</span>
+                </div>
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                  <span className="font-medium">Yahoo:</span>
+                  <span className="font-mono text-gray-600 dark:text-gray-400">smtp.mail.yahoo.com:587</span>
+                </div>
               </div>
             </div>
           </div>

@@ -193,21 +193,21 @@ export default function ProductForm({
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
-        <div className="glass rounded-2xl p-6">
-          <h3 className="text-xl font-bold text-white mb-6">اطلاعات اصلی</h3>
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات اصلی</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* SKU */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 SKU <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 value={formData.sku}
                 onChange={(e) => handleInputChange('sku', e.target.value)}
-                className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                  errors.sku ? 'border-red-500' : 'border-white/20'
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
+                  errors.sku ? 'border-red-500' : ''
                 }`}
                 placeholder="مثال: DISC-001"
                 disabled={isEditing} // SKU cannot be changed after creation
@@ -217,15 +217,15 @@ export default function ProductForm({
 
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 نام محصول <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                  errors.name ? 'border-red-500' : 'border-white/20'
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
+                  errors.name ? 'border-red-500' : ''
                 }`}
                 placeholder="نام کامل محصول"
               />
@@ -234,15 +234,15 @@ export default function ProductForm({
 
             {/* Slug */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 نامک <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => handleInputChange('slug', e.target.value)}
-                className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                  errors.slug ? 'border-red-500' : 'border-white/20'
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
+                  errors.slug ? 'border-red-500' : ''
                 }`}
                 placeholder="نامک محصول"
               />
@@ -251,14 +251,14 @@ export default function ProductForm({
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 دسته‌بندی <span className="text-red-400">*</span>
               </label>
               <select
                 value={formData.categoryId}
                 onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                  errors.categoryId ? 'border-red-500' : 'border-white/20'
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
+                  errors.categoryId ? 'border-red-500' : ''
                 }`}
               >
                 <option value="">انتخاب دسته‌بندی</option>
@@ -273,15 +273,15 @@ export default function ProductForm({
 
             {/* Price */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 قیمت (تومان) <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"
                 value={formData.price}
                 onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                  errors.price ? 'border-red-500' : 'border-white/20'
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
+                  errors.price ? 'border-red-500' : ''
                 }`}
                 placeholder="0"
                 min="0"
@@ -297,14 +297,14 @@ export default function ProductForm({
 
             {/* Compare Price */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 قیمت مقایسه‌ای (تومان)
               </label>
               <input
                 type="number"
                 value={formData.comparePrice}
                 onChange={(e) => handleInputChange('comparePrice', parseFloat(e.target.value) || 0)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                 placeholder="0"
                 min="0"
                 step="1000"
@@ -318,15 +318,15 @@ export default function ProductForm({
 
             {/* Stock Quantity */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 موجودی <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"
                 value={formData.stockQuantity}
                 onChange={(e) => handleInputChange('stockQuantity', parseInt(e.target.value) || 0)}
-                className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-                  errors.stockQuantity ? 'border-red-500' : 'border-white/20'
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
+                  errors.stockQuantity ? 'border-red-500' : ''
                 }`}
                 placeholder="0"
                 min="0"
@@ -336,14 +336,14 @@ export default function ProductForm({
 
             {/* Low Stock Threshold */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 حداقل موجودی
               </label>
               <input
                 type="number"
                 value={formData.lowStockThreshold}
                 onChange={(e) => handleInputChange('lowStockThreshold', parseInt(e.target.value) || 5)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                 placeholder="5"
                 min="0"
               />
@@ -352,36 +352,36 @@ export default function ProductForm({
 
           {/* Description */}
           <div className="mt-6">
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
               توضیحات کوتاه
             </label>
             <textarea
               value={formData.shortDescription}
               onChange={(e) => handleInputChange('shortDescription', e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
               placeholder="توضیحات مختصر محصول"
             />
           </div>
 
           {/* Full Description */}
           <div className="mt-6">
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
               توضیحات کامل
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               rows={6}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
               placeholder="توضیحات کامل محصول"
             />
           </div>
         </div>
 
         {/* Product Images */}
-        <div className="glass rounded-2xl p-6">
-          <h3 className="text-xl font-bold text-white mb-6">تصاویر محصول</h3>
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تصاویر محصول</h3>
           <ImageUpload
             images={images}
             onImagesChange={setImages}
@@ -398,9 +398,9 @@ export default function ProductForm({
         </div>
 
         {/* Multilingual Section */}
-        <div className="glass rounded-2xl p-6">
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-white">ترجمه‌ها (برای مشتریان)</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">ترجمه‌ها (برای مشتریان)</h3>
             <button
               type="button"
               onClick={() => setShowMultilingual(!showMultilingual)}
@@ -421,85 +421,85 @@ export default function ProductForm({
           {showMultilingual && (
             <div className="space-y-6">
               {/* English */}
-              <div className="border border-white/10 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2 space-x-reverse">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2 space-x-reverse">
                   <span className="w-6 h-6 bg-primary-orange/20 text-primary-orange rounded-full flex items-center justify-center text-sm font-bold">EN</span>
                   <span>انگلیسی</span>
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       نام (انگلیسی)
                     </label>
                     <input
                       type="text"
                       value={formData.nameEn}
                       onChange={(e) => handleInputChange('nameEn', e.target.value)}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                       placeholder="Product name in English"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       توضیحات کوتاه (انگلیسی)
                     </label>
                     <textarea
                       value={formData.shortDescriptionEn}
                       onChange={(e) => handleInputChange('shortDescriptionEn', e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                       placeholder="Short description in English"
                     />
                   </div>
                 </div>
 
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     توضیحات کامل (انگلیسی)
                   </label>
                   <textarea
                     value={formData.descriptionEn}
                     onChange={(e) => handleInputChange('descriptionEn', e.target.value)}
                     rows={4}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="Full description in English"
                   />
                 </div>
               </div>
 
               {/* Arabic */}
-              <div className="border border-white/10 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2 space-x-reverse">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2 space-x-reverse">
                   <span className="w-6 h-6 bg-primary-orange/20 text-primary-orange rounded-full flex items-center justify-center text-sm font-bold">AR</span>
                   <span>عربی</span>
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       نام (عربی)
                     </label>
                     <input
                       type="text"
                       value={formData.nameAr}
                       onChange={(e) => handleInputChange('nameAr', e.target.value)}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                       placeholder="اسم المنتج بالعربية"
                       dir="rtl"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       توضیحات کوتاه (عربی)
                     </label>
                     <textarea
                       value={formData.shortDescriptionAr}
                       onChange={(e) => handleInputChange('shortDescriptionAr', e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                       placeholder="وصف مختصر بالعربية"
                       dir="rtl"
                     />
@@ -507,14 +507,14 @@ export default function ProductForm({
                 </div>
 
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     توضیحات کامل (عربی)
                   </label>
                   <textarea
                     value={formData.descriptionAr}
                     onChange={(e) => handleInputChange('descriptionAr', e.target.value)}
                     rows={4}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                       placeholder="وصف كامل بالعربية"
                       dir="rtl"
                   />
@@ -525,9 +525,9 @@ export default function ProductForm({
         </div>
 
         {/* Advanced Options */}
-        <div className="glass rounded-2xl p-6">
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-white">تنظیمات پیشرفته</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">تنظیمات پیشرفته</h3>
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
@@ -550,14 +550,14 @@ export default function ProductForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Cost Price */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     قیمت تمام شده (تومان)
                   </label>
                   <input
                     type="number"
                     value={formData.costPrice}
                     onChange={(e) => handleInputChange('costPrice', parseFloat(e.target.value) || 0)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="0"
                     min="0"
                     step="1000"
@@ -566,14 +566,14 @@ export default function ProductForm({
 
                 {/* Weight */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     وزن (گرم)
                   </label>
                   <input
                     type="number"
                     value={formData.weight}
                     onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || 0)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="0"
                     min="0"
                     step="0.1"
@@ -582,56 +582,56 @@ export default function ProductForm({
 
                 {/* Material */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     جنس
                   </label>
                   <input
                     type="text"
                     value={formData.material}
                     onChange={(e) => handleInputChange('material', e.target.value)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="مثال: فولاد، آلومینیوم"
                   />
                 </div>
 
                 {/* Brand */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     برند
                   </label>
                   <input
                     type="text"
                     value={formData.brand}
                     onChange={(e) => handleInputChange('brand', e.target.value)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="نام برند"
                   />
                 </div>
 
                 {/* Warranty */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     گارانتی
                   </label>
                   <input
                     type="text"
                     value={formData.warranty}
                     onChange={(e) => handleInputChange('warranty', e.target.value)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="مثال: 2 سال"
                   />
                 </div>
 
                 {/* Sort Order */}
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     ترتیب نمایش
                   </label>
                   <input
                     type="number"
                     value={formData.sortOrder}
                     onChange={(e) => handleInputChange('sortOrder', parseInt(e.target.value) || 0)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="0"
                   />
                 </div>
@@ -639,7 +639,7 @@ export default function ProductForm({
 
               {/* Dimensions */}
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   ابعاد (میلی‌متر)
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -648,7 +648,7 @@ export default function ProductForm({
                     placeholder="طول"
                     value={String((formData.dimensions as Record<string, unknown>)?.length || '')}
                     onChange={(e) => handleDimensionsChange('length', e.target.value)}
-                    className="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     min="0"
                   />
                   <input
@@ -656,7 +656,7 @@ export default function ProductForm({
                     placeholder="عرض"
                     value={String((formData.dimensions as Record<string, unknown>)?.width || '')}
                     onChange={(e) => handleDimensionsChange('width', e.target.value)}
-                    className="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     min="0"
                   />
                   <input
@@ -664,7 +664,7 @@ export default function ProductForm({
                     placeholder="ارتفاع"
                     value={String((formData.dimensions as Record<string, unknown>)?.height || '')}
                     onChange={(e) => handleDimensionsChange('height', e.target.value)}
-                    className="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                    className="px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     min="0"
                   />
                 </div>
@@ -674,45 +674,45 @@ export default function ProductForm({
         </div>
 
         {/* SEO & Meta */}
-        <div className="glass rounded-2xl p-6">
-          <h3 className="text-xl font-bold text-white mb-6">SEO و متا</h3>
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">SEO و متا</h3>
           
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 عنوان متا
               </label>
               <input
                 type="text"
                 value={formData.metaTitle}
                 onChange={(e) => handleInputChange('metaTitle', e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                 placeholder="عنوان برای موتورهای جستجو"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 توضیحات متا
               </label>
               <textarea
                 value={formData.metaDescription}
                 onChange={(e) => handleInputChange('metaDescription', e.target.value)}
                 rows={3}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                 placeholder="توضیحات برای موتورهای جستجو"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 کلمات کلیدی
               </label>
               <input
                 type="text"
                 value={formData.metaKeywords}
                 onChange={(e) => handleInputChange('metaKeywords', e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                 placeholder="کلمات کلیدی با کاما جدا کنید"
               />
             </div>
@@ -720,8 +720,8 @@ export default function ProductForm({
         </div>
 
         {/* Status & Options */}
-        <div className="glass rounded-2xl p-6">
-          <h3 className="text-xl font-bold text-white mb-6">وضعیت و گزینه‌ها</h3>
+        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">وضعیت و گزینه‌ها</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -730,9 +730,9 @@ export default function ProductForm({
                   type="checkbox"
                   checked={formData.isActive}
                   onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                  className="w-4 h-4 text-primary-orange bg-white/10 border-white/20 rounded focus:ring-primary-orange focus:ring-2"
+                  className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
                 />
-                <span className="text-white">فعال</span>
+                <span className="text-gray-900 dark:text-white">فعال</span>
               </label>
 
               <label className="flex items-center space-x-3 space-x-reverse">
@@ -740,7 +740,7 @@ export default function ProductForm({
                   type="checkbox"
                   checked={formData.isFeatured}
                   onChange={(e) => handleInputChange('isFeatured', e.target.checked)}
-                  className="w-4 h-4 text-primary-orange bg-white/10 border-white/20 rounded focus:ring-primary-orange focus:ring-2"
+                  className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
                 />
                 <span className="text-white">ویژه</span>
               </label>
@@ -750,7 +750,7 @@ export default function ProductForm({
                   type="checkbox"
                   checked={formData.isInStock}
                   onChange={(e) => handleInputChange('isInStock', e.target.checked)}
-                  className="w-4 h-4 text-primary-orange bg-white/10 border-white/20 rounded focus:ring-primary-orange focus:ring-2"
+                  className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
                 />
                 <span className="text-white">موجود</span>
               </label>
@@ -760,7 +760,7 @@ export default function ProductForm({
                   type="checkbox"
                   checked={formData.allowBackorders}
                   onChange={(e) => handleInputChange('allowBackorders', e.target.checked)}
-                  className="w-4 h-4 text-primary-orange bg-white/10 border-white/20 rounded focus:ring-primary-orange focus:ring-2"
+                  className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
                 />
                 <span className="text-white">پیش‌فروش</span>
               </label>
@@ -773,7 +773,7 @@ export default function ProductForm({
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-3 text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="px-6 py-3 text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
             disabled={isLoading}
           >
             انصراف

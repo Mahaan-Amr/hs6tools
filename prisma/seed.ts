@@ -19,6 +19,8 @@ async function main() {
     await prisma.category.deleteMany();
     await prisma.article.deleteMany();
     await prisma.contentCategory.deleteMany();
+    await prisma.educationLesson.deleteMany();
+    await prisma.educationCategory.deleteMany();
     await prisma.address.deleteMany();
     await prisma.user.deleteMany();
 
@@ -471,13 +473,487 @@ async function main() {
 
     console.log('✅ Articles created:', articles.length);
 
+    // Create Education Categories
+    console.log('📚 Creating education categories...');
+    
+    const educationCategories = [
+      {
+        name: 'آموزش ابزارهای برش',
+        slug: 'cutting-tools-education',
+        description: 'آموزش‌های تخصصی برای استفاده صحیح از ابزارهای برش',
+        icon: '🔪',
+        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        sortOrder: 1,
+        children: [
+          {
+            name: 'دیسک‌های الماسه',
+            slug: 'diamond-discs-education',
+            description: 'آموزش استفاده از دیسک‌های الماسه برای برش مواد سخت',
+            icon: '💎',
+            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            sortOrder: 1,
+          },
+          {
+            name: 'تیغه‌های اره',
+            slug: 'saw-blades-education',
+            description: 'آموزش انتخاب و استفاده از تیغه‌های اره',
+            icon: '🪚',
+            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            sortOrder: 2,
+          }
+        ]
+      },
+      {
+        name: 'آموزش نجاری',
+        slug: 'woodworking-education',
+        description: 'آموزش تکنیک‌های نجاری و کار با چوب',
+        icon: '🪵',
+        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        sortOrder: 2,
+        children: [
+          {
+            name: 'تکنیک‌های اتصال',
+            slug: 'joinery-techniques',
+            description: 'آموزش روش‌های مختلف اتصال در نجاری',
+            icon: '🔗',
+            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            sortOrder: 1,
+          },
+          {
+            name: 'پرداخت و رنگ‌آمیزی',
+            slug: 'finishing-techniques',
+            description: 'آموزش پرداخت و رنگ‌آمیزی چوب',
+            icon: '🎨',
+            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            sortOrder: 2,
+          }
+        ]
+      },
+      {
+        name: 'ایمنی و نگهداری',
+        slug: 'safety-maintenance',
+        description: 'آموزش ایمنی در کار و نگهداری ابزارها',
+        icon: '🛡️',
+        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        sortOrder: 3,
+        children: []
+      }
+    ];
+
+    const createdEducationCategories: Array<{ id: string; slug: string }> = [];
+
+    for (const mainCat of educationCategories) {
+      const { children, ...mainCatData } = mainCat;
+      
+      const createdMainCat = await prisma.educationCategory.create({
+        data: mainCatData,
+      });
+      createdEducationCategories.push(createdMainCat);
+
+      for (const childCat of children) {
+        const createdChildCat = await prisma.educationCategory.create({
+          data: {
+            ...childCat,
+            parentId: createdMainCat.id,
+          },
+        });
+        createdEducationCategories.push(createdChildCat);
+      }
+    }
+
+    console.log('✅ Education categories created:', createdEducationCategories.length);
+
+    // Create Education Lessons
+    console.log('📖 Creating education lessons...');
+    
+    const educationLessons = [
+      // TEXT-based lessons
+      {
+        title: 'راهنمای کامل استفاده از دیسک الماسه',
+        slug: 'complete-guide-diamond-disc',
+        excerpt: 'آموزش جامع استفاده صحیح از دیسک‌های الماسه برای برش مواد مختلف',
+        content: `
+          <h2>مقدمه</h2>
+          <p>دیسک‌های الماسه یکی از مهم‌ترین ابزارهای برش در صنعت هستند. در این آموزش با نحوه استفاده صحیح از این ابزارها آشنا خواهید شد.</p>
+          
+          <h2>انتخاب دیسک مناسب</h2>
+          <p>انتخاب دیسک الماسه مناسب بستگی به نوع ماده مورد برش دارد:</p>
+          <ul>
+            <li><strong>بتن و سنگ:</strong> از دیسک‌های با دانه‌بندی متوسط استفاده کنید</li>
+            <li><strong>سرامیک و کاشی:</strong> دیسک‌های با دانه ریز مناسب‌تر هستند</li>
+            <li><strong>فلزات:</strong> دیسک‌های مخصوص فلزات را انتخاب کنید</li>
+          </ul>
+          
+          <h2>نحوه نصب</h2>
+          <ol>
+            <li>مطمئن شوید دستگاه خاموش است</li>
+            <li>دیسک را روی محور قرار دهید</li>
+            <li>فلنج را محکم کنید</li>
+            <li>با آچار مخصوص پیچ را سفت کنید</li>
+          </ol>
+          
+          <h2>نکات ایمنی</h2>
+          <ul>
+            <li>همیشه از عینک محافظ استفاده کنید</li>
+            <li>دستکش مناسب بپوشید</li>
+            <li>از ماسک گرد و غبار استفاده کنید</li>
+            <li>محیط کار را تمیز نگه دارید</li>
+          </ul>
+          
+          <h2>نگهداری</h2>
+          <p>برای افزایش عمر دیسک الماسه:</p>
+          <ul>
+            <li>بعد از هر استفاده آن را تمیز کنید</li>
+            <li>در جای خشک و خنک نگهداری کنید</li>
+            <li>از ضربه زدن به دیسک خودداری کنید</li>
+            <li>قبل از استفاده از سلامت آن اطمینان حاصل کنید</li>
+          </ul>
+        `,
+        contentType: 'TEXT' as const,
+        categorySlug: 'diamond-discs-education',
+        difficulty: 'BEGINNER' as const,
+        estimatedTime: 15,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: true,
+        sortOrder: 1,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      {
+        title: 'تکنیک‌های پیشرفته اتصال در نجاری',
+        slug: 'advanced-joinery-techniques',
+        excerpt: 'آموزش تکنیک‌های پیشرفته اتصال چوب برای ساخت‌های حرفه‌ای',
+        content: `
+          <h2>مقدمه</h2>
+          <p>اتصال‌های چوبی یکی از اساسی‌ترین مهارت‌های نجاری هستند. در این آموزش با تکنیک‌های پیشرفته آشنا می‌شوید.</p>
+          
+          <h2>اتصال دوبل (Mortise and Tenon)</h2>
+          <p>این یکی از قوی‌ترین روش‌های اتصال است:</p>
+          <ol>
+            <li>سوراخ (mortise) را در قطعه اول ایجاد کنید</li>
+            <li>زائده (tenon) را در قطعه دوم بسازید</li>
+            <li>اندازه‌ها باید دقیقاً مطابقت داشته باشند</li>
+            <li>با چسب چوب محکم کنید</li>
+          </ol>
+          
+          <h2>اتصال داوود (Dovetail)</h2>
+          <p>اتصال داوود برای کشوها و جعبه‌ها ایده‌آل است:</p>
+          <ul>
+            <li>نیاز به دقت بسیار بالا دارد</li>
+            <li>از اره داوود استفاده کنید</li>
+            <li>قبل از برش، خطوط را به دقت علامت‌گذاری کنید</li>
+          </ul>
+          
+          <h2>نکات مهم</h2>
+          <ul>
+            <li>همیشه از چوب خشک استفاده کنید</li>
+            <li>اندازه‌گیری دقیق کلید موفقیت است</li>
+            <li>قبل از چسب‌کاری، قطعات را تست کنید</li>
+          </ul>
+        `,
+        contentType: 'TEXT' as const,
+        categorySlug: 'joinery-techniques',
+        difficulty: 'ADVANCED' as const,
+        estimatedTime: 45,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: true,
+        sortOrder: 1,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      // VIDEO-based lessons
+      {
+        title: 'ویدیو: آموزش استفاده از اره دستی',
+        slug: 'video-hand-saw-tutorial',
+        excerpt: 'ویدیو آموزشی کامل برای استفاده صحیح از اره دستی در نجاری',
+        content: null,
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Example YouTube embed URL
+        videoDuration: 720, // 12 minutes in seconds
+        contentType: 'VIDEO' as const,
+        categorySlug: 'woodworking-education',
+        difficulty: 'BEGINNER' as const,
+        estimatedTime: 12,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: false,
+        sortOrder: 1,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      {
+        title: 'ویدیو: تکنیک‌های برش با دیسک الماسه',
+        slug: 'video-diamond-disc-cutting',
+        excerpt: 'ویدیو آموزشی تکنیک‌های حرفه‌ای برش با دیسک الماسه',
+        content: null,
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        videoDuration: 900, // 15 minutes
+        contentType: 'VIDEO' as const,
+        categorySlug: 'diamond-discs-education',
+        difficulty: 'INTERMEDIATE' as const,
+        estimatedTime: 15,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: true,
+        sortOrder: 2,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      // MIXED content lessons
+      {
+        title: 'راهنمای کامل پرداخت چوب (ویدیو + متن)',
+        slug: 'complete-wood-finishing-guide',
+        excerpt: 'آموزش جامع پرداخت و رنگ‌آمیزی چوب با محتوای متنی و ویدیویی',
+        content: `
+          <h2>مقدمه</h2>
+          <p>پرداخت چوب آخرین مرحله در ساخت یک پروژه نجاری است. این مرحله می‌تواند کیفیت نهایی کار را به شدت تحت تأثیر قرار دهد.</p>
+          
+          <h2>مراحل آماده‌سازی</h2>
+          <ol>
+            <li>سطح چوب را با کاغذ سنباده صاف کنید</li>
+            <li>گرد و غبار را کاملاً پاک کنید</li>
+            <li>اگر نیاز به پر کردن ترک‌ها دارید، این کار را انجام دهید</li>
+            <li>سطح را با پارچه مرطوب تمیز کنید</li>
+          </ol>
+          
+          <h2>انواع پرداخت</h2>
+          <h3>روغن طبیعی</h3>
+          <p>روغن طبیعی برای چوب‌های با بافت زیبا مناسب است. این روش بافت طبیعی چوب را حفظ می‌کند.</p>
+          
+          <h3>ورنی</h3>
+          <p>ورنی محافظت بیشتری ایجاد می‌کند و برای سطوحی که استفاده زیادی دارند مناسب است.</p>
+          
+          <h3>رنگ</h3>
+          <p>رنگ علاوه بر محافظت، ظاهر چوب را نیز تغییر می‌دهد.</p>
+          
+          <h2>نکات مهم</h2>
+          <ul>
+            <li>همیشه در محیط با تهویه مناسب کار کنید</li>
+            <li>از برس‌های با کیفیت استفاده کنید</li>
+            <li>لایه‌ها را نازک بزنید</li>
+            <li>بین لایه‌ها زمان کافی برای خشک شدن بدهید</li>
+          </ul>
+        `,
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        videoDuration: 600, // 10 minutes
+        contentType: 'MIXED' as const,
+        categorySlug: 'finishing-techniques',
+        difficulty: 'INTERMEDIATE' as const,
+        estimatedTime: 25,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: true,
+        sortOrder: 1,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      {
+        title: 'ایمنی در کارگاه نجاری',
+        slug: 'workshop-safety-guide',
+        excerpt: 'راهنمای کامل ایمنی در کارگاه نجاری و استفاده از ابزارها',
+        content: `
+          <h2>مقدمه</h2>
+          <p>ایمنی در کارگاه نجاری از اهمیت بالایی برخوردار است. رعایت نکات ایمنی می‌تواند از حوادث جدی جلوگیری کند.</p>
+          
+          <h2>تجهیزات حفاظت فردی</h2>
+          <ul>
+            <li><strong>عینک محافظ:</strong> همیشه هنگام کار با ابزارهای برش استفاده کنید</li>
+            <li><strong>دستکش:</strong> برای محافظت از دست‌ها در برابر بریدگی</li>
+            <li><strong>ماسک:</strong> برای جلوگیری از استنشاق گرد و غبار</li>
+            <li><strong>گوشی محافظ:</strong> هنگام استفاده از ابزارهای پر سر و صدا</li>
+            <li><strong>کفش ایمنی:</strong> برای محافظت از پاها</li>
+          </ul>
+          
+          <h2>ایمنی ابزارها</h2>
+          <ul>
+            <li>همیشه قبل از استفاده از سلامت ابزار اطمینان حاصل کنید</li>
+            <li>از ابزارهای تیز و تمیز استفاده کنید</li>
+            <li>ابزارها را بعد از استفاده تمیز و در جای مناسب نگهداری کنید</li>
+            <li>از استفاده از ابزارهای معیوب خودداری کنید</li>
+          </ul>
+          
+          <h2>ایمنی محیط کار</h2>
+          <ul>
+            <li>کارگاه را تمیز و مرتب نگه دارید</li>
+            <li>از روشنایی کافی اطمینان حاصل کنید</li>
+            <li>کابل‌های برق را از مسیر عبور و مرور دور نگه دارید</li>
+            <li>مواد قابل اشتعال را در جای مناسب نگهداری کنید</li>
+          </ul>
+          
+          <h2>در صورت بروز حادثه</h2>
+          <ol>
+            <li>آرامش خود را حفظ کنید</li>
+            <li>در صورت نیاز کمک بخواهید</li>
+            <li>کیت کمک‌های اولیه را در دسترس داشته باشید</li>
+            <li>شماره‌های اضطراری را بدانید</li>
+          </ol>
+        `,
+        contentType: 'TEXT' as const,
+        categorySlug: 'safety-maintenance',
+        difficulty: 'BEGINNER' as const,
+        estimatedTime: 20,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: false,
+        sortOrder: 1,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      {
+        title: 'نگهداری و تعمیر ابزارهای برش',
+        slug: 'cutting-tools-maintenance',
+        excerpt: 'آموزش نگهداری صحیح ابزارهای برش برای افزایش عمر مفید آنها',
+        content: `
+          <h2>مقدمه</h2>
+          <p>نگهداری صحیح ابزارهای برش می‌تواند عمر مفید آنها را به شدت افزایش دهد و کیفیت کار را بهبود بخشد.</p>
+          
+          <h2>تمیز کردن</h2>
+          <p>بعد از هر استفاده:</p>
+          <ol>
+            <li>گرد و غبار و باقیمانده مواد را پاک کنید</li>
+            <li>با پارچه مرطوب سطح را تمیز کنید</li>
+            <li>برای جلوگیری از زنگ زدگی، سطح را خشک کنید</li>
+            <li>در صورت نیاز از روغن محافظ استفاده کنید</li>
+          </ol>
+          
+          <h2>تیز کردن</h2>
+          <p>ابزارهای برش باید همیشه تیز باشند:</p>
+          <ul>
+            <li>از سنگ تیزکنی مناسب استفاده کنید</li>
+            <li>زاویه تیزی را حفظ کنید</li>
+            <li>به صورت منظم تیز کنید</li>
+          </ul>
+          
+          <h2>نگهداری</h2>
+          <ul>
+            <li>در جای خشک و خنک نگهداری کنید</li>
+            <li>از ضربه زدن خودداری کنید</li>
+            <li>از تماس با مواد خورنده جلوگیری کنید</li>
+            <li>به صورت دوره‌ای بازرسی کنید</li>
+          </ul>
+        `,
+        contentType: 'TEXT' as const,
+        categorySlug: 'safety-maintenance',
+        difficulty: 'INTERMEDIATE' as const,
+        estimatedTime: 18,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: false,
+        sortOrder: 2,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      {
+        title: 'ویدیو: تکنیک‌های پیشرفته برش زاویه‌دار',
+        slug: 'video-advanced-angle-cutting',
+        excerpt: 'ویدیو آموزشی تکنیک‌های پیشرفته برش زاویه‌دار در نجاری',
+        content: null,
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        videoDuration: 1080, // 18 minutes
+        contentType: 'VIDEO' as const,
+        categorySlug: 'woodworking-education',
+        difficulty: 'ADVANCED' as const,
+        estimatedTime: 18,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: false,
+        sortOrder: 2,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      {
+        title: 'راهنمای انتخاب تیغه اره مناسب',
+        slug: 'saw-blade-selection-guide',
+        excerpt: 'آموزش انتخاب تیغه اره مناسب برای انواع کارهای برش',
+        content: `
+          <h2>مقدمه</h2>
+          <p>انتخاب تیغه اره مناسب می‌تواند تفاوت زیادی در کیفیت و سرعت کار ایجاد کند.</p>
+          
+          <h2>انواع تیغه اره</h2>
+          <h3>تیغه اره چوب</h3>
+          <p>برای برش چوب و مواد چوبی طراحی شده است. دارای دندانه‌های بزرگ و فاصله‌دار است.</p>
+          
+          <h3>تیغه اره فلز</h3>
+          <p>برای برش فلزات استفاده می‌شود. دندانه‌های ریز و محکم دارد.</p>
+          
+          <h3>تیغه اره الماسه</h3>
+          <p>برای برش مواد سخت مانند بتن و سنگ مناسب است.</p>
+          
+          <h2>عوامل انتخاب</h2>
+          <ul>
+            <li>نوع ماده مورد برش</li>
+            <li>ضخامت ماده</li>
+            <li>کیفیت برش مورد نیاز</li>
+            <li>سرعت کار</li>
+          </ul>
+          
+          <h2>نکات مهم</h2>
+          <ul>
+            <li>همیشه از تیغه مناسب برای ماده استفاده کنید</li>
+            <li>تیغه را به درستی نصب کنید</li>
+            <li>از تیغه‌های تیز استفاده کنید</li>
+            <li>تیغه را به صورت منظم تمیز کنید</li>
+          </ul>
+        `,
+        contentType: 'TEXT' as const,
+        categorySlug: 'saw-blades-education',
+        difficulty: 'BEGINNER' as const,
+        estimatedTime: 12,
+        status: 'PUBLISHED' as const,
+        publishedAt: new Date(),
+        isFeatured: false,
+        sortOrder: 1,
+        authorId: adminUser.id,
+        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+      },
+      // Draft lesson (not published)
+      {
+        title: 'تکنیک‌های حرفه‌ای ساخت مبلمان (در حال تکمیل)',
+        slug: 'professional-furniture-making',
+        excerpt: 'این درس در حال تکمیل است و به زودی منتشر خواهد شد',
+        content: `
+          <h2>این درس در حال تکمیل است</h2>
+          <p>محتوای کامل به زودی اضافه خواهد شد.</p>
+        `,
+        contentType: 'TEXT' as const,
+        categorySlug: 'woodworking-education',
+        difficulty: 'EXPERT' as const,
+        estimatedTime: 60,
+        status: 'DRAFT' as const,
+        publishedAt: null,
+        isFeatured: false,
+        sortOrder: 3,
+        authorId: adminUser.id,
+        thumbnail: null,
+      }
+    ];
+
+    for (const lessonData of educationLessons) {
+      const { categorySlug, ...lessonFields } = lessonData;
+      
+      // Find education category by slug
+      const educationCategory = createdEducationCategories.find(cat => cat.slug === categorySlug);
+      
+      await prisma.educationLesson.create({
+        data: {
+          ...lessonFields,
+          categoryId: educationCategory?.id || null,
+        },
+      });
+    }
+
+    console.log('✅ Education lessons created:', educationLessons.length);
+
     console.log('🎉 Database seeding completed successfully!');
     console.log('\n📋 Summary:');
     console.log(`- Users: 2 (Admin + Test User)`);
     console.log(`- Product Categories: ${createdCategories.length}`);
     console.log(`- Content Categories: ${createdContentCategories.length}`);
+    console.log(`- Education Categories: ${createdEducationCategories.length}`);
     console.log(`- Products: ${products.length}`);
     console.log(`- Articles: ${articles.length}`);
+    console.log(`- Education Lessons: ${educationLessons.length}`);
     
     console.log('\n🔑 Admin Account Credentials:');
     console.log('Email: admin@hs6tools.com');

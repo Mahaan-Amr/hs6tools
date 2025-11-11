@@ -62,8 +62,12 @@ export class FileStorage {
     // Generate public URL
     const publicUrl = `${this.baseUrl}/${category}/${fileName}`;
 
+    // Determine file type prefix for ID
+    const isVideo = file.type.startsWith('video/');
+    const idPrefix = isVideo ? 'vid' : 'img';
+
     return {
-      id: `img_${timestamp}_${randomSuffix}`,
+      id: `${idPrefix}_${timestamp}_${randomSuffix}`,
       name: fileName,
       originalName: file.name,
       url: publicUrl,

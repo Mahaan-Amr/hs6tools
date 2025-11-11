@@ -352,10 +352,10 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                     <select
                       value={customer.lifecycleStage || "CUSTOMER"}
                       onChange={(e) => updateCustomerStage(customer.id, e.target.value)}
-                      className="px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-primary-orange"
+                      className="px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
                     >
                       {lifecycleStages.map((stage) => (
-                        <option key={stage.value} value={stage.value}>
+                        <option key={stage.value} value={stage.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                           {stage.label}
                         </option>
                       ))}
@@ -366,10 +366,10 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                     <select
                       value={customer.customerTier || "BRONZE"}
                       onChange={(e) => updateCustomerTier(customer.id, e.target.value)}
-                      className="px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-primary-orange"
+                      className="px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
                     >
                       {customerTiers.map((tier) => (
-                        <option key={tier.value} value={tier.value}>
+                        <option key={tier.value} value={tier.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                           {tier.label}
                         </option>
                       ))}

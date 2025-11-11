@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ArticleStatus } from "@prisma/client";
 import ImageUpload from "@/components/admin/common/ImageUpload";
 
@@ -75,6 +76,25 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
       }
     }
   }, [article]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const fetchCategories = async () => {
     try {
@@ -183,17 +203,34 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  const modalContent = (
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      onClick={handleBackdropClick}
+    >
+      <div 
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+        style={{ 
+          maxHeight: '90vh',
+          margin: 'auto'
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
+        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             {isEditing ? "ویرایش مقاله" : "مقاله جدید"}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-white/60 hover:text-white transition-colors duration-200"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -204,186 +241,207 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-white font-medium mb-2">عنوان مقاله *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent ${
-                  errors.title ? "border-red-500" : "border-white/10"
-                }`}
-                placeholder="عنوان مقاله را وارد کنید"
-              />
-              {errors.title && (
-                <p className="text-red-400 text-sm mt-1">{errors.title}</p>
-              )}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات پایه</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">عنوان مقاله *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.title ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  placeholder="عنوان مقاله را وارد کنید"
+                />
+                {errors.title && (
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.title}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">Slug *</label>
+                <input
+                  type="text"
+                  value={formData.slug}
+                  onChange={(e) => handleInputChange("slug", e.target.value)}
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.slug ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  placeholder="slug-article"
+                />
+                {errors.slug && (
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.slug}</p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-white font-medium mb-2">Slug *</label>
-              <input
-                type="text"
-                value={formData.slug}
-                onChange={(e) => handleInputChange("slug", e.target.value)}
-                className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent ${
-                  errors.slug ? "border-red-500" : "border-white/10"
-                }`}
-                placeholder="slug-article"
+            <div className="mt-6">
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">خلاصه مقاله</label>
+              <textarea
+                value={formData.excerpt}
+                onChange={(e) => handleInputChange("excerpt", e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
+                placeholder="خلاصه کوتاهی از مقاله"
               />
-              {errors.slug && (
-                <p className="text-red-400 text-sm mt-1">{errors.slug}</p>
-              )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-white font-medium mb-2">خلاصه مقاله</label>
-            <textarea
-              value={formData.excerpt}
-              onChange={(e) => handleInputChange("excerpt", e.target.value)}
-              rows={3}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="خلاصه کوتاهی از مقاله"
-            />
-          </div>
-
-          <div>
-            <label className="block text-white font-medium mb-2">محتوای مقاله *</label>
-            <textarea
-              value={formData.content}
-              onChange={(e) => handleInputChange("content", e.target.value)}
-              rows={8}
-              className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent ${
-                errors.content ? "border-red-500" : "border-white/10"
-              }`}
-              placeholder="محتوای کامل مقاله را وارد کنید"
-            />
-            {errors.content && (
-              <p className="text-red-400 text-sm mt-1">{errors.content}</p>
-            )}
+          {/* Article Content */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">محتوای مقاله</h3>
+            <div>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">محتوای مقاله *</label>
+              <textarea
+                value={formData.content}
+                onChange={(e) => handleInputChange("content", e.target.value)}
+                rows={12}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none font-mono text-sm ${
+                  errors.content ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
+                }`}
+                placeholder="محتوای کامل مقاله را وارد کنید..."
+              />
+              {errors.content && (
+                <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.content}</p>
+              )}
+            </div>
           </div>
 
           {/* Featured Image */}
-          <div>
-            <label className="block text-white font-medium mb-2">تصویر شاخص</label>
-            <ImageUpload
-              images={images}
-              onImagesChange={setImages}
-              multiple={false}
-              maxImages={1}
-              label="تصویر شاخص مقاله"
-              required={false}
-              category="articles"
-            />
-            <p className="text-sm text-gray-400 mt-2">
-              تصویر شاخص برای نمایش در لیست مقالات و صفحات اصلی استفاده می‌شود.
-            </p>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تصویر شاخص</h3>
+            <div>
+              <ImageUpload
+                images={images}
+                onImagesChange={setImages}
+                multiple={false}
+                maxImages={1}
+                label="تصویر شاخص مقاله"
+                required={false}
+                category="articles"
+              />
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-3">
+                تصویر شاخص برای نمایش در لیست مقالات و صفحات اصلی استفاده می‌شود.
+              </p>
+            </div>
           </div>
 
-          {/* Settings */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-white font-medium mb-2">دسته‌بندی</label>
-              <select
-                value={formData.categoryId}
-                onChange={(e) => handleInputChange("categoryId", e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              >
-                <option value="">بدون دسته‌بندی</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+          {/* Additional Settings */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تنظیمات اضافی</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">دسته‌بندی</label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => handleInputChange("categoryId", e.target.value)}
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                >
+                  <option value="">بدون دسته‌بندی</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-white font-medium mb-2">وضعیت</label>
-              <select
-                value={formData.status}
-                onChange={(e) => handleInputChange("status", e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              >
-                <option value="DRAFT">پیش‌نویس</option>
-                <option value="PUBLISHED">منتشر شده</option>
-                <option value="ARCHIVED">آرشیو شده</option>
-              </select>
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">وضعیت</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleInputChange("status", e.target.value)}
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                >
+                  <option value="DRAFT">پیش‌نویس</option>
+                  <option value="PUBLISHED">منتشر شده</option>
+                  <option value="ARCHIVED">آرشیو شده</option>
+                </select>
+              </div>
 
-            <div className="flex items-center space-x-3">
-              <label className="flex items-center space-x-2 text-white">
+              <div className="flex items-center pt-8">
                 <input
                   type="checkbox"
+                  id="isFeatured"
                   checked={formData.isFeatured}
                   onChange={(e) => handleInputChange("isFeatured", e.target.checked)}
-                  className="w-4 h-4 text-primary-orange bg-white/5 border-white/10 rounded focus:ring-primary-orange focus:ring-2"
+                  className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
                 />
-                <span className="text-sm">مقاله ویژه</span>
-              </label>
+                <label htmlFor="isFeatured" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
+                  مقاله ویژه
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* SEO Fields */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-white font-medium mb-2">عنوان SEO</label>
-              <input
-                type="text"
-                value={formData.metaTitle}
-                onChange={(e) => handleInputChange("metaTitle", e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                placeholder="عنوان برای موتورهای جستجو"
-              />
-            </div>
+          {/* SEO Settings */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تنظیمات SEO</h3>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">Meta Title</label>
+                <input
+                  type="text"
+                  value={formData.metaTitle}
+                  onChange={(e) => handleInputChange("metaTitle", e.target.value)}
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                  placeholder="عنوان SEO"
+                />
+              </div>
 
-            <div>
-              <label className="block text-white font-medium mb-2">توضیحات SEO</label>
-              <textarea
-                value={formData.metaDescription}
-                onChange={(e) => handleInputChange("metaDescription", e.target.value)}
-                rows={2}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                placeholder="توضیحات برای موتورهای جستجو"
-              />
-            </div>
-          </div>
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">Meta Description</label>
+                <textarea
+                  value={formData.metaDescription}
+                  onChange={(e) => handleInputChange("metaDescription", e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
+                  placeholder="توضیحات SEO"
+                />
+              </div>
 
-          <div>
-            <label className="block text-white font-medium mb-2">کلمات کلیدی SEO</label>
-            <input
-              type="text"
-              value={formData.metaKeywords}
-              onChange={(e) => handleInputChange("metaKeywords", e.target.value)}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-              placeholder="کلمات کلیدی با کاما جدا کنید"
-            />
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">Meta Keywords</label>
+                <input
+                  type="text"
+                  value={formData.metaKeywords}
+                  onChange={(e) => handleInputChange("metaKeywords", e.target.value)}
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                  placeholder="کلمات کلیدی (با کاما جدا کنید)"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-white/10">
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 text-white/80 hover:text-white transition-colors duration-200"
+              className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
             >
               انصراف
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-3 bg-primary-orange text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
             >
-              {loading && (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              )}
-              <span>{isEditing ? "بروزرسانی" : "ایجاد"}</span>
+              {loading ? "در حال ذخیره..." : isEditing ? "به‌روزرسانی" : "ایجاد"}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
+
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return createPortal(modalContent, document.body);
 }

@@ -397,7 +397,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                       {messages?.customer?.orders?.viewDetails || 'مشاهده جزئیات'}
                     </button>
                     {order.status === 'DELIVERED' && (
-                      <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                      <button className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition-colors">
                         {messages?.customer?.orders?.reorder || 'سفارش مجدد'}
                       </button>
                     )}
