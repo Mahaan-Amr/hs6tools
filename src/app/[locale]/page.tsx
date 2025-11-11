@@ -20,8 +20,8 @@ export default async function HomePage({ params }: HomePageProps) {
           <div className="pointer-events-none absolute bottom-0 inset-x-0 h-40 bg-gradient-to-b from-transparent to-gray-50/70 dark:to-black/70" />
 
           {/* Floating Elements */}
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-orange/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary-orange/10 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-orange/20 rounded-full blur-3xl animate-pulse animate-float-soft" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary-orange/10 rounded-full blur-3xl animate-pulse delay-1000 animate-float-soft-delayed" />
           
           {/* Hero Content */}
           <div className="relative z-10 text-center px-4 max-w-6xl mx-auto">
@@ -34,15 +34,15 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
             
             {/* Main Tagline */}
-            <h2 className="text-2xl md:text-4xl font-semibold text-gray-900 dark:text-white mb-6 animate-slide-up">
+            <h2 className="text-2xl md:text-4xl font-semibold text-gray-900 dark:text-white mb-6 animate-slide-up" data-scroll-reveal>
               {t.homepage.hero.tagline}
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-slide-up delay-200">
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto text-justify leading-relaxed animate-slide-up delay-200" data-scroll-reveal style={{ transitionDelay: "0.1s" }}>
               {t.homepage.hero.description}
             </p>
             
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up delay-300">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up delay-300" data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
               <Link 
                 href={`/${locale}/shop`}
                 className="px-8 py-4 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-2xl shadow-glass-orange hover:shadow-2xl transition-all duration-300 hover:scale-105 transform"
@@ -69,18 +69,18 @@ export default async function HomePage({ params }: HomePageProps) {
         {/* Features Section */}
         <section className="relative z-10 -mt-12 rounded-t-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-t border-gray-200 dark:border-white/10 py-24 px-4 shadow-2xl shadow-gray-200/50 dark:shadow-black/30">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
+            <div className="text-center mb-16" data-scroll-reveal>
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 {t.homepage.features.title}
               </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
                 {t.homepage.features.subtitle}
               </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Feature 1 */}
-              <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300">
+              <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300" data-scroll-reveal style={{ transitionDelay: "0.05s" }}>
                 <div className="w-16 h-16 bg-gradient-to-r from-primary-orange to-orange-500 rounded-2xl mx-auto mb-6 flex items-center justify-center">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -91,7 +91,7 @@ export default async function HomePage({ params }: HomePageProps) {
               </div>
               
               {/* Feature 2 */}
-              <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300">
+              <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300" data-scroll-reveal style={{ transitionDelay: "0.15s" }}>
                 <div className="w-16 h-16 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-6 flex items-center justify-center">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -102,7 +102,7 @@ export default async function HomePage({ params }: HomePageProps) {
               </div>
               
               {/* Feature 3 */}
-              <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300">
+              <div className="glass rounded-3xl p-8 text-center hover:scale-105 transition-transform duration-300" data-scroll-reveal style={{ transitionDelay: "0.25s" }}>
                 <div className="w-16 h-16 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-6 flex items-center justify-center">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
@@ -118,18 +118,18 @@ export default async function HomePage({ params }: HomePageProps) {
         {/* Product Categories Preview */}
         <section className="py-24 px-4 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
+            <div className="text-center mb-16" data-scroll-reveal>
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 {t.homepage.categories.title}
               </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
                 {t.homepage.categories.subtitle}
               </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Category 1 */}
-              <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300">
+              <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300" data-scroll-reveal style={{ transitionDelay: "0.05s" }}>
                 <div className="aspect-square bg-gradient-to-br from-primary-orange/15 to-primary-orange/25 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center ring-2 ring-gray-300 dark:ring-white/30 shadow-glass-orange group-hover:scale-110 transition-transform duration-300">
@@ -144,7 +144,7 @@ export default async function HomePage({ params }: HomePageProps) {
               </div>
               
               {/* Category 2 */}
-              <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300">
+              <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300" data-scroll-reveal style={{ transitionDelay: "0.15s" }}>
                 <div className="aspect-square bg-gradient-to-br from-primary-orange/15 to-primary-orange/25 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -159,7 +159,7 @@ export default async function HomePage({ params }: HomePageProps) {
               </div>
               
               {/* Category 3 */}
-              <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300">
+              <div className="group relative overflow-hidden rounded-3xl glass hover:scale-105 transition-all duration-300" data-scroll-reveal style={{ transitionDelay: "0.25s" }}>
                 <div className="aspect-square bg-gradient-to-br from-primary-orange/15 to-primary-orange/25 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -174,7 +174,7 @@ export default async function HomePage({ params }: HomePageProps) {
               </div>
             </div>
             
-            <div className="text-center mt-12">
+            <div className="text-center mt-12" data-scroll-reveal style={{ transitionDelay: "0.35s" }}>
               <Link 
                 href={`/${locale}/shop`}
                 className="inline-flex items-center px-8 py-4 glass text-gray-900 dark:text-white font-semibold rounded-2xl border border-gray-300 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-300 group"

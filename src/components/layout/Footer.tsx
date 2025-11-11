@@ -22,7 +22,7 @@ export default function Footer({ locale, messages }: FooterProps) {
               </div>
               <span className="text-gray-900 dark:text-white font-bold text-2xl">HS6Tools</span>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md">
+            <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md text-justify leading-relaxed">
               تولید کننده تخصصی ابزارهای صنعتی و نجاری با کیفیت برتر. 
               ما متعهد به ارائه بهترین محصولات و خدمات به مشتریان خود هستیم.
             </p>
@@ -78,23 +78,8 @@ export default function Footer({ locale, messages }: FooterProps) {
             <h3 className="text-gray-900 dark:text-white font-semibold text-lg mb-6">{messages.footer.support}</h3>
             <ul className="space-y-3">
               <li>
-                <Link href={`/${locale}/help`} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-                  راهنمای استفاده
-                </Link>
-              </li>
-              <li>
                 <Link href={`/${locale}/faq`} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
                   سوالات متداول
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${locale}/shipping`} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-                  اطلاعات ارسال
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${locale}/returns`} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-                  بازگشت کالا
                 </Link>
               </li>
             </ul>

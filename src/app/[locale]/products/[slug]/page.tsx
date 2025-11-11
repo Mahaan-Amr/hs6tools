@@ -267,7 +267,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Short Description */}
             {product.shortDescription && (
-              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed text-justify">
                 {product.shortDescription}
               </p>
             )}

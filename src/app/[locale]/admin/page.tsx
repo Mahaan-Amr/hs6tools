@@ -18,7 +18,7 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-4">
             پنل مدیریت
           </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-300 max-w-2xl mx-auto px-4">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-300 max-w-2xl mx-auto px-4 text-justify leading-relaxed">
             مدیریت کامل سیستم و محصولات
           </p>
         </div>

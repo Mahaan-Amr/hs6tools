@@ -60,7 +60,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
             </div>
             
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">سبد خرید خالی است</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg mb-8">
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-8 text-justify leading-relaxed">
               محصولی به سبد خرید اضافه نکرده‌اید. برای شروع خرید، محصولات ما را مشاهده کنید.
             </p>
             
@@ -91,7 +91,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">سبد خرید</h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-lg text-justify leading-relaxed">
             {totalItems} آیتم در سبد خرید شما
           </p>
         </div>

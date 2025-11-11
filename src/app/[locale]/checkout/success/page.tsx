@@ -25,7 +25,7 @@ export default async function CheckoutSuccessPage({ params, searchParams }: Chec
             سفارش شما با موفقیت ثبت شد!
           </h1>
           
-          <p className="text-gray-600 dark:text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
+          <p className="text-gray-600 dark:text-gray-300 text-lg mb-8 max-w-2xl mx-auto text-justify leading-relaxed">
             از خرید شما متشکریم. سفارش شما در حال پردازش است و به زودی از طریق ایمیل یا پیامک، 
             اطلاعات تکمیلی ارسال خواهد شد.
           </p>

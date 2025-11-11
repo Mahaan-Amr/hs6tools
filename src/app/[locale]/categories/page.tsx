@@ -48,11 +48,11 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12" data-scroll-reveal>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             دسته‌بندی محصولات
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
             دسته‌بندی کامل ابزارهای صنعتی و نجاری برای انتخاب آسان
           </p>
         </div>
@@ -64,20 +64,21 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
               دسته‌های اصلی
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {parentCategories.map((category: Category) => (
-                <CategoryCard
-                  key={category.id}
-                  id={category.id}
-                  slug={category.slug}
-                  name={category.name}
-                  description={category.description}
-                  image={category.image}
-                  icon={category.icon}
-                  productCount={category._count.products}
-                  subcategoryCount={category._count.children}
-                  locale={locale}
-                  isParent={true}
-                />
+              {parentCategories.map((category: Category, index: number) => (
+                <div key={category.id} data-scroll-reveal style={{ transitionDelay: `${index * 0.07}s` }}>
+                  <CategoryCard
+                    id={category.id}
+                    slug={category.slug}
+                    name={category.name}
+                    description={category.description}
+                    image={category.image}
+                    icon={category.icon}
+                    productCount={category._count.products}
+                    subcategoryCount={category._count.children}
+                    locale={locale}
+                    isParent={true}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -90,20 +91,21 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
               زیردسته‌ها
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {childCategories.map((category: Category) => (
-                <CategoryCard
-                  key={category.id}
-                  id={category.id}
-                  slug={category.slug}
-                  name={category.name}
-                  description={category.description}
-                  image={category.image}
-                  icon={category.icon}
-                  productCount={category._count.products}
-                  subcategoryCount={0}
-                  locale={locale}
-                  isParent={false}
-                />
+              {childCategories.map((category: Category, index: number) => (
+                <div key={category.id} data-scroll-reveal style={{ transitionDelay: `${index * 0.05}s` }}>
+                  <CategoryCard
+                    id={category.id}
+                    slug={category.slug}
+                    name={category.name}
+                    description={category.description}
+                    image={category.image}
+                    icon={category.icon}
+                    productCount={category._count.products}
+                    subcategoryCount={0}
+                    locale={locale}
+                    isParent={false}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -111,7 +113,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
 
         {/* Empty State */}
         {categories.length === 0 && (
-          <div className="text-center py-12">
+          <div className="text-center py-12" data-scroll-reveal>
             <div className="glass rounded-3xl p-8 max-w-md mx-auto">
               <div className="w-16 h-16 bg-gray-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

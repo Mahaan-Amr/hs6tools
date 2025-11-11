@@ -150,16 +150,16 @@ function AccountPageContent({ params }: AccountPageProps) {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12" data-scroll-reveal>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             {messages?.customer?.account?.title || 'حساب کاربری'}
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6 text-justify leading-relaxed">
             {messages?.customer?.account?.subtitle || 'مدیریت اطلاعات شخصی و سفارشات شما'}
           </p>
           
           {/* Logout Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center" data-scroll-reveal style={{ transitionDelay: "0.15s" }}>
             <button
               onClick={() => signOut({ callbackUrl: `/${locale}/auth/login` })}
               className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-gray-900 dark:text-white font-medium rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl"
@@ -175,7 +175,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1" data-scroll-reveal style={{ transitionDelay: "0.1s" }}>
             <div className="glass rounded-3xl p-6">
               <nav className="space-y-2">
                 <button
@@ -259,7 +259,7 @@ function AccountPageContent({ params }: AccountPageProps) {
           </div>
 
           {/* Tab Content */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2" data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
             {renderTabContent()}
           </div>
         </div>

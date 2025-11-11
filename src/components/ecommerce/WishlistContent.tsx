@@ -112,7 +112,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
 
   if (!session?.user) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12" data-scroll-reveal>
         <div className="text-gray-600 dark:text-gray-400 mb-4">
           <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -136,7 +136,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-scroll-reveal>
         {[...Array(6)].map((_, index) => (
           <div key={index} className="glass rounded-3xl p-6 animate-pulse">
             <div className="aspect-square bg-gray-700 rounded-2xl mb-4"></div>
@@ -153,7 +153,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
 
   if (wishlistItems.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12" data-scroll-reveal>
         <div className="text-gray-600 dark:text-gray-400 mb-4">
           <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -177,8 +177,13 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {wishlistItems.map((item) => (
-        <div key={item.id} className="glass rounded-3xl overflow-hidden hover:scale-105 transition-all duration-300">
+      {wishlistItems.map((item, index) => (
+        <div
+          key={item.id}
+          className="glass rounded-3xl overflow-hidden hover:scale-105 transition-all duration-300"
+          data-scroll-reveal
+          style={{ transitionDelay: `${index * 0.05}s` }}
+        >
           {/* Product Image */}
           <div className="relative aspect-square overflow-hidden">
             {item.product.images[0] ? (

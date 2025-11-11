@@ -112,7 +112,7 @@ export default function EducationList({ lessons, onEdit, onDelete }: EducationLi
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as ArticleStatus | "ALL")}
-            className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
+            className="w-full pl-4 pr-12 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
           >
             <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">همه وضعیت‌ها</option>
             <option value="DRAFT" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">پیش‌نویس</option>
@@ -124,7 +124,7 @@ export default function EducationList({ lessons, onEdit, onDelete }: EducationLi
           <select
             value={contentTypeFilter}
             onChange={(e) => setContentTypeFilter(e.target.value as LessonContentType | "ALL")}
-            className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
+            className="w-full pl-4 pr-12 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
           >
             <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">همه انواع</option>
             <option value="TEXT" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">متنی</option>

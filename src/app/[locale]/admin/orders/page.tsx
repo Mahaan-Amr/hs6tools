@@ -16,7 +16,7 @@ export default async function AdminOrdersPage({ params }: AdminOrdersPageProps) 
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             مدیریت سفارشات
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
             مدیریت سفارشات، پرداخت‌ها و تحویل
           </p>
         </div>

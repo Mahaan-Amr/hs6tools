@@ -16,7 +16,7 @@ export default async function AdminUsersPage({ params }: AdminUsersPageProps) {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             مدیریت کاربران
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
             مدیریت کاربران، نقش‌ها و دسترسی‌ها
           </p>
         </div>

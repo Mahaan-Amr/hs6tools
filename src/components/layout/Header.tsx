@@ -186,20 +186,20 @@ export default function Header({ locale, messages }: HeaderProps) {
                   {/* Dropdown Menu */}
                   {isUserMenuOpen && (
                     <div 
-                      className="fixed top-16 right-4 w-48 glass rounded-xl shadow-xl border border-gray-200 dark:border-white/10 backdrop-blur-xl bg-white/90 dark:bg-gray-900/90" 
-                      style={{ zIndex: 60 }}
+                      className="fixed top-16 right-4 w-48 rounded-xl shadow-2xl border-2 border-gray-300 dark:border-white/20 backdrop-blur-xl bg-white dark:bg-gray-900" 
+                      style={{ zIndex: 9998 }}
                     >
                       <div className="py-2">
-                        <div className="px-4 py-3 border-b border-gray-200 dark:border-white/10">
-                          <p className="text-sm text-gray-700 dark:text-white/60">
+                        <div className="px-4 py-3 border-b border-gray-300 dark:border-white/20">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
                             {session?.user?.firstName} {session?.user?.lastName}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-white/40">{session?.user?.email}</p>
+                          <p className="text-xs text-gray-600 dark:text-white/60 mt-0.5">{session?.user?.email}</p>
                         </div>
                         
                         <Link 
                           href={`/${locale}/account`}
-                          className="block px-4 py-2 text-sm text-gray-700 dark:text-white/80 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-200"
+                          className="block px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white hover:text-primary-orange dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors duration-200"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
                           {messages?.customer?.account?.title || 'حساب کاربری'}
@@ -210,7 +210,7 @@ export default function Header({ locale, messages }: HeaderProps) {
                             signOut({ callbackUrl: `/${locale}/auth/login` });
                             setIsUserMenuOpen(false);
                           }}
-                          className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors duration-200"
+                          className="block w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors duration-200"
                         >
                           {messages?.common?.logout || 'خروج از حساب'}
                         </button>

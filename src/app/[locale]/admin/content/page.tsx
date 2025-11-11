@@ -16,7 +16,7 @@ export default async function AdminContentPage({ params }: AdminContentPageProps
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             مدیریت محتوا
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
             مدیریت مقالات، دسته‌بندی‌ها و محتوای آموزشی
           </p>
         </div>

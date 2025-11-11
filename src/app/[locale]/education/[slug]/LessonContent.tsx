@@ -114,7 +114,7 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
             </h1>
 
             {lesson.excerpt && (
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-6">
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-6 text-justify leading-relaxed">
                 {lesson.excerpt}
               </p>
             )}

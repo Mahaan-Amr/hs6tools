@@ -227,7 +227,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
             <select
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value)}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full pl-3 pr-10 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
               <option value="">All Stages</option>
               {lifecycleStages.map((stage) => (
@@ -245,7 +245,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
             <select
               value={selectedTier}
               onChange={(e) => setSelectedTier(e.target.value)}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full pl-3 pr-10 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
               <option value="">All Tiers</option>
               {customerTiers.map((tier) => (
@@ -335,15 +335,15 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
               {filteredCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-white/5">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl flex items-center justify-center text-white text-base font-bold shadow-lg shadow-primary-orange/20">
                         {customer.firstName.charAt(0)}{customer.lastName.charAt(0)}
                       </div>
-                      <div className="mr-4">
-                        <div className="text-sm font-medium text-white">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-white leading-tight">
                           {customer.firstName} {customer.lastName}
                         </div>
-                        <div className="text-sm text-gray-300">{customer.email}</div>
+                        <div className="text-xs text-gray-300">{customer.email}</div>
                       </div>
                     </div>
                   </td>
@@ -352,7 +352,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                     <select
                       value={customer.lifecycleStage || "CUSTOMER"}
                       onChange={(e) => updateCustomerStage(customer.id, e.target.value)}
-                      className="px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
+                      className="pl-3 pr-10 py-1.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
                     >
                       {lifecycleStages.map((stage) => (
                         <option key={stage.value} value={stage.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
@@ -366,7 +366,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                     <select
                       value={customer.customerTier || "BRONZE"}
                       onChange={(e) => updateCustomerTier(customer.id, e.target.value)}
-                      className="px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
+                      className="pl-3 pr-10 py-1.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
                     >
                       {customerTiers.map((tier) => (
                         <option key={tier.value} value={tier.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">

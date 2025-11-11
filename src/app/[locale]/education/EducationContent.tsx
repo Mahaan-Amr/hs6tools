@@ -115,7 +115,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
     <div className="space-y-8">
       {/* Categories Filter */}
       {categories.length > 0 && (
-        <div className="flex flex-wrap gap-3 mb-8">
+        <div className="flex flex-wrap gap-3 mb-8" data-scroll-reveal>
           <button
             onClick={() => setSelectedCategory(null)}
             className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
@@ -130,7 +130,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
                 selectedCategory === category.id
                   ? "bg-primary-orange text-white"
                   : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-white/20"
@@ -147,13 +147,13 @@ export default function EducationContent({ locale }: EducationContentProps) {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-8">
+      <div className="flex flex-wrap gap-4 mb-8" data-scroll-reveal style={{ transitionDelay: "0.05s" }}>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">نوع محتوا</label>
           <select
             value={contentTypeFilter}
             onChange={(e) => setContentTypeFilter(e.target.value as LessonContentType | "ALL")}
-            className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
+            className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer pr-12"
           >
             <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">همه انواع</option>
             <option value="TEXT" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">متنی</option>
@@ -167,7 +167,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value as LessonDifficulty | "ALL")}
-            className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
+            className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer pr-12"
           >
             <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">همه سطوح</option>
             <option value="BEGINNER" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">مبتدی</option>
@@ -180,7 +180,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="text-center py-12">
+        <div className="text-center py-12" data-scroll-reveal>
           <div className="w-12 h-12 border-4 border-primary-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-900 dark:text-white">در حال بارگذاری...</p>
         </div>
@@ -189,11 +189,13 @@ export default function EducationContent({ locale }: EducationContentProps) {
       {/* Lessons Grid */}
       {!isLoading && lessons.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lessons.map((lesson) => (
+          {lessons.map((lesson, index) => (
             <Link
               key={lesson.id}
               href={`/${locale}/education/${lesson.slug}`}
               className="group glass rounded-3xl overflow-hidden hover:scale-105 transition-all duration-300"
+              data-scroll-reveal
+              style={{ transitionDelay: `${index * 0.05}s` }}
             >
               {/* Thumbnail/Image */}
               <div className="relative aspect-video bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800">

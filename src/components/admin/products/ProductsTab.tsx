@@ -372,7 +372,7 @@ export default function ProductsTab() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full pl-4 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
               <option value="">همه دسته‌بندی‌ها</option>
               {categories.map((category) => (
@@ -389,7 +389,7 @@ export default function ProductsTab() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className="w-full pl-4 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
               <option value="all">همه</option>
               <option value="active">فعال</option>

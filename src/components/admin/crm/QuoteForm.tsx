@@ -296,7 +296,7 @@ export default function QuoteForm({
                 onChange={handleInputChange}
                 required
                 disabled={loadingCustomers}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">
                   {loadingCustomers ? "در حال بارگذاری..." : "انتخاب مشتری"}
@@ -319,7 +319,7 @@ export default function QuoteForm({
                 value={formData.opportunityId}
                 onChange={handleInputChange}
                 disabled={loadingOpportunities}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">
                   {loadingOpportunities ? "در حال بارگذاری..." : "انتخاب فرصت (اختیاری)"}
@@ -432,7 +432,7 @@ export default function QuoteForm({
                 value={formData.validUntil}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               />
             </div>
 
@@ -444,7 +444,7 @@ export default function QuoteForm({
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               >
                 {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
