@@ -84,10 +84,20 @@ export default function Footer({ locale, messages }: FooterProps) {
 
         {/* Bottom Section */}
         <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-500 dark:text-gray-400 text-sm mb-4 md:mb-0">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               © 2025 HS6Tools. تمامی حقوق محفوظ است.
             </div>
+            
+            {/* E-Namad Trust Seal - Exact code as provided by e-namad without modifications */}
+            {/* Note: e-namad logo may not load on localhost - it requires production domain */}
+            <div 
+              className="flex items-center justify-center min-h-[60px]"
+              dangerouslySetInnerHTML={{
+                __html: `<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf' alt='' style='cursor:pointer' code='uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf'></a>`
+              }}
+            />
+            
             <div className="flex space-x-6 text-sm">
               <Link href={`/${locale}/privacy`} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors duration-200">
                 {messages.footer.privacyPolicy}
