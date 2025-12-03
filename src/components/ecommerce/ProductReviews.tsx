@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface Review {
   id: string;
@@ -40,6 +41,15 @@ export default function ProductReviews({ productId, productName, locale }: Produ
     rating: 5
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -153,17 +163,17 @@ export default function ProductReviews({ productId, productName, locale }: Produ
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            نظرات کاربران
+            {messages?.reviews?.title || 'نظرات کاربران'}
           </h3>
           <div className="flex items-center space-x-4 space-x-reverse">
             <div className="flex items-center space-x-2 space-x-reverse">
               {renderStars(stats.averageRating)}
               <span className="text-gray-600 dark:text-gray-400 text-sm">
-                {stats.averageRating.toFixed(1)} از 5
+                {stats.averageRating.toFixed(1)} {messages?.reviews?.outOf || 'از'} 5
               </span>
             </div>
             <span className="text-gray-600 dark:text-gray-400 text-sm">
-              {stats.totalReviews} نظر
+              {stats.totalReviews} {messages?.reviews?.review || 'نظر'}
             </span>
           </div>
         </div>
@@ -173,7 +183,10 @@ export default function ProductReviews({ productId, productName, locale }: Produ
             onClick={() => setShowReviewForm(!showReviewForm)}
             className="px-4 py-2 bg-primary-orange text-white rounded-xl hover:bg-orange-600 transition-colors duration-200"
           >
-            {showReviewForm ? "انصراف" : "نظر دهید"}
+            {showReviewForm 
+              ? (messages?.reviews?.cancel || 'انصراف')
+              : (messages?.reviews?.writeReview || 'نظر دهید')
+            }
           </button>
         )}
       </div>
@@ -182,27 +195,27 @@ export default function ProductReviews({ productId, productName, locale }: Produ
       {showReviewForm && session?.user && (
         <div className="glass rounded-2xl p-6">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            نظر خود را درباره {productName} بنویسید
+            {(messages?.reviews?.writeReviewFor || 'نظر خود را درباره {productName} بنویسید').replace('{productName}', productName)}
           </h4>
           
           <form onSubmit={handleSubmitReview} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                عنوان نظر
+                {messages?.reviews?.reviewTitle || 'عنوان نظر'}
               </label>
               <input
                 type="text"
                 value={newReview.title}
                 onChange={(e) => setNewReview({ ...newReview, title: e.target.value })}
                 className="w-full px-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
-                placeholder="عنوان کوتاه برای نظر خود"
+                placeholder={messages?.reviews?.reviewTitlePlaceholder || 'عنوان کوتاه برای نظر خود'}
                 required
               />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                امتیاز
+                {messages?.reviews?.rating || 'امتیاز'}
               </label>
               {renderStars(newReview.rating, true, (rating) => 
                 setNewReview({ ...newReview, rating })
@@ -211,14 +224,14 @@ export default function ProductReviews({ productId, productName, locale }: Produ
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                متن نظر
+                {messages?.reviews?.reviewContent || 'متن نظر'}
               </label>
               <textarea
                 value={newReview.content}
                 onChange={(e) => setNewReview({ ...newReview, content: e.target.value })}
                 rows={4}
                 className="w-full px-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange resize-none"
-                placeholder="تجربه خود را از این محصول به اشتراک بگذارید..."
+                placeholder={messages?.reviews?.reviewContentPlaceholder || 'تجربه خود را از این محصول به اشتراک بگذارید...'}
                 required
                 minLength={10}
               />
@@ -230,14 +243,17 @@ export default function ProductReviews({ productId, productName, locale }: Produ
                 onClick={() => setShowReviewForm(false)}
                 className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
               >
-                انصراف
+                {messages?.reviews?.cancel || 'انصراف'}
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="px-6 py-2 bg-primary-orange text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50"
               >
-                {isSubmitting ? "در حال ارسال..." : "ارسال نظر"}
+                {isSubmitting 
+                  ? (messages?.reviews?.submitting || 'در حال ارسال...')
+                  : (messages?.reviews?.submitReview || 'ارسال نظر')
+                }
               </button>
             </div>
           </form>
@@ -289,14 +305,14 @@ export default function ProductReviews({ productId, productName, locale }: Produ
             </svg>
           </div>
           <p className="text-gray-700 dark:text-gray-400 mb-4">
-            هنوز نظری برای این محصول ثبت نشده است
+            {messages?.reviews?.noReviewsYet || 'هنوز نظری برای این محصول ثبت نشده است'}
           </p>
           {session?.user && (
             <button
               onClick={() => setShowReviewForm(true)}
               className="px-6 py-2 bg-primary-orange text-white rounded-xl hover:bg-orange-600 transition-colors duration-200"
             >
-              اولین نظر را شما بدهید
+              {messages?.reviews?.beFirstToReview || 'اولین نظر را شما بدهید'}
             </button>
           )}
         </div>

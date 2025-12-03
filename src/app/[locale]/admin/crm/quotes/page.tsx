@@ -1,10 +1,16 @@
 import { Metadata } from "next";
 import QuoteManagementClient from "@/app/[locale]/admin/crm/quotes/QuoteManagementClient";
+import { getMessages } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "مدیریت پیشنهادات | پنل مدیریت",
-  description: "مدیریت و پیگیری پیشنهادات فروش در سیستم CRM"
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const messages = await getMessages(locale);
+  
+  return {
+    title: `${String(messages.admin.crm?.quotes?.title || "Quotes Management")} | ${String(messages.admin.adminLayout?.title || "Admin Panel")}`,
+    description: String(messages.admin.crm?.quotesManagement || "Manage and track sales quotes in CRM system")
+  };
+}
 
 interface QuoteManagementPageProps {
   params: Promise<{ locale: string }>;

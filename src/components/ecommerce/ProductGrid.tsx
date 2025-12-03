@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 import ProductCard from "./ProductCard";
 
 interface Product {
@@ -60,6 +61,15 @@ interface ProductGridProps {
 
 export default function ProductGrid({ products, locale, loading = false, error }: ProductGridProps) {
   const [gridCols, setGridCols] = useState("grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4");
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   useEffect(() => {
     const updateGridCols = () => {
@@ -106,13 +116,15 @@ export default function ProductGrid({ products, locale, loading = false, error }
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">خطا در بارگذاری محصولات</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            {messages?.products?.errorLoading || 'خطا در بارگذاری محصولات'}
+          </h3>
           <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition-colors duration-200"
           >
-            تلاش مجدد
+            {messages?.products?.retry || messages?.common?.retry || 'تلاش مجدد'}
           </button>
         </div>
       </div>
@@ -128,9 +140,11 @@ export default function ProductGrid({ products, locale, loading = false, error }
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">محصولی یافت نشد</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            {messages?.products?.noProductsFound || 'محصولی یافت نشد'}
+          </h3>
           <p className="text-gray-700 dark:text-gray-300 text-sm">
-            متأسفانه محصولی با این مشخصات پیدا نشد. لطفاً فیلترهای خود را تغییر دهید.
+            {messages?.products?.noProductsMessage || 'متأسفانه محصولی با این مشخصات پیدا نشد. لطفاً فیلترهای خود را تغییر دهید.'}
           </p>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface SearchSuggestion {
   value: string;
@@ -24,12 +25,21 @@ interface AdvancedSearchProps {
 export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [messages, setMessages] = useState<Messages | null>(null);
   
   // Search state
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
   
   // Filter state
   const [filters, setFilters] = useState({
@@ -215,7 +225,7 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
           onChange={(e) => handleSearchChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => setShowSuggestions(true)}
-          placeholder="جستجو در محصولات..."
+          placeholder={messages?.search?.placeholder || 'جستجو در محصولات...'}
           className="w-full pl-16 pr-14 py-4 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent text-lg"
         />
         
@@ -253,7 +263,9 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
           {/* Search Suggestions */}
           {suggestions.length > 0 && (
             <div className="p-4 border-b border-gray-200 dark:border-white/10">
-              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">پیشنهادات جستجو</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+                {messages?.search?.searchSuggestions || 'پیشنهادات جستجو'}
+              </h3>
               <div className="space-y-2">
                 {suggestions.map((suggestion, index) => (
                   <button
@@ -271,7 +283,9 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
           {/* Search History */}
           {searchHistory.length > 0 && (
             <div className="p-4">
-              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">تاریخچه جستجو</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+                {messages?.search?.searchHistory || 'تاریخچه جستجو'}
+              </h3>
               <div className="space-y-2">
                 {searchHistory.map((historyItem, index) => (
                   <button
@@ -295,43 +309,49 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
       {showFilters && (
         <div className="mt-6 glass rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">فیلترهای پیشرفته</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {messages?.search?.advancedFilters || 'فیلترهای پیشرفته'}
+            </h3>
             <button
               onClick={clearFilters}
               className="text-sm text-primary-orange hover:text-orange-600 dark:hover:text-orange-400 font-medium transition-colors duration-200"
             >
-              پاک کردن همه
+              {messages?.search?.clearAll || 'پاک کردن همه'}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">دسته‌بندی</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {messages?.search?.category || 'دسته‌بندی'}
+              </label>
               <select
                 value={filters.categoryId}
                 onChange={(e) => handleFilterChange("categoryId", e.target.value)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
-                <option value="">همه دسته‌ها</option>
+                <option value="">{messages?.search?.allCategories || 'همه دسته‌ها'}</option>
                 {/* Categories would be loaded from API */}
               </select>
             </div>
 
             {/* Price Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">محدوده قیمت</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {messages?.search?.priceRange || 'محدوده قیمت'}
+              </label>
               <div className="flex space-x-2">
                 <input
                   type="number"
-                  placeholder="از"
+                  placeholder={messages?.search?.from || 'از'}
                   value={filters.minPrice}
                   onChange={(e) => handleFilterChange("minPrice", e.target.value)}
                   className="flex-1 px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
                 />
                 <input
                   type="number"
-                  placeholder="تا"
+                  placeholder={messages?.search?.to || 'تا'}
                   value={filters.maxPrice}
                   onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
                   className="flex-1 px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
@@ -341,13 +361,15 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Brand Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">برند</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {messages?.search?.brand || 'برند'}
+              </label>
               <select
                 value={filters.brand}
                 onChange={(e) => handleFilterChange("brand", e.target.value)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
-                <option value="">همه برندها</option>
+                <option value="">{messages?.search?.allBrands || 'همه برندها'}</option>
                 {filterOptions.brands.map((brand) => (
                   <option key={brand.value} value={brand.value}>
                     {brand.value} ({brand.count})
@@ -358,13 +380,15 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Material Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">جنس</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {messages?.search?.material || 'جنس'}
+              </label>
               <select
                 value={filters.material}
                 onChange={(e) => handleFilterChange("material", e.target.value)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
-                <option value="">همه جنس‌ها</option>
+                <option value="">{messages?.search?.allMaterials || 'همه جنس‌ها'}</option>
                 {filterOptions.materials.map((material) => (
                   <option key={material.value} value={material.value}>
                     {material.value} ({material.count})
@@ -375,45 +399,51 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
 
             {/* Stock Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">وضعیت موجودی</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {messages?.search?.stockStatus || 'وضعیت موجودی'}
+              </label>
               <select
                 value={filters.inStock}
                 onChange={(e) => handleFilterChange("inStock", e.target.value)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
-                <option value="">همه</option>
-                <option value="true">موجود</option>
-                <option value="false">ناموجود</option>
+                <option value="">{messages?.search?.all || 'همه'}</option>
+                <option value="true">{messages?.search?.inStock || 'موجود'}</option>
+                <option value="false">{messages?.search?.outOfStock || 'ناموجود'}</option>
               </select>
             </div>
 
             {/* Featured Products */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">محصولات ویژه</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {messages?.search?.featured || 'محصولات ویژه'}
+              </label>
               <select
                 value={filters.featured}
                 onChange={(e) => handleFilterChange("featured", e.target.value)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
-                <option value="">همه</option>
-                <option value="true">فقط ویژه</option>
+                <option value="">{messages?.search?.all || 'همه'}</option>
+                <option value="true">{messages?.search?.onlyFeatured || 'فقط ویژه'}</option>
               </select>
             </div>
 
             {/* Rating Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">حداقل امتیاز</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {messages?.search?.minRating || 'حداقل امتیاز'}
+              </label>
               <select
                 value={filters.rating}
                 onChange={(e) => handleFilterChange("rating", e.target.value)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
-                <option value="">همه</option>
-                <option value="5">5 ستاره</option>
-                <option value="4">4 ستاره و بالاتر</option>
-                <option value="3">3 ستاره و بالاتر</option>
-                <option value="2">2 ستاره و بالاتر</option>
-                <option value="1">1 ستاره و بالاتر</option>
+                <option value="">{messages?.search?.all || 'همه'}</option>
+                <option value="5">5 {messages?.search?.stars || 'ستاره'}</option>
+                <option value="4">4 {messages?.search?.stars || 'ستاره'} {messages?.search?.andAbove || 'و بالاتر'}</option>
+                <option value="3">3 {messages?.search?.stars || 'ستاره'} {messages?.search?.andAbove || 'و بالاتر'}</option>
+                <option value="2">2 {messages?.search?.stars || 'ستاره'} {messages?.search?.andAbove || 'و بالاتر'}</option>
+                <option value="1">1 {messages?.search?.stars || 'ستاره'} {messages?.search?.andAbove || 'و بالاتر'}</option>
               </select>
             </div>
           </div>
@@ -424,7 +454,7 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
               onClick={() => handleSearch()}
               className="px-8 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:shadow-glass-orange hover:scale-105 transition-all duration-300"
             >
-              اعمال فیلترها
+              {messages?.search?.applyFilters || 'اعمال فیلترها'}
             </button>
           </div>
         </div>

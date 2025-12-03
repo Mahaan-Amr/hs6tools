@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { sendSMSSafe, SMSTemplates, sendLowStockAlert } from "@/lib/sms";
 
 // GET /api/customer/orders - Get customer order history with pagination and filtering
 export async function GET(request: NextRequest) {
@@ -216,7 +217,8 @@ export async function POST(request: NextRequest) {
       shippingAmount,
       taxAmount,
       discountAmount,
-      totalAmount
+      totalAmount,
+      couponCode
     } = body;
 
     // Validation
@@ -244,6 +246,49 @@ export async function POST(request: NextRequest) {
     // Generate order number
     const orderNumber = `HS6-${Date.now().toString().slice(-6)}`;
     console.log('🛒 API: Generated order number:', orderNumber);
+
+    // Validate and get coupon if coupon code is provided
+    let coupon = null;
+    let couponId = null;
+    if (couponCode) {
+      coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+
+      if (coupon) {
+        // Re-validate coupon at order creation time
+        const now = new Date();
+        if (
+          !coupon.isActive ||
+          now < coupon.validFrom ||
+          now > coupon.validUntil ||
+          (coupon.usageLimit !== null && coupon.usageCount >= coupon.usageLimit) ||
+          (coupon.minimumAmount && subtotal < Number(coupon.minimumAmount))
+        ) {
+          return NextResponse.json(
+            { success: false, error: "کد تخفیف معتبر نیست یا منقضی شده است" },
+            { status: 400 }
+          );
+        }
+
+        // Check user usage limit
+        const userOrderCount = await prisma.order.count({
+          where: {
+            userId: session.user.id,
+            couponId: coupon.id,
+          },
+        });
+
+        if (userOrderCount >= coupon.userUsageLimit) {
+          return NextResponse.json(
+            { success: false, error: "شما قبلاً از این کد تخفیف استفاده کرده‌اید" },
+            { status: 400 }
+          );
+        }
+
+        couponId = coupon.id;
+      }
+    }
 
     // Create order in transaction
     const order = await prisma.$transaction(async (tx) => {
@@ -297,6 +342,8 @@ export async function POST(request: NextRequest) {
           shippingAmount: shippingAmount || 0,
           discountAmount: discountAmount || 0,
           totalAmount: totalAmount || 0,
+          couponId: couponId || null,
+          couponCode: couponCode || null,
           customerNote: customerNote || null,
           billingAddressId: billingAddr.id,
           shippingAddressId: shippingAddr.id,
@@ -304,6 +351,18 @@ export async function POST(request: NextRequest) {
           customerPhone: shippingAddress.phone
         }
       });
+
+      // Increment coupon usage count if coupon was used
+      if (couponId && coupon) {
+        await tx.coupon.update({
+          where: { id: couponId },
+          data: {
+            usageCount: {
+              increment: 1
+            }
+          }
+        });
+      }
 
       // Create order items and update product stock
       for (const item of items) {
@@ -338,7 +397,11 @@ export async function POST(request: NextRequest) {
           // Check if stock is now low and update isInStock
           const updatedProduct = await tx.product.findUnique({
             where: { id: item.productId },
-            select: { stockQuantity: true, lowStockThreshold: true }
+            select: { 
+              stockQuantity: true, 
+              lowStockThreshold: true,
+              name: true
+            }
           });
 
           if (updatedProduct && updatedProduct.stockQuantity <= updatedProduct.lowStockThreshold) {
@@ -348,6 +411,35 @@ export async function POST(request: NextRequest) {
                 isInStock: updatedProduct.stockQuantity > 0
               }
             });
+
+            // Send low stock alert to admins (after transaction, non-blocking)
+            // We'll do this after the transaction completes
+            if (updatedProduct.stockQuantity <= updatedProduct.lowStockThreshold) {
+              // Get admin phone numbers (after transaction)
+              prisma.user.findMany({
+                where: {
+                  role: { in: ['ADMIN', 'SUPER_ADMIN'] },
+                  phone: { not: null },
+                  isActive: true
+                },
+                select: { phone: true }
+              }).then(admins => {
+                const adminPhones = admins
+                  .map(admin => admin.phone)
+                  .filter((phone): phone is string => phone !== null);
+                
+                if (adminPhones.length > 0) {
+                  sendLowStockAlert(
+                    updatedProduct.name,
+                    updatedProduct.stockQuantity,
+                    updatedProduct.lowStockThreshold,
+                    adminPhones
+                  );
+                }
+              }).catch(err => {
+                console.error('[SMS] Error fetching admin phones for low stock alert:', err);
+              });
+            }
           }
         }
       }
@@ -356,6 +448,23 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('🛒 API: Order created successfully:', order.id);
+
+    // Send order confirmation SMS (non-blocking)
+    if (order.customerPhone) {
+      const user = await prisma.user.findUnique({
+        where: { id: order.userId },
+        select: { firstName: true, lastName: true }
+      });
+      const customerName = user ? `${user.firstName} ${user.lastName}` : 'کاربر گرامی';
+      
+      sendSMSSafe(
+        {
+          receptor: order.customerPhone,
+          message: SMSTemplates.ORDER_CONFIRMED(order.orderNumber, customerName),
+        },
+        `Order created: ${order.orderNumber}`
+      );
+    }
 
     // Return order with basic info
     return NextResponse.json({

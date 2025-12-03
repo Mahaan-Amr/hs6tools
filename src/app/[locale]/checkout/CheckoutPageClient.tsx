@@ -1,9 +1,10 @@
 "use client";
 
 import { useCartStore } from "@/contexts/CartContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CheckoutAddressSelector from "@/components/checkout/CheckoutAddressSelector";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface CheckoutPageClientProps {
   locale: string;
@@ -46,26 +47,44 @@ interface ShippingMethod {
   estimatedDays: string;
 }
 
-const SHIPPING_METHODS: ShippingMethod[] = [
-  {
-    id: "post",
-    name: "پست ایران",
-    description: "ارسال از طریق پست رسمی ایران",
-    price: 50000,
-    estimatedDays: "3-5 روز کاری"
-  },
-  {
-    id: "tipax",
-    name: "تیپاکس",
-    description: "ارسال سریع از طریق تیپاکس",
-    price: 80000,
-    estimatedDays: "2-3 روز کاری"
-  }
-];
-
 export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCartStore();
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  // Get shipping methods from translations
+  const getShippingMethods = (): ShippingMethod[] => {
+    if (!messages?.checkout?.shippingMethods) {
+      return [];
+    }
+    const shippingMethods = messages.checkout.shippingMethods;
+    return [
+      {
+        id: "post",
+        name: shippingMethods?.post?.name || "",
+        description: shippingMethods?.post?.description || "",
+        price: 50000,
+        estimatedDays: shippingMethods?.post?.estimatedDays || ""
+      },
+      {
+        id: "tipax",
+        name: shippingMethods?.tipax?.name || "",
+        description: shippingMethods?.tipax?.description || "",
+        price: 80000,
+        estimatedDays: shippingMethods?.tipax?.estimatedDays || ""
+      }
+    ];
+  };
+
+  const SHIPPING_METHODS = getShippingMethods();
   const [currentStep, setCurrentStep] = useState(1);
   const [address, setAddress] = useState<Address>({
     firstName: "",
@@ -81,6 +100,10 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
   const [useSavedAddresses, setUseSavedAddresses] = useState(false);
   const [selectedBillingAddress, setSelectedBillingAddress] = useState<CustomerAddress | null>(null);
   const [selectedShippingAddress, setSelectedShippingAddress] = useState<CustomerAddress | null>(null);
+  const [couponCode, setCouponCode] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
@@ -93,23 +116,40 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
   const selectedShippingMethod = SHIPPING_METHODS.find(m => m.id === selectedShipping);
   const shippingCost = selectedShippingMethod?.price || 0;
-  const totalWithShipping = totalPrice + shippingCost;
+  const taxAmount = Math.round(totalPrice * 0.09); // 9% VAT for Iran
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const totalWithShipping = totalPrice + shippingCost + taxAmount - discountAmount;
 
   const handleAddressChange = (field: keyof Address, value: string) => {
     setAddress(prev => ({ ...prev, [field]: value }));
   };
+
+  if (!messages?.checkout) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center text-gray-900 dark:text-white">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-orange mx-auto"></div>
+            <p className="mt-4 text-xl">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const t = messages.checkout;
 
   const handleNextStep = () => {
     if (currentStep === 1) {
       // Check if using saved addresses or manual form
       if (useSavedAddresses) {
         if (!selectedBillingAddress || !selectedShippingAddress) {
-          alert("لطفاً آدرس صورتحساب و ارسال را انتخاب کنید");
+          alert(String(t.selectBillingShipping));
           return;
         }
       } else {
         if (!isAddressValid()) {
-          alert("لطفاً تمام فیلدهای آدرس را تکمیل کنید");
+          alert(String(t.completeAddressFields));
           return;
         }
       }
@@ -135,6 +175,58 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     } else {
       setSelectedShippingAddress(address);
     }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError(String(t.enterCouponCode));
+      return;
+    }
+
+    setIsValidatingCoupon(true);
+    setCouponError(null);
+
+    try {
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          subtotal: totalPrice,
+          items: items.map(item => ({
+            productId: item.productId,
+          })),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setAppliedCoupon({
+          code: result.data.coupon.code,
+          discountAmount: result.data.discountAmount,
+        });
+        setCouponCode("");
+        setCouponError(null);
+      } else {
+        setCouponError(result.error || String(t.invalidCoupon));
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      console.error('Error validating coupon:', error);
+      setCouponError(String(t.couponValidationError));
+      setAppliedCoupon(null);
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError(null);
   };
 
   const handlePlaceOrder = async () => {
@@ -188,8 +280,8 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
       const orderData = {
         items: items.map(item => ({
-          productId: item.id,
-          variantId: null, // TODO: Add variant support if needed
+          productId: item.productId,
+          variantId: item.variantId || null,
           sku: item.sku,
           name: item.name,
           description: item.category,
@@ -205,8 +297,9 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
         customerNote: "",
         subtotal: totalPrice,
         shippingAmount: shippingCost,
-        taxAmount: 0, // TODO: Add tax calculation
-        discountAmount: 0, // TODO: Add discount support
+        taxAmount: Math.round(totalPrice * 0.09), // 9% VAT for Iran
+        discountAmount: discountAmount,
+        couponCode: appliedCoupon?.code || null,
         totalAmount: totalWithShipping
       };
 
@@ -234,7 +327,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
       router.push(`/${locale}/checkout/success?orderNumber=${result.data.orderNumber}`);
     } catch (error) {
       console.error("Error placing order:", error);
-      alert(`خطا در ثبت سفارش: ${error instanceof Error ? error.message : 'لطفاً دوباره تلاش کنید.'}`);
+      alert(`${String(t.orderError)}: ${error instanceof Error ? error.message : String(t.tryAgain)}`);
     } finally {
       setIsProcessing(false);
     }
@@ -244,15 +337,15 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-900 dark:text-white mb-4">سبد خرید خالی است</h1>
-          <p className="text-gray-600 dark:text-gray-600 dark:text-gray-400 text-lg mb-8 text-justify leading-relaxed">
-            برای تکمیل خرید، ابتدا محصولی به سبد خرید اضافه کنید.
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{String(t.emptyCartTitle)}</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-lg mb-8 text-justify leading-relaxed">
+            {String(t.emptyCartMessage)}
           </p>
           <button
             onClick={() => router.push(`/${locale}/shop`)}
             className="bg-gradient-to-r from-primary-orange to-orange-500 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-glass-orange hover:scale-105 transition-all duration-200"
           >
-            مشاهده محصولات
+            {String(t.viewProducts)}
           </button>
         </div>
       </div>
@@ -264,9 +357,9 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Page Header */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-900 dark:text-white mb-4">تکمیل خرید</h1>
-          <p className="text-gray-600 dark:text-gray-600 dark:text-gray-400 text-lg text-justify leading-relaxed">
-            مراحل تکمیل سفارش خود را دنبال کنید
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">{String(t.checkoutTitle)}</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-lg text-justify leading-relaxed">
+            {String(t.checkoutSubtitle)}
           </p>
         </div>
 
@@ -278,14 +371,14 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-lg ${
                   currentStep >= step 
                     ? "bg-primary-orange text-white" 
-                    : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-600 dark:text-gray-400"
+                    : "bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400"
                 }`}>
                   {step}
                 </div>
                 <span className={`ml-3 text-lg font-medium ${
-                  currentStep >= step ? "text-gray-900 dark:text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-600 dark:text-gray-400"
+                  currentStep >= step ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-400"
                 }`}>
-                  {step === 1 ? "اطلاعات ارسال" : step === 2 ? "روش ارسال" : "بررسی نهایی"}
+                  {step === 1 ? String(t.step1Label) : step === 2 ? String(t.step2Label) : String(t.step3Label)}
                 </span>
                 {step < 3 && (
                   <div className={`w-16 h-1 mx-4 ${
@@ -303,7 +396,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
             {/* Step 1: Address Information */}
             {currentStep === 1 && (
               <div className="glass rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-900 dark:text-white mb-6">اطلاعات ارسال</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.shippingInfo)}</h2>
                 
                 {/* Address Selection Toggle */}
                 <div className="mb-6">
@@ -313,20 +406,20 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
                         !useSavedAddresses
                           ? "bg-primary-orange text-white"
-                          : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:text-white"
+                          : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
-                      وارد کردن آدرس جدید
+                      {String(t.enterNewAddress)}
                     </button>
                     <button
                       onClick={() => setUseSavedAddresses(true)}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
                         useSavedAddresses
                           ? "bg-primary-orange text-white"
-                          : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:text-white"
+                          : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
-                      انتخاب از آدرس‌های ذخیره شده
+                      {String(t.selectSavedAddress)}
                     </button>
                   </div>
                 </div>
@@ -341,79 +434,79 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-2">نام</label>
+                    <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.firstName)}</label>
                     <input
                       type="text"
                       value={address.firstName}
                       onChange={(e) => handleAddressChange("firstName", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
-                      placeholder="نام خود را وارد کنید"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      placeholder={String(t.firstNamePlaceholder)}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-2">نام خانوادگی</label>
+                    <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.lastName)}</label>
                     <input
                       type="text"
                       value={address.lastName}
                       onChange={(e) => handleAddressChange("lastName", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
-                      placeholder="نام خانوادگی خود را وارد کنید"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      placeholder={String(t.lastNamePlaceholder)}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-2">شماره تماس</label>
+                    <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.phone)}</label>
                     <input
                       type="tel"
                       value={address.phone}
                       onChange={(e) => handleAddressChange("phone", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
-                      placeholder="شماره تماس خود را وارد کنید"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      placeholder={String(t.phonePlaceholder)}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-2">کد پستی</label>
+                    <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.postalCode)}</label>
                     <input
                       type="text"
                       value={address.postalCode}
                       onChange={(e) => handleAddressChange("postalCode", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
-                      placeholder="کد پستی را وارد کنید"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      placeholder={String(t.postalCodePlaceholder)}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-2">استان</label>
+                    <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.province)}</label>
                     <input
                       type="text"
                       value={address.province}
                       onChange={(e) => handleAddressChange("province", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
-                      placeholder="استان را وارد کنید"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      placeholder={String(t.provincePlaceholder)}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-2">شهر</label>
+                    <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.city)}</label>
                     <input
                       type="text"
                       value={address.city}
                       onChange={(e) => handleAddressChange("city", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
-                      placeholder="شهر را وارد کنید"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      placeholder={String(t.cityPlaceholder)}
                     />
                   </div>
                   
                   <div className="md:col-span-2">
-                    <label className="block text-gray-900 dark:text-gray-900 dark:text-white font-medium mb-2">آدرس کامل</label>
+                    <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.fullAddress)}</label>
                     <textarea
                       value={address.address}
                       onChange={(e) => handleAddressChange("address", e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200 resize-none"
-                      placeholder="آدرس کامل خود را وارد کنید"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200 resize-none"
+                      placeholder={String(t.fullAddressPlaceholder)}
                     />
                   </div>
                 </div>
@@ -424,7 +517,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
             {/* Step 2: Shipping Method */}
             {currentStep === 2 && (
               <div className="glass rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">انتخاب روش ارسال</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.selectShippingMethod)}</h2>
                 
                 <div className="space-y-4">
                   {SHIPPING_METHODS.map((method) => (
@@ -433,7 +526,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       className={`p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
                         selectedShipping === method.id
                           ? "border-primary-orange bg-primary-orange/10"
-                          : "border-gray-300 dark:border-white/20 bg-gray-100 dark:bg-white/5 hover:border-gray-300 dark:border-gray-300 dark:border-white/40"
+                          : "border-gray-300 dark:border-white/20 bg-gray-100 dark:bg-white/5 hover:border-gray-300 dark:hover:border-white/40"
                       }`}
                       onClick={() => setSelectedShipping(method.id)}
                     >
@@ -452,7 +545,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{method.name}</h3>
                             <p className="text-gray-600 dark:text-gray-400 text-sm">{method.description}</p>
                             <p className="text-primary-orange text-sm mt-1">
-                              زمان تحویل: {method.estimatedDays}
+                              {String(t.deliveryTime)}: {method.estimatedDays}
                             </p>
                           </div>
                         </div>
@@ -471,11 +564,11 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
             {/* Step 3: Order Review */}
             {currentStep === 3 && (
               <div className="glass rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">بررسی نهایی سفارش</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.orderReview)}</h2>
                 
                 {/* Address Summary */}
                 <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">اطلاعات ارسال</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.shippingInfoLabel)}</h3>
                   <div className="text-gray-600 dark:text-gray-300">
                     {useSavedAddresses && selectedShippingAddress ? (
                       <>
@@ -484,7 +577,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                         <p>{selectedShippingAddress.state}، {selectedShippingAddress.city}</p>
                         <p>{selectedShippingAddress.addressLine1}</p>
                         {selectedShippingAddress.addressLine2 && <p>{selectedShippingAddress.addressLine2}</p>}
-                        <p>کد پستی: {selectedShippingAddress.postalCode}</p>
+                        <p>{String(t.postalCodeLabel)}: {selectedShippingAddress.postalCode}</p>
                       </>
                     ) : (
                       <>
@@ -492,7 +585,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                         <p>{address.phone}</p>
                         <p>{address.province}، {address.city}</p>
                         <p>{address.address}</p>
-                        <p>کد پستی: {address.postalCode}</p>
+                        <p>{String(t.postalCodeLabel)}: {address.postalCode}</p>
                       </>
                     )}
                   </div>
@@ -500,17 +593,17 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
                 {/* Shipping Summary */}
                 <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">روش ارسال</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.shippingMethodLabel)}</h3>
                   <div className="text-gray-600 dark:text-gray-300">
                     <p>{selectedShippingMethod?.name}</p>
-                    <p>زمان تحویل: {selectedShippingMethod?.estimatedDays}</p>
-                    <p>هزینه: {formatPrice(selectedShippingMethod?.price || 0)}</p>
+                    <p>{String(t.deliveryTime)}: {selectedShippingMethod?.estimatedDays}</p>
+                    <p>{String(t.shippingCost)}: {formatPrice(selectedShippingMethod?.price || 0)}</p>
                   </div>
                 </div>
 
                 {/* Order Items */}
                 <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">محصولات سفارش</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.orderItems)}</h3>
                   <div className="space-y-3">
                     {items.map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
@@ -539,7 +632,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                     : "glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10"
                 }`}
               >
-                مرحله قبل
+                {String(t.previousStep)}
               </button>
               
               {currentStep < 3 ? (
@@ -547,7 +640,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                   onClick={handleNextStep}
                   className="px-8 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-gray-900 dark:text-white rounded-xl font-semibold hover:shadow-glass-orange hover:scale-105 transition-all duration-200"
                 >
-                  مرحله بعد
+                  {String(t.nextStep)}
                 </button>
               ) : (
                 <button
@@ -558,10 +651,10 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                   {isProcessing ? (
                     <div className="flex items-center space-x-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>در حال پردازش...</span>
+                      <span>{String(t.processing)}</span>
                     </div>
                   ) : (
-                    "ثبت سفارش و پرداخت"
+                    String(t.placeOrder)
                   )}
                 </button>
               )}
@@ -571,22 +664,89 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
             <div className="glass rounded-3xl p-6 sticky top-24">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">خلاصه سفارش</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{String(t.orderSummary)}</h2>
               
+              {/* Coupon Code Section */}
+              <div className="mb-6 p-4 bg-gray-100 dark:bg-white/5 rounded-xl">
+                {!appliedCoupon ? (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                      {String(t.couponCode)}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase());
+                          setCouponError(null);
+                        }}
+                        placeholder={String(t.couponPlaceholder)}
+                        className="flex-1 px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleApplyCoupon();
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        disabled={isValidatingCoupon || !couponCode.trim()}
+                        className="px-6 py-2 bg-primary-orange text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isValidatingCoupon ? "..." : String(t.apply)}
+                      </button>
+                    </div>
+                    {couponError && (
+                      <p className="text-sm text-red-600 dark:text-red-400">{couponError}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600 dark:text-green-400 font-medium">
+                        {String(t.discountApplied)}: {appliedCoupon.code}
+                      </span>
+                      <span className="text-green-600 dark:text-green-400">
+                        (-{formatPrice(appliedCoupon.discountAmount)})
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm"
+                    >
+                      {String(t.remove)}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>جمع جزء:</span>
+                  <span>{String(t.subtotal)}:</span>
                   <span className="text-gray-900 dark:text-white">{formatPrice(totalPrice)}</span>
                 </div>
                 
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>هزینه ارسال:</span>
+                  <span>{String(t.shippingCostLabel)}:</span>
                   <span className="text-gray-900 dark:text-white">{formatPrice(shippingCost)}</span>
                 </div>
                 
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>{String(t.tax)}:</span>
+                  <span className="text-gray-900 dark:text-white">{formatPrice(taxAmount)}</span>
+                </div>
+                
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600 dark:text-green-400">
+                    <span>{String(t.discount)}:</span>
+                    <span className="font-semibold">-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
+                
                 <div className="border-t border-white/10 pt-4">
                   <div className="flex justify-between text-lg font-semibold text-gray-900 dark:text-white">
-                    <span>مجموع کل:</span>
+                    <span>{String(t.total)}:</span>
                     <span className="text-primary-orange">{formatPrice(totalWithShipping)}</span>
                   </div>
                 </div>
@@ -598,12 +758,11 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                   </svg>
-                  <span>پرداخت امن با ZarinPal</span>
+                  <span>{String(t.securePayment)}</span>
                 </div>
                 
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  با تکمیل خرید، شما شرایط و قوانین ما را می‌پذیرید. 
-                  اطلاعات شما محفوظ و امن خواهد بود.
+                  {String(t.termsAcceptance)}
                 </p>
               </div>
             </div>

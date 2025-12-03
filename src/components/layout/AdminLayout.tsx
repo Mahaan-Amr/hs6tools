@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,15 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
 
   // Prevent body scroll when sidebar is open on mobile
@@ -144,7 +154,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               <button
                 onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
                 className="lg:hidden p-2 text-white/80 hover:text-white transition-colors duration-200 flex-shrink-0"
-                title="باز کردن منو"
+                title={String(messages?.admin?.crm?.adminLayout?.openMenu || "باز کردن منو")}
               >
                 <svg 
                   className="w-6 h-6" 
@@ -156,7 +166,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                 </svg>
               </button>
               
-              <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-white truncate">پنل مدیریت</h1>
+              <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-white truncate">{String(messages?.admin?.crm?.adminLayout?.title || "پنل مدیریت")}</h1>
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
@@ -164,7 +174,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               <button
                 onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
                 className="hidden lg:block p-2 text-white/80 hover:text-white transition-colors duration-200"
-                title={`${isRightSidebarCollapsed ? 'باز کردن منو' : 'بستن منو'} (Ctrl+M)`}
+                title={`${isRightSidebarCollapsed ? String(messages?.admin?.crm?.adminLayout?.openMenu || 'باز کردن منو') : String(messages?.admin?.crm?.adminLayout?.closeMenu || 'بستن منو')} (Ctrl+M)`}
               >
                 <svg 
                   className={`w-5 h-5 transition-transform duration-300 ${isRightSidebarCollapsed ? 'rotate-180' : ''}`} 
@@ -188,7 +198,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               <Link
                 href={`/${locale}`}
                 className="p-2 text-white/80 hover:text-white"
-                title="بازگشت به سایت"
+                title={String(messages?.admin?.crm?.adminLayout?.backToSite || "بازگشت به سایت")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -199,7 +209,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               <button
                 onClick={handleSignOut}
                 className="p-2 text-white/80 hover:text-red-400 transition-colors duration-200"
-                title="خروج"
+                title={String(messages?.admin?.crm?.adminLayout?.logout || messages?.common?.logout || "خروج")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -244,7 +254,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
         <div className="flex flex-col h-full w-full lg:w-64" style={{ height: '100vh', overflow: 'hidden' }}>
           {/* Right Sidebar Header */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-white/10 flex-shrink-0">
-            <h2 className="text-white font-bold text-lg">منوی مدیریت</h2>
+            <h2 className="text-white font-bold text-lg">{String(messages?.admin?.crm?.adminLayout?.menu || "منوی مدیریت")}</h2>
             <button
               onClick={() => setIsRightSidebarCollapsed(true)}
               className="p-1 text-white/60 hover:text-white transition-colors duration-200"
@@ -268,7 +278,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
                   </svg>
                 </div>
-                <span className="font-medium">داشبورد</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.dashboard || messages?.admin?.dashboard || "داشبورد")}</span>
               </div>
             </Link>
 
@@ -282,7 +292,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                 </div>
-                <span className="font-medium">محصولات</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.products || messages?.admin?.products || "محصولات")}</span>
               </div>
             </Link>
 
@@ -296,7 +306,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                 </div>
-                <span className="font-medium">دسته‌بندی‌ها</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.categories || messages?.admin?.categories || "دسته‌بندی‌ها")}</span>
               </div>
             </Link>
 
@@ -311,7 +321,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                   </div>
-                  <span className="font-medium">سفارشات</span>
+                  <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.orders || messages?.admin?.orders || "سفارشات")}</span>
                 </div>
                 <span className="px-2 py-1 bg-primary-orange text-white text-xs rounded-full">12</span>
               </div>
@@ -327,7 +337,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <span className="font-medium">کاربران</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.users || messages?.admin?.users || "کاربران")}</span>
               </div>
             </Link>
 
@@ -341,7 +351,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <span className="font-medium">محتوا</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.content || messages?.admin?.content || "محتوا")}</span>
               </div>
             </Link>
 
@@ -355,7 +365,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <span className="font-medium">گزارش‌ها</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.analytics || messages?.admin?.analytics || "گزارش‌ها")}</span>
               </div>
             </Link>
 
@@ -369,7 +379,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <span className="font-medium">مدیریت مشتریان</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.customerManagement || messages?.admin?.crm?.customerManagement || "مدیریت مشتریان")}</span>
               </div>
             </Link>
 
@@ -383,7 +393,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <span className="font-medium">چرخه زندگی مشتری</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.customerLifecycle || messages?.admin?.crm?.customerLifecycle || "چرخه زندگی مشتری")}</span>
               </div>
             </Link>
 
@@ -397,21 +407,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
-                <span className="font-medium">مدیریت لیدها</span>
-              </div>
-            </Link>
-
-            <Link
-              href={`/${locale}/admin/crm/opportunities`}
-              className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="text-white/60 group-hover:text-primary-orange transition-colors duration-200">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-                <span className="font-medium">فرصت‌های فروش</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.leadManagement || messages?.admin?.crm?.leadManagement || "مدیریت لیدها")}</span>
               </div>
             </Link>
 
@@ -425,7 +421,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <span className="font-medium">پیشنهادات</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.quotes || messages?.admin?.crm?.quotesLabel || "پیشنهادات")}</span>
               </div>
             </Link>
 
@@ -440,7 +436,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <span className="font-medium">تنظیمات</span>
+                <span className="font-medium">{String(messages?.admin?.crm?.adminLayout?.settings || messages?.admin?.settings || "تنظیمات")}</span>
               </div>
             </Link>
           </nav>
@@ -458,7 +454,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                   {session?.user?.firstName} {session?.user?.lastName}
                 </p>
                 <p className="text-white/60 text-xs truncate">
-                  {session?.user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
+                  {session?.user?.role === 'SUPER_ADMIN' ? String(messages?.admin?.crm?.adminLayout?.superAdmin || 'Super Admin') : String(messages?.admin?.crm?.adminLayout?.admin || 'Admin')}
                 </p>
               </div>
             </div>
@@ -471,7 +467,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
         <button
           onClick={() => setIsRightSidebarCollapsed(false)}
           className="hidden lg:block fixed right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-primary-orange hover:bg-orange-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
-          title="نمایش منو"
+          title={String(messages?.admin?.crm?.adminLayout?.toggleMenu || messages?.admin?.crm?.adminLayout?.showMenu || "نمایش منو")}
           style={{ zIndex: 10002 }}
         >
           <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -485,7 +481,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
         <button
           onClick={() => setIsRightSidebarCollapsed(false)}
           className="lg:hidden fixed right-4 bottom-4 w-14 h-14 bg-primary-orange hover:bg-orange-600 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50"
-          title="باز کردن منو"
+          title={String(messages?.admin?.crm?.adminLayout?.openMenu || "باز کردن منو")}
           style={{ zIndex: 10003 }}
         >
           <svg 

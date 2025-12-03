@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { AdminProduct, AdminCategory, CreateProductData, UpdateProductData } from "@/types/admin";
 import { formatPrice } from "@/utils/format";
@@ -9,6 +9,8 @@ import ProductList from "./ProductList";
 import ProductForm from "./ProductForm";
 
 export default function ProductsTab() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'fa';
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -330,6 +332,7 @@ export default function ProductsTab() {
           onSave={handleProductSaved}
           onCancel={handleFormClose}
           isLoading={isSaving}
+          locale={locale}
         />
       </div>
     );

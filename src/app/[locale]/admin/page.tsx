@@ -2,6 +2,7 @@ import AdminLayoutWrapper from "@/components/layout/AdminLayoutWrapper";
 import DashboardStats from "@/components/admin/DashboardStats";
 import RecentOrders from "@/components/admin/RecentOrders";
 import QuickActions from "@/components/admin/QuickActions";
+import { getMessages } from "@/lib/i18n";
 
 interface AdminDashboardPageProps {
   params: Promise<{ locale: string }>;
@@ -9,6 +10,13 @@ interface AdminDashboardPageProps {
 
 export default async function AdminDashboardPage({ params }: AdminDashboardPageProps) {
   const { locale } = await params;
+  const messages = await getMessages(locale);
+  
+  if (!messages.admin.dashboardPage) {
+    return <AdminLayoutWrapper locale={locale}><div className="text-white p-4">Loading...</div></AdminLayoutWrapper>;
+  }
+  
+  const t = messages.admin.dashboardPage;
 
   return (
     <AdminLayoutWrapper locale={locale}>
@@ -16,10 +24,10 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
         {/* Page Header */}
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-4">
-            پنل مدیریت
+            {String(t.title)}
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-300 max-w-2xl mx-auto px-4 text-justify leading-relaxed">
-            مدیریت کامل سیستم و محصولات
+            {String(t.subtitle)}
           </p>
         </div>
 
@@ -39,33 +47,33 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
 
         {/* System Status */}
         <div className="glass rounded-3xl p-4 sm:p-6 lg:p-8 mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">وضعیت سیستم</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">{String(t.systemStatus)}</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center p-6 bg-white/5 rounded-xl">
               <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mb-3"></div>
-              <p className="text-white font-medium text-lg mb-1">سرور</p>
-              <p className="text-green-400 text-sm font-medium">آنلاین</p>
+              <p className="text-white font-medium text-lg mb-1">{String(t.server)}</p>
+              <p className="text-green-400 text-sm font-medium">{String(t.online)}</p>
               <p className="text-gray-400 text-xs mt-1">Node.js {process.version}</p>
             </div>
             
             <div className="text-center p-6 bg-white/5 rounded-xl">
               <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mb-3"></div>
-              <p className="text-white font-medium text-lg mb-1">دیتابیس</p>
+              <p className="text-white font-medium text-lg mb-1">{String(t.database)}</p>
               <p className="text-green-400 text-sm font-medium">PostgreSQL</p>
               <p className="text-gray-400 text-xs mt-1">Prisma ORM</p>
             </div>
             
             <div className="text-center p-6 bg-white/5 rounded-xl">
               <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mb-3"></div>
-              <p className="text-white font-medium text-lg mb-1">احراز هویت</p>
+              <p className="text-white font-medium text-lg mb-1">{String(t.authentication)}</p>
               <p className="text-green-400 text-sm font-medium">NextAuth.js</p>
               <p className="text-gray-400 text-xs mt-1">JWT + Sessions</p>
             </div>
 
             <div className="text-center p-6 bg-white/5 rounded-xl">
               <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mb-3"></div>
-              <p className="text-white font-medium text-lg mb-1">پلتفرم</p>
+              <p className="text-white font-medium text-lg mb-1">{String(t.platform)}</p>
               <p className="text-green-400 text-sm font-medium">Next.js 15</p>
               <p className="text-gray-400 text-xs mt-1">App Router</p>
             </div>
@@ -73,11 +81,11 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
 
           {/* Performance Metrics */}
           <div className="mt-8 pt-6 border-t border-white/10">
-            <h3 className="text-lg font-semibold text-white mb-4">معیارهای عملکرد</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">{String(t.performanceMetrics)}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="p-4 bg-white/5 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 text-sm">سرعت بارگذاری صفحه</span>
+                  <span className="text-gray-300 text-sm">{String(t.pageLoadSpeed)}</span>
                   <span className="text-green-400 text-sm font-medium">1.2s</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2">
@@ -110,7 +118,7 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
 
         {/* Recent Activity */}
         <div className="glass rounded-3xl p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">فعالیت‌های اخیر</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">{String(t.recentActivity)}</h2>
           
           <div className="space-y-4">
             <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-xl">
@@ -120,10 +128,10 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-white font-medium">سیستم راه‌اندازی شد</p>
-                <p className="text-gray-400 text-sm">پلتفرم HS6Tools آماده به کار است</p>
+                <p className="text-white font-medium">{String(t.systemStarted)}</p>
+                <p className="text-gray-400 text-sm">{String(t.platformReady)}</p>
               </div>
-              <span className="text-gray-500 text-xs">همیشه</span>
+              <span className="text-gray-500 text-xs">{String(t.always)}</span>
             </div>
 
             <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-xl">
@@ -133,10 +141,10 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-white font-medium">دیتابیس متصل است</p>
-                <p className="text-gray-400 text-sm">PostgreSQL با Prisma ORM</p>
+                <p className="text-white font-medium">{String(t.databaseConnected)}</p>
+                <p className="text-gray-400 text-sm">{String(t.postgresqlWithPrisma)}</p>
               </div>
-              <span className="text-gray-500 text-xs">همیشه</span>
+              <span className="text-gray-500 text-xs">{String(t.always)}</span>
             </div>
 
             <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-xl">
@@ -146,10 +154,10 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-white font-medium">احراز هویت فعال</p>
-                <p className="text-gray-400 text-sm">NextAuth.js با JWT و Sessions</p>
+                <p className="text-white font-medium">{String(t.authenticationActive)}</p>
+                <p className="text-gray-400 text-sm">{String(t.nextAuthWithJWT)}</p>
               </div>
-              <span className="text-gray-500 text-xs">همیشه</span>
+              <span className="text-gray-500 text-xs">{String(t.always)}</span>
             </div>
 
             <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-xl">
@@ -159,10 +167,10 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-white font-medium">پلتفرم آماده</p>
-                <p className="text-gray-400 text-sm">Next.js 15 با App Router</p>
+                <p className="text-white font-medium">{String(t.platformReadyText)}</p>
+                <p className="text-gray-400 text-sm">{String(t.nextjsWithRouter)}</p>
               </div>
-              <span className="text-gray-500 text-xs">همیشه</span>
+              <span className="text-gray-500 text-xs">{String(t.always)}</span>
             </div>
           </div>
         </div>

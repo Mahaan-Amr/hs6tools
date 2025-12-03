@@ -1,64 +1,96 @@
-export default function ContactPage() {
+"use client";
+
+import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
+
+interface ContactPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default function ContactPage({ params }: ContactPageProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const { locale } = await params;
+      const msg = await getMessages(locale);
+      setMessages(msg);
+    };
+    loadMessages();
+  }, [params]);
+
+  if (!messages) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center text-gray-900 dark:text-white">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-orange mx-auto"></div>
+            <p className="mt-4 text-xl">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12" data-scroll-reveal>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            تماس با ما
+            {messages.contact?.pageTitle}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
-            ما آماده پاسخگویی به سوالات و درخواست‌های شما هستیم
+            {messages.contact?.pageSubtitle}
           </p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <div className="glass rounded-3xl p-8" data-scroll-reveal>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">فرم تماس</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{messages.contact?.contactForm}</h2>
             <form className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">نام</label>
+                  <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">{messages.contact?.firstName}</label>
                   <input 
                     type="text" 
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                    placeholder="نام خود را وارد کنید"
+                    placeholder={messages.contact?.firstNamePlaceholder}
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">نام خانوادگی</label>
+                  <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">{messages.contact?.lastName}</label>
                   <input 
                     type="text" 
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                    placeholder="نام خانوادگی خود را وارد کنید"
+                    placeholder={messages.contact?.lastNamePlaceholder}
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">ایمیل</label>
+                <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">{messages.contact?.email}</label>
                 <input 
                   type="email" 
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                  placeholder="ایمیل خود را وارد کنید"
+                  placeholder={messages.contact?.emailPlaceholder}
                 />
               </div>
               
               <div>
-                <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">موضوع</label>
+                <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">{messages.contact?.subject}</label>
                 <input 
                   type="text" 
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                  placeholder="موضوع پیام خود را وارد کنید"
+                  placeholder={messages.contact?.subjectPlaceholder}
                 />
               </div>
               
               <div>
-                <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">پیام</label>
+                <label className="block text-gray-900 dark:text-white text-sm font-medium mb-2">{messages.contact?.message}</label>
                 <textarea 
                   rows={4}
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent resize-none"
-                  placeholder="پیام خود را وارد کنید"
+                  placeholder={messages.contact?.messagePlaceholder}
                 ></textarea>
               </div>
               
@@ -66,7 +98,7 @@ export default function ContactPage() {
                 type="submit"
                 className="w-full px-8 py-4 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300"
               >
-                ارسال پیام
+                {messages.contact?.sendMessage}
               </button>
             </form>
           </div>
@@ -74,7 +106,7 @@ export default function ContactPage() {
           {/* Contact Information */}
           <div className="space-y-8">
           <div className="glass rounded-3xl p-8" data-scroll-reveal style={{ transitionDelay: "0.1s" }}>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">اطلاعات تماس</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{messages.contact?.contactInfo}</h2>
               <div className="space-y-4">
             <div className="flex items-center gap-4 gap-x-6">
                   <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-primary-orange to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-orange/20">
@@ -84,7 +116,7 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-gray-900 dark:text-white font-semibold text-lg">آدرس</h3>
+                    <h3 className="text-gray-900 dark:text-white font-semibold text-lg">{messages.contact?.address}</h3>
                     <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed">تهران، خیابان ولیعصر، پلاک ۱۲۳</p>
                   </div>
                 </div>
@@ -96,7 +128,7 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-gray-900 dark:text-white font-semibold text-lg">تلفن</h3>
+                    <h3 className="text-gray-900 dark:text-white font-semibold text-lg">{messages.contact?.phone}</h3>
                     <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed">۰۲۱-۱۲۳۴۵۶۷۸</p>
                   </div>
                 </div>
@@ -108,7 +140,7 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-gray-900 dark:text-white font-semibold text-lg">ایمیل</h3>
+                    <h3 className="text-gray-900 dark:text-white font-semibold text-lg">{messages.contact?.email}</h3>
                     <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed">info@hs6tools.com</p>
                   </div>
                 </div>
@@ -116,11 +148,11 @@ export default function ContactPage() {
             </div>
             
             <div className="glass rounded-3xl p-8" data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">ساعات کاری</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{messages.contact?.workingHours}</h2>
               <div className="space-y-2 text-gray-600 dark:text-gray-300">
-                <p>شنبه تا چهارشنبه: ۸ صبح تا ۶ عصر</p>
-                <p>پنجشنبه: ۸ صبح تا ۱ ظهر</p>
-                <p>جمعه: تعطیل</p>
+                <p>{messages.contact?.saturdayToWednesday}</p>
+                <p>{messages.contact?.thursday}</p>
+                <p>{messages.contact?.friday}</p>
               </div>
             </div>
           </div>

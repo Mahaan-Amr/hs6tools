@@ -1,6 +1,8 @@
 "use client";
 
 import { useCartStore, CartItem } from "@/contexts/CartContext";
+import { getMessages, Messages } from "@/lib/i18n";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -10,6 +12,15 @@ interface MiniCartProps {
 
 export default function MiniCart({ locale }: MiniCartProps) {
   const { items, isOpen, closeCart, totalItems, totalPrice, removeItem, updateQuantity } = useCartStore();
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
@@ -43,7 +54,9 @@ export default function MiniCart({ locale }: MiniCartProps) {
         {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">سبد خرید</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {messages?.cart?.title || 'سبد خرید'}
+            </h3>
             <button
               onClick={closeCart}
               className="p-2 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
@@ -54,7 +67,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
             </button>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {totalItems} آیتم در سبد خرید
+            {totalItems} {messages?.cart?.itemsInCart || 'آیتم در سبد خرید'}
           </p>
         </div>
 
@@ -67,9 +80,11 @@ export default function MiniCart({ locale }: MiniCartProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">سبد خرید خالی است</h4>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {messages?.cart?.emptyTitle || 'سبد خرید خالی است'}
+              </h4>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                محصولی به سبد خرید اضافه نکرده‌اید
+                {messages?.cart?.emptyMessage || 'محصولی به سبد خرید اضافه نکرده‌اید'}
               </p>
             </div>
           ) : (
@@ -152,7 +167,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
           <div className="p-4 border-t border-gray-200 dark:border-white/10 space-y-4">
             {/* Total */}
             <div className="flex items-center justify-between text-lg font-semibold text-gray-900 dark:text-white">
-              <span>مجموع:</span>
+              <span>{messages?.cart?.totalLabel || 'مجموع:'}</span>
               <span className="text-primary-orange">{formatPrice(totalPrice)}</span>
             </div>
 
@@ -163,7 +178,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
                 onClick={closeCart}
                 className="block w-full py-3 px-4 bg-gradient-to-r from-primary-orange to-orange-500 text-white text-center rounded-xl font-semibold hover:shadow-glass-orange hover:scale-105 transition-all duration-200"
               >
-                مشاهده سبد خرید
+                {messages?.cart?.viewCart || 'مشاهده سبد خرید'}
               </Link>
               
               <Link
@@ -171,7 +186,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
                 onClick={closeCart}
                 className="block w-full py-3 px-4 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-center rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200"
               >
-                تکمیل خرید
+                {messages?.cart?.checkout || 'تکمیل خرید'}
               </Link>
             </div>
           </div>

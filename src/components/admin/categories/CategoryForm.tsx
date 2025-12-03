@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminCategory, CreateCategoryData, UpdateCategoryData } from "@/types/admin";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface CategoryFormProps {
   category?: AdminCategory;
@@ -9,6 +10,7 @@ interface CategoryFormProps {
   onSave: (data: CreateCategoryData | UpdateCategoryData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  locale: string;
 }
 
 export default function CategoryForm({ 
@@ -16,10 +18,21 @@ export default function CategoryForm({
   categories, 
   onSave, 
   onCancel, 
-  isLoading = false 
+  isLoading = false,
+  locale
 }: CategoryFormProps) {
   const isEditing = !!category;
   
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
   const [formData, setFormData] = useState<CreateCategoryData>({
     name: category?.name || '',
     slug: category?.slug || '',
@@ -65,15 +78,21 @@ export default function CategoryForm({
     }
   };
 
+  if (!messages || !messages.admin?.categoriesForm) {
+    return <div className="text-white p-4">Loading...</div>;
+  }
+
+  const t = messages.admin.categoriesForm;
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'نام دسته‌بندی الزامی است';
+      newErrors.name = String(t.nameRequired);
     }
 
     if (!formData.slug.trim()) {
-      newErrors.slug = 'نامک الزامی است';
+      newErrors.slug = String(t.slugRequired);
     }
 
     setErrors(newErrors);
@@ -97,13 +116,13 @@ export default function CategoryForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information - Persian (Admin) */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات اصلی (فارسی)</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.basicInfo)}</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Name */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                نام دسته‌بندی <span className="text-red-500">*</span>
+                {String(t.categoryName)} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -112,7 +131,7 @@ export default function CategoryForm({
                 className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                   errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
-                placeholder="نام دسته‌بندی"
+                placeholder={String(t.categoryName)}
               />
               {errors.name && <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.name}</p>}
             </div>
@@ -120,7 +139,7 @@ export default function CategoryForm({
             {/* Slug */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                نامک <span className="text-red-500">*</span>
+                {String(t.slug)} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -129,7 +148,7 @@ export default function CategoryForm({
                 className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                   errors.slug ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
-                placeholder="نامک دسته‌بندی"
+                placeholder={String(t.slug)}
               />
               {errors.slug && <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.slug}</p>}
             </div>
@@ -137,14 +156,14 @@ export default function CategoryForm({
             {/* Parent Category */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                دسته‌بندی والد
+                {String(t.parentCategory)}
               </label>
               <select
                 value={formData.parentId}
                 onChange={(e) => handleInputChange('parentId', e.target.value)}
                 className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
               >
-                <option value="">بدون والد (دسته‌بندی اصلی)</option>
+                <option value="">{String(t.noParent)}</option>
                 {categories
                   .filter(cat => cat.id !== category?.id) // Prevent self-reference
                   .map((cat) => (
@@ -158,7 +177,7 @@ export default function CategoryForm({
             {/* Sort Order */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                ترتیب نمایش
+                {String(t.sortOrder)}
               </label>
               <input
                 type="number"
@@ -181,7 +200,7 @@ export default function CategoryForm({
               onChange={(e) => handleInputChange('description', e.target.value)}
               rows={4}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
-              placeholder="توضیحات دسته‌بندی"
+              placeholder={String(t.description)}
             />
           </div>
         </div>
@@ -189,13 +208,13 @@ export default function CategoryForm({
         {/* Multilingual Section */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">ترجمه‌ها (برای مشتریان)</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{String(t.translations)}</h3>
             <button
               type="button"
               onClick={() => setShowMultilingual(!showMultilingual)}
               className="flex items-center space-x-2 space-x-reverse text-primary-orange hover:text-orange-600 transition-colors font-semibold"
             >
-              <span>{showMultilingual ? 'مخفی کردن' : 'نمایش'}</span>
+              <span>{showMultilingual ? String(t.hide) : String(t.show)}</span>
               <svg 
                 className={`w-5 h-5 transition-transform ${showMultilingual ? 'rotate-180' : ''}`} 
                 fill="none" 
@@ -213,13 +232,13 @@ export default function CategoryForm({
               <div className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
                 <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2 space-x-reverse">
                   <span className="w-6 h-6 bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">EN</span>
-                  <span>انگلیسی</span>
+                  <span>{String(t.english)}</span>
                 </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                      نام (انگلیسی)
+                      {String(t.nameEn)}
                     </label>
                     <input
                       type="text"
@@ -232,7 +251,7 @@ export default function CategoryForm({
                   
                   <div>
                     <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                      توضیحات (انگلیسی)
+                      {String(t.descriptionEn)}
                     </label>
                     <textarea
                       value={formData.descriptionEn}
@@ -249,13 +268,13 @@ export default function CategoryForm({
               <div className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
                 <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2 space-x-reverse">
                   <span className="w-6 h-6 bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-sm font-bold">AR</span>
-                  <span>عربی</span>
+                  <span>{String(t.arabic)}</span>
                 </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                      نام (عربی)
+                      {String(t.nameAr)}
                     </label>
                     <input
                       type="text"
@@ -269,7 +288,7 @@ export default function CategoryForm({
                   
                   <div>
                     <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                      توضیحات (عربی)
+                      {String(t.descriptionAr)}
                     </label>
                     <textarea
                       value={formData.descriptionAr}
@@ -288,13 +307,13 @@ export default function CategoryForm({
 
         {/* Media & SEO */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">رسانه و SEO</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.mediaSeo)}</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Image */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                تصویر
+                {String(t.image)}
               </label>
               <input
                 type="text"
@@ -308,7 +327,7 @@ export default function CategoryForm({
             {/* Icon */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                آیکون
+                {String(t.icon)}
               </label>
               <input
                 type="text"
@@ -322,7 +341,7 @@ export default function CategoryForm({
             {/* Meta Title */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                عنوان متا
+                {String(t.metaTitle)}
               </label>
               <input
                 type="text"
@@ -336,7 +355,7 @@ export default function CategoryForm({
             {/* Meta Description */}
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                توضیحات متا
+                {String(t.metaDescription)}
               </label>
               <textarea
                 value={formData.metaDescription}
@@ -351,7 +370,7 @@ export default function CategoryForm({
           {/* Meta Keywords */}
           <div className="mt-6">
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              کلمات کلیدی
+              {String(t.metaKeywords)}
             </label>
             <input
               type="text"
@@ -365,7 +384,7 @@ export default function CategoryForm({
 
         {/* Status */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">وضعیت</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.status)}</h3>
           
           <div className="space-y-4">
             <div className="flex items-center pt-2">
@@ -377,7 +396,7 @@ export default function CategoryForm({
                 className="w-5 h-5 text-primary-orange bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary-orange focus:ring-offset-0 cursor-pointer"
               />
               <label htmlFor="isActive" className="mr-3 text-gray-900 dark:text-white font-semibold cursor-pointer">
-                فعال
+                {String(t.active)}
               </label>
             </div>
           </div>
@@ -391,7 +410,7 @@ export default function CategoryForm({
             className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
             disabled={isLoading}
           >
-            انصراف
+            {String(t.cancel)}
           </button>
           <button
             type="submit"
@@ -401,10 +420,10 @@ export default function CategoryForm({
             {isLoading ? (
               <div className="flex items-center space-x-2 space-x-reverse">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>در حال ذخیره...</span>
+                <span>{String(t.saving)}</span>
               </div>
             ) : (
-              isEditing ? 'به‌روزرسانی' : 'ایجاد'
+              isEditing ? String(t.update) : String(t.create)
             )}
           </button>
         </div>

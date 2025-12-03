@@ -69,33 +69,70 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+    const currency = messages?.customer?.orders?.currency || 'تومان';
+    return new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : 'en-US').format(price) + ` ${currency}`;
   };
 
   const getStatusInfo = (status: string) => {
-    // Use hardcoded Persian text since orderStatuses doesn't exist in messages
-    const fallbackMap: Record<string, { label: string; color: string }> = {
-      PENDING: { label: 'در انتظار', color: 'bg-yellow-500/20 text-yellow-400' },
-      CONFIRMED: { label: 'تأیید شده', color: 'bg-blue-500/20 text-blue-400' },
-      PROCESSING: { label: 'در حال پردازش', color: 'bg-purple-500/20 text-purple-400' },
-      SHIPPED: { label: 'ارسال شده', color: 'bg-indigo-500/20 text-indigo-400' },
-      DELIVERED: { label: 'تحویل شده', color: 'bg-green-500/20 text-green-400' },
-      CANCELLED: { label: 'لغو شده', color: 'bg-red-500/20 text-red-400' },
-      REFUNDED: { label: 'بازپرداخت شده', color: 'bg-gray-500/20 text-gray-400' }
+    const t = messages?.customer?.orders?.orderStatuses;
+    const statusMap: Record<string, { label: string; color: string }> = {
+      PENDING: { 
+        label: String(t?.pending || 'در انتظار'), 
+        color: 'bg-yellow-500/20 text-yellow-400' 
+      },
+      CONFIRMED: { 
+        label: String(t?.confirmed || 'تأیید شده'), 
+        color: 'bg-blue-500/20 text-blue-400' 
+      },
+      PROCESSING: { 
+        label: String(t?.processing || 'در حال پردازش'), 
+        color: 'bg-purple-500/20 text-purple-400' 
+      },
+      SHIPPED: { 
+        label: String(t?.shipped || 'ارسال شده'), 
+        color: 'bg-indigo-500/20 text-indigo-400' 
+      },
+      DELIVERED: { 
+        label: String(t?.delivered || 'تحویل شده'), 
+        color: 'bg-green-500/20 text-green-400' 
+      },
+      CANCELLED: { 
+        label: String(t?.cancelled || 'لغو شده'), 
+        color: 'bg-red-500/20 text-red-400' 
+      },
+      REFUNDED: { 
+        label: String(t?.refunded || 'بازپرداخت شده'), 
+        color: 'bg-gray-500/20 text-gray-400' 
+      }
     };
-    return fallbackMap[status] || { label: status, color: 'bg-gray-500/20 text-gray-400' };
+    return statusMap[status] || { label: status, color: 'bg-gray-500/20 text-gray-400' };
   };
 
   const getPaymentStatusInfo = (status: string) => {
-    // Use hardcoded Persian text since paymentStatuses doesn't exist in messages
-    const fallbackMap: Record<string, { label: string; color: string }> = {
-      PENDING: { label: 'در انتظار پرداخت', color: 'bg-yellow-500/20 text-yellow-400' },
-      PAID: { label: 'پرداخت شده', color: 'bg-green-500/20 text-green-400' },
-      FAILED: { label: 'پرداخت ناموفق', color: 'bg-red-500/20 text-red-400' },
-      REFUNDED: { label: 'بازپرداخت شده', color: 'bg-gray-500/20 text-gray-400' },
-      PARTIALLY_REFUNDED: { label: 'بازپرداخت جزئی', color: 'bg-orange-500/20 text-orange-400' }
+    const t = messages?.customer?.orders?.paymentStatuses;
+    const statusMap: Record<string, { label: string; color: string }> = {
+      PENDING: { 
+        label: String(t?.pending || 'در انتظار پرداخت'), 
+        color: 'bg-yellow-500/20 text-yellow-400' 
+      },
+      PAID: { 
+        label: String(t?.paid || 'پرداخت شده'), 
+        color: 'bg-green-500/20 text-green-400' 
+      },
+      FAILED: { 
+        label: String(t?.failed || 'پرداخت ناموفق'), 
+        color: 'bg-red-500/20 text-red-400' 
+      },
+      REFUNDED: { 
+        label: String(t?.refunded || 'بازپرداخت شده'), 
+        color: 'bg-gray-500/20 text-gray-400' 
+      },
+      PARTIALLY_REFUNDED: { 
+        label: String(t?.partiallyRefunded || 'بازپرداخت جزئی'), 
+        color: 'bg-orange-500/20 text-orange-400' 
+      }
     };
-    return fallbackMap[status] || { label: status, color: 'bg-gray-500/20 text-gray-400' };
+    return statusMap[status] || { label: status, color: 'bg-gray-500/20 text-gray-400' };
   };
 
   const handleViewOrder = (orderId: string) => {

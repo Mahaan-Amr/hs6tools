@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { UpdateOrderData } from "@/types/admin";
+import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 
 export async function GET(
   request: NextRequest,
@@ -192,6 +193,9 @@ export async function PUT(
       updateData.deliveredAt = body.deliveredAt ? new Date(body.deliveredAt) : null;
     }
 
+    // Track status changes for SMS notifications
+    const previousStatus = existingOrder.status;
+
     // Update order
     const updatedOrder = await prisma.order.update({
       where: { id },
@@ -233,6 +237,47 @@ export async function PUT(
         }
       }
     });
+
+    // Send SMS notifications based on status changes (non-blocking)
+    if (updatedOrder.customerPhone && body.status && body.status !== previousStatus) {
+      const customerName = updatedOrder.user 
+        ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}` 
+        : 'کاربر گرامی';
+
+      // Order confirmed
+      if (body.status === 'CONFIRMED' && previousStatus !== 'CONFIRMED') {
+        sendSMSSafe(
+          {
+            receptor: updatedOrder.customerPhone,
+            message: SMSTemplates.ORDER_CONFIRMED(updatedOrder.orderNumber, customerName),
+          },
+          `Order confirmed: ${updatedOrder.orderNumber}`
+        );
+      }
+
+      // Order shipped
+      if (body.status === 'SHIPPED' && previousStatus !== 'SHIPPED') {
+        const trackingNumber = updatedOrder.trackingNumber || body.trackingNumber;
+        sendSMSSafe(
+          {
+            receptor: updatedOrder.customerPhone,
+            message: SMSTemplates.ORDER_SHIPPED(updatedOrder.orderNumber, trackingNumber),
+          },
+          `Order shipped: ${updatedOrder.orderNumber}`
+        );
+      }
+
+      // Order delivered
+      if (body.status === 'DELIVERED' && previousStatus !== 'DELIVERED') {
+        sendSMSSafe(
+          {
+            receptor: updatedOrder.customerPhone,
+            message: SMSTemplates.ORDER_DELIVERED(updatedOrder.orderNumber),
+          },
+          `Order delivered: ${updatedOrder.orderNumber}`
+        );
+      }
+    }
 
     // Transform data to match AdminOrder interface
     const transformedOrder = {

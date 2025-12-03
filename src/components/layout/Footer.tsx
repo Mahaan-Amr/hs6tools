@@ -23,8 +23,7 @@ export default function Footer({ locale, messages }: FooterProps) {
               <span className="text-gray-900 dark:text-white font-bold text-2xl">HS6Tools</span>
             </div>
             <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md text-justify leading-relaxed">
-              تولید کننده تخصصی ابزارهای صنعتی و نجاری با کیفیت برتر. 
-              ما متعهد به ارائه بهترین محصولات و خدمات به مشتریان خود هستیم.
+              {messages.footer.companyDescription}
             </p>
             <div className="flex space-x-4">
               {/* Instagram Link */}
@@ -61,11 +60,6 @@ export default function Footer({ locale, messages }: FooterProps) {
                   {messages.navigation.blog}
                 </Link>
               </li>
-              <li>
-                <Link href={`/${locale}/careers`} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-                  فرصت‌های شغلی
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -75,7 +69,7 @@ export default function Footer({ locale, messages }: FooterProps) {
             <ul className="space-y-3">
               <li>
                 <Link href={`/${locale}/faq`} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-                  سوالات متداول
+                  {messages.footer.faq}
                 </Link>
               </li>
             </ul>
@@ -86,7 +80,7 @@ export default function Footer({ locale, messages }: FooterProps) {
         <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-gray-500 dark:text-gray-400 text-sm">
-              © 2025 HS6Tools. تمامی حقوق محفوظ است.
+              {messages.footer.copyright}
             </div>
             
             {/* E-Namad Trust Seal - Exact code as provided by e-namad without modifications */}

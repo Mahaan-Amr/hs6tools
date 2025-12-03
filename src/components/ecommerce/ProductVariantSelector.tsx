@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface ProductVariant {
   id: string;
@@ -27,6 +28,15 @@ export default function ProductVariantSelector({
   locale
 }: ProductVariantSelectorProps) {
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string | number>>({});
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   // Get unique attribute keys from all variants
   const attributeKeys = Array.from(
@@ -99,11 +109,12 @@ export default function ProductVariantSelector({
       {attributeKeys.map((key) => (
         <div key={key} className="space-y-3">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-            {key === "color" ? "رنگ" : 
-             key === "size" ? "سایز" : 
-             key === "material" ? "جنس" : 
-             key === "weight" ? "وزن" : 
-             key === "dimension" ? "ابعاد" : key}
+            {(messages?.products?.attributes as Record<string, string>)?.[key] || 
+             (key === "color" ? "رنگ" : 
+              key === "size" ? "سایز" : 
+              key === "material" ? "جنس" : 
+              key === "weight" ? "وزن" : 
+              key === "dimension" ? "ابعاد" : key)}
           </label>
           
           <div className="flex flex-wrap gap-3">
@@ -148,12 +159,16 @@ export default function ProductVariantSelector({
       {selectedVariant && (
         <div className="glass rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-gray-400">SKU:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {messages?.products?.sku || 'SKU'}:
+            </span>
             <span className="text-sm text-gray-900 dark:text-white font-mono">{selectedVariant.sku}</span>
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-gray-400">قیمت:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {messages?.products?.price || 'قیمت'}:
+            </span>
             <div className="text-right">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
                 {formatPrice(selectedVariant.price)}
@@ -167,13 +182,15 @@ export default function ProductVariantSelector({
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-gray-400">موجودی:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {messages?.products?.stock || 'موجودی'}:
+            </span>
             <span className={`text-sm font-medium ${
               selectedVariant.isInStock ? "text-primary-orange" : "text-red-400"
             }`}>
               {selectedVariant.isInStock 
-                ? `${selectedVariant.stockQuantity} عدد موجود` 
-                : "ناموجود"
+                ? `${selectedVariant.stockQuantity} ${messages?.products?.stockAvailable || 'عدد موجود'}` 
+                : (messages?.products?.outOfStock || 'ناموجود')
               }
             </span>
           </div>

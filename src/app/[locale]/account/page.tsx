@@ -52,7 +52,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-orange mx-auto"></div>
-            <p className="text-gray-900 dark:text-white mt-4">در حال بارگذاری...</p>
+            <p className="text-gray-900 dark:text-white mt-4">{messages?.common?.loading || "Loading..."}</p>
           </div>
         </div>
       </div>
@@ -70,7 +70,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-orange mx-auto"></div>
-            <p className="text-gray-900 dark:text-white mt-4">در حال بارگذاری...</p>
+            <p className="text-gray-900 dark:text-white mt-4">Loading...</p>
           </div>
         </div>
       </div>
@@ -84,13 +84,13 @@ function AccountPageContent({ params }: AccountPageProps) {
           <>
             <div className="glass rounded-xl p-6 mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                {messages?.customer?.profile?.title || 'اطلاعات شخصی'}
+                {String(messages?.customer?.profile?.title)}
               </h2>
               <ProfileForm locale={locale} />
             </div>
             <div className="glass rounded-xl p-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                {messages?.customer?.orders?.recentOrders || 'سفارشات اخیر'}
+                {String(messages?.customer?.orders?.recentOrders)}
               </h2>
               <RecentOrders locale={locale} />
             </div>
@@ -100,7 +100,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         return (
           <div className="glass rounded-xl p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {messages?.customer?.orders?.title || 'تاریخچه سفارشات'}
+              {String(messages?.customer?.orders?.title)}
             </h2>
             <OrderHistory locale={locale} />
           </div>
@@ -109,7 +109,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         return (
           <div className="glass rounded-xl p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {messages?.customer?.addresses?.title || 'آدرس‌ها'}
+              {String(messages?.customer?.addresses?.title)}
             </h2>
             <AddressesTab locale={locale} />
           </div>
@@ -118,7 +118,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         return (
           <div className="glass rounded-xl p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {messages?.customer?.wishlist?.title || 'علاقه‌مندی‌ها'}
+              {String(messages?.customer?.wishlist?.title)}
             </h2>
             <WishlistTab locale={locale} />
           </div>
@@ -127,7 +127,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         return (
           <div className="glass rounded-xl p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {messages?.customer?.settings?.title || 'تنظیمات'}
+              {String(messages?.customer?.settings?.title)}
             </h2>
             <SettingsTab locale={locale} />
           </div>
@@ -136,7 +136,7 @@ function AccountPageContent({ params }: AccountPageProps) {
         return (
           <div className="glass rounded-xl p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {messages?.customer?.security?.title || 'امنیت'}
+              {String(messages?.customer?.security?.title)}
             </h2>
             <SecurityTab locale={locale} />
           </div>
@@ -152,10 +152,10 @@ function AccountPageContent({ params }: AccountPageProps) {
         {/* Header */}
         <div className="text-center mb-12" data-scroll-reveal>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            {messages?.customer?.account?.title || 'حساب کاربری'}
+            {String(messages?.customer?.account?.title)}
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6 text-justify leading-relaxed">
-            {messages?.customer?.account?.subtitle || 'مدیریت اطلاعات شخصی و سفارشات شما'}
+            {String(messages?.customer?.account?.subtitle)}
           </p>
           
           {/* Logout Button */}
@@ -167,7 +167,7 @@ function AccountPageContent({ params }: AccountPageProps) {
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              {messages?.common?.logout || 'خروج از حساب'}
+              {String(messages?.common?.logout)}
             </button>
           </div>
         </div>
@@ -186,7 +186,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                       : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
-                  {messages?.customer?.account?.personalInfo || 'اطلاعات شخصی'}
+                  {String(messages?.customer?.account?.personalInfo)}
                 </button>
                 <button
                   onClick={() => handleTabChange('orders')}
@@ -196,7 +196,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                       : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
-                  {messages?.customer?.account?.orders || 'سفارشات'}
+                  {String(messages?.customer?.account?.orders)}
                 </button>
                 <button
                   onClick={() => handleTabChange('addresses')}
@@ -206,7 +206,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                       : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
-                  {messages?.customer?.account?.addresses || 'آدرس‌ها'}
+                  {String(messages?.customer?.account?.addresses)}
                 </button>
                 <button
                   onClick={() => handleTabChange('wishlist')}
@@ -216,7 +216,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                       : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
-                  {messages?.customer?.account?.wishlist || 'علاقه‌مندی‌ها'}
+                  {String(messages?.customer?.account?.wishlist)}
                 </button>
                 <button
                   onClick={() => handleTabChange('settings')}
@@ -226,7 +226,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                       : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
-                  {messages?.customer?.account?.settings || 'تنظیمات'}
+                  {String(messages?.customer?.account?.settings)}
                 </button>
                 
                 <button
@@ -237,7 +237,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                       : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
                   }`}
                 >
-                  {messages?.customer?.account?.security || 'امنیت'}
+                  {String(messages?.customer?.account?.security)}
                 </button>
                 
                 {/* Logout Button in Sidebar */}
@@ -247,7 +247,7 @@ function AccountPageContent({ params }: AccountPageProps) {
                     className="w-full text-right px-4 py-3 rounded-xl transition-all duration-200 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
                   >
                     <div className="flex items-center justify-end">
-                      <span>{messages?.common?.logout || 'خروج از حساب'}</span>
+                      <span>{String(messages?.common?.logout)}</span>
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                       </svg>

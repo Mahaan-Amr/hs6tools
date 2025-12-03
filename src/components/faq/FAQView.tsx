@@ -1,4 +1,8 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getMessages, Messages } from "@/lib/i18n";
 import type { FAQContent } from "@/app/[locale]/faq/content";
 
 interface FAQViewProps {
@@ -7,6 +11,29 @@ interface FAQViewProps {
 }
 
 export default function FAQView({ locale, content }: FAQViewProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  if (!messages) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center text-gray-900 dark:text-white">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-orange mx-auto"></div>
+            <p className="mt-4 text-xl">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-white via-orange-50/40 to-white dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-24">
       {/* Floating background accents */}
@@ -28,7 +55,7 @@ export default function FAQView({ locale, content }: FAQViewProps) {
           <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/40 bg-white/70 px-4 py-2 text-sm font-semibold text-primary-orange dark:border-white/20 dark:bg-white/10 dark:text-orange-200">
               <span className="accent-dot" />
-              HS6Tools Support Knowledge Base
+              {messages.faq.knowledgeBase}
             </span>
             <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white md:text-5xl">
               {content.title}
@@ -39,16 +66,16 @@ export default function FAQView({ locale, content }: FAQViewProps) {
             <div className="grid w-full gap-4 md:grid-cols-3">
               {[
                 {
-                  label: "پوشش کامل",
-                  value: "۳ بخش اصلی",
+                  label: messages.faq.fullCoverage,
+                  value: messages.faq.threeMainSections,
                 },
                 {
-                  label: "پاسخ‌های به‌روز",
-                  value: "۱۲ ماه ضمانت",
+                  label: messages.faq.updatedAnswers,
+                  value: messages.faq.twelveMonthWarranty,
                 },
                 {
-                  label: "پشتیبانی سریع",
-                  value: "پاسخ زیر ۲۴ ساعت",
+                  label: messages.faq.quickSupport,
+                  value: messages.faq.responseUnder24Hours,
                 },
               ].map((stat) => (
                 <div
@@ -87,11 +114,7 @@ export default function FAQView({ locale, content }: FAQViewProps) {
                   </h2>
                 </div>
                 <div className="max-w-lg text-right text-sm text-gray-500 dark:text-gray-400">
-                  {locale === "fa"
-                    ? "تمام پرسش‌های این بخش با تجربه کاربران واقعی به‌روزرسانی شده‌اند."
-                    : locale === "ar"
-                    ? "تم تحديث هذه الإجابات بناءً على تجارب العملاء الفعلية."
-                    : "Answers in this block reflect real customer conversations and the latest product updates."}
+                  {messages.faq.updatedDescription}
                 </div>
               </header>
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMessages, Messages } from '@/lib/i18n';
 import { useCustomer } from '@/contexts/CustomerContext';
+import AddressFormModal from './AddressFormModal';
 
 interface CheckoutAddressSelectorProps {
   locale: string;
@@ -38,6 +39,8 @@ export default function CheckoutAddressSelector({
 }: CheckoutAddressSelectorProps) {
   const { addresses, addressesLoading } = useCustomer();
   const [messages, setMessages] = useState<Messages | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [modalAddressType, setModalAddressType] = useState<'billing' | 'shipping'>('shipping');
 
 
   useEffect(() => {
@@ -63,8 +66,12 @@ export default function CheckoutAddressSelector({
   };
 
   const handleAddNewAddress = (type: 'billing' | 'shipping') => {
-    // TODO: Implement address form
-    console.log('Add new address:', type);
+    setModalAddressType(type);
+    setShowAddressModal(true);
+  };
+
+  const handleAddressCreated = () => {
+    // Addresses will be refreshed automatically by CustomerContext
   };
 
   if (addressesLoading || !messages) {
@@ -248,6 +255,15 @@ export default function CheckoutAddressSelector({
           </label>
         </div>
       )}
+
+      {/* Address Form Modal */}
+      <AddressFormModal
+        locale={locale}
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        addressType={modalAddressType}
+        onAddressCreated={handleAddressCreated}
+      />
     </div>
   );
 }

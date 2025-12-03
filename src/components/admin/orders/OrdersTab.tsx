@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { AdminOrder, UpdateOrderData } from "@/types/admin";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 import OrderList from "./OrderList";
@@ -8,6 +9,8 @@ import OrderForm from "./OrderForm";
 import { formatPrice } from "@/utils/format";
 
 export default function OrdersTab() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'fa';
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -409,6 +412,7 @@ export default function OrdersTab() {
           onSave={handleOrderUpdate}
           onCancel={handleCancelEdit}
           isSaving={isSaving}
+          locale={locale}
         />
       )}
     </div>

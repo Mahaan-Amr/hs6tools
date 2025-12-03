@@ -3,7 +3,8 @@
 import { useCartStore } from "@/contexts/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface CartPageClientProps {
   locale: string;
@@ -12,6 +13,15 @@ interface CartPageClientProps {
 export default function CartPageClient({ locale }: CartPageClientProps) {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCartStore();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
@@ -42,10 +52,16 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
   };
 
   const handleClearCart = () => {
-    if (confirm("آیا مطمئن هستید که می‌خواهید سبد خرید را خالی کنید؟")) {
+    if (messages?.cart?.clearCartConfirm && confirm(messages.cart.clearCartConfirm)) {
       clearCart();
     }
   };
+
+  if (!messages) {
+    return <div className="min-h-screen pt-20 flex items-center justify-center">{messages?.common?.loading || "Loading..."}</div>;
+  }
+
+  const t = messages.cart;
 
   if (items.length === 0) {
     return (
@@ -59,9 +75,9 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
               </svg>
             </div>
             
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">سبد خرید خالی است</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t.emptyTitle}</h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg mb-8 text-justify leading-relaxed">
-              محصولی به سبد خرید اضافه نکرده‌اید. برای شروع خرید، محصولات ما را مشاهده کنید.
+              {t.emptyMessage}
             </p>
             
             <div className="space-x-4">
@@ -69,14 +85,14 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                 href={`/${locale}/shop`}
                 className="inline-block bg-gradient-to-r from-primary-orange to-orange-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-glass-orange hover:scale-105 transition-all duration-200"
               >
-                مشاهده محصولات
+                {t.viewProducts}
               </Link>
               
               <Link
                 href={`/${locale}/categories`}
                 className="inline-block glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200"
               >
-                دسته‌بندی‌ها
+                {t.categories}
               </Link>
             </div>
           </div>
@@ -90,9 +106,9 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">سبد خرید</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">{t.pageTitle}</h1>
           <p className="text-gray-600 dark:text-gray-400 text-lg text-justify leading-relaxed">
-            {totalItems} آیتم در سبد خرید شما
+            {totalItems} {t.itemsInYourCart}
           </p>
         </div>
 
@@ -101,12 +117,12 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
           <div className="lg:col-span-2">
             <div className="glass rounded-3xl p-6 mb-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">محصولات انتخاب شده</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t.selectedProducts}</h2>
                 <button
                   onClick={handleClearCart}
                   className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm transition-colors duration-200"
                 >
-                  خالی کردن سبد خرید
+                  {t.clearCart}
                 </button>
               </div>
 
@@ -185,7 +201,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                           onClick={() => handleRemoveItem(item.id)}
                           className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm transition-colors duration-200"
                         >
-                          حذف
+                          {t.delete}
                         </button>
                       </div>
                     </div>
@@ -197,12 +213,12 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
             {/* Continue Shopping */}
             <div className="glass rounded-3xl p-6">
               <div className="text-center">
-                <p className="text-gray-600 dark:text-gray-400 mb-4">آیا محصول دیگری نیاز دارید؟</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{t.needMoreProducts}</p>
                 <Link
                   href={`/${locale}/shop`}
                   className="inline-block glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white px-8 py-3 rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200"
                 >
-                  ادامه خرید
+                  {t.continueShopping}
                 </Link>
               </div>
             </div>
@@ -211,23 +227,23 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="glass rounded-3xl p-6 sticky top-24">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">خلاصه سفارش</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{t.orderSummary}</h2>
               
               {/* Order Details */}
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>تعداد محصولات:</span>
+                  <span>{t.productCount}</span>
                   <span className="text-gray-900 dark:text-white">{items.length}</span>
                 </div>
                 
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>تعداد کل آیتم‌ها:</span>
+                  <span>{t.totalItemsCount}</span>
                   <span className="text-gray-900 dark:text-white">{totalItems}</span>
                 </div>
                 
                 <div className="border-t border-gray-200 dark:border-white/10 pt-4">
                   <div className="flex justify-between text-lg font-semibold text-gray-900 dark:text-white">
-                    <span>مجموع:</span>
+                    <span>{t.totalLabel}</span>
                     <span className="text-primary-orange">{formatPrice(totalPrice)}</span>
                   </div>
                 </div>
@@ -235,11 +251,11 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
 
               {/* Shipping Info */}
               <div className="mb-6 p-4 bg-gray-100 dark:bg-white/5 rounded-2xl">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">اطلاعات ارسال</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t.shippingInfo}</h3>
                 <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <p>• ارسال از طریق پست و تیپاکس</p>
-                  <p>• زمان تحویل: 2-5 روز کاری</p>
-                  <p>• هزینه ارسال: رایگان برای سفارشات بالای 500,000 تومان</p>
+                  <p>• {t.shippingInfoText1}</p>
+                  <p>• {t.shippingInfoText2}</p>
+                  <p>• {t.shippingInfoText3}</p>
                 </div>
               </div>
 
@@ -248,7 +264,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                 href={`/${locale}/checkout`}
                 className="block w-full bg-gradient-to-r from-primary-orange to-orange-500 text-white text-center py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-glass-orange hover:scale-105 transition-all duration-200"
               >
-                تکمیل خرید
+                {t.checkout}
               </Link>
 
               {/* Security Notice */}
@@ -257,7 +273,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                   </svg>
-                  <span>پرداخت امن با ZarinPal</span>
+                  <span>{t.securePayment}</span>
                 </div>
               </div>
             </div>

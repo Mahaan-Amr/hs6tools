@@ -193,7 +193,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {product.isFeatured && (
                 <div className="absolute top-4 right-4">
                   <span className="bg-gradient-to-r from-primary-orange to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    ویژه
+                    {t.products.featured}
                   </span>
                 </div>
               )}
@@ -247,7 +247,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
               {hasDiscount && (
                 <div className="text-sm text-green-400">
-                  {Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100)}% تخفیف
+                  {Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100)}{t.products.discountPercent}
                 </div>
               )}
             </div>
@@ -256,11 +256,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${product.isInStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
               <span className={`text-sm ${product.isInStock ? 'text-green-400' : 'text-red-400'}`}>
-                {product.isInStock ? 'موجود' : 'ناموجود'}
+                {product.isInStock ? t.products.inStock : t.products.outOfStock}
               </span>
               {product.isInStock && (
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  ({product.stockQuantity} عدد)
+                  ({product.stockQuantity} {t.products.stockCount})
                 </span>
               )}
             </div>
@@ -275,7 +275,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Variants */}
             {hasVariants && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">انتخاب گزینه</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.products.selectVariant}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {product.variants.map((variant) => (
                     <div key={variant.id} className="glass rounded-xl p-4 cursor-pointer hover:ring-2 ring-primary-orange transition-all duration-200">
@@ -284,7 +284,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         {formatPrice(variant.price)}
                       </div>
                       <div className="text-xs text-gray-600 dark:text-gray-400">
-                        موجودی: {variant.stockQuantity} عدد
+                        {t.products.stock}: {variant.stockQuantity} {t.products.stockCount}
                       </div>
                     </div>
                   ))}
@@ -302,40 +302,40 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 }`}
                 disabled={!product.isInStock}
               >
-                {product.isInStock ? "افزودن به سبد خرید" : "ناموجود"}
+                {product.isInStock ? t.products.addToCart : t.products.outOfStock}
               </button>
               
               <button className="w-full py-4 px-6 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-200">
-                افزودن به لیست علاقه‌مندی
+                {t.products.addToWishlist}
               </button>
             </div>
 
             {/* Product Details */}
             <div className="glass rounded-2xl p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">مشخصات محصول</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.products.productSpecs}</h3>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {product.brand && (
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">برند:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t.products.brand}</span>
                     <span className="text-gray-900 dark:text-white ml-2">{product.brand}</span>
                   </div>
                 )}
                 {product.material && (
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">جنس:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t.products.material}</span>
                     <span className="text-gray-900 dark:text-white ml-2">{product.material}</span>
                   </div>
                 )}
                 {product.weight && (
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">وزن:</span>
-                    <span className="text-gray-900 dark:text-white ml-2">{product.weight} گرم</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t.products.weight}</span>
+                    <span className="text-gray-900 dark:text-white ml-2">{product.weight} {t.products.weightUnit}</span>
                   </div>
                 )}
                 {product.warranty && (
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">گارانتی:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t.products.warranty}</span>
                     <span className="text-gray-900 dark:text-white ml-2">{product.warranty}</span>
                   </div>
                 )}
@@ -347,7 +347,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Product Description */}
         {product.description && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">توضیحات محصول</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.products.productDescription}</h2>
             <div className="glass rounded-3xl p-8">
               <div className="prose prose-invert max-w-none">
                 <div dangerouslySetInnerHTML={{ __html: product.description }} />
@@ -360,7 +360,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {product.reviews.length > 0 && (
           <div className="mt-16">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              نظرات ({product._count.reviews})
+              {t.products.reviews} ({product._count.reviews})
             </h2>
             <div className="space-y-4">
               {product.reviews.map((review) => (
@@ -402,7 +402,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">محصولات مرتبط</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.products.relatedProducts}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
                 <Link key={relatedProduct.id} href={`/${locale}/products/${relatedProduct.slug}`}>

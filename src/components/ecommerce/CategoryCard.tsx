@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface CategoryCardProps {
   id: string;
@@ -30,6 +31,15 @@ export default function CategoryCard({
 }: CategoryCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   return (
     <Link href={`/${locale}/categories/${slug}`}>
@@ -72,10 +82,10 @@ export default function CategoryCard({
         {/* Content */}
         <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
           {/* Category Type Badge */}
-          {isParent && (
+          {isParent && messages && (
             <div className="mb-3">
               <span className="bg-primary-orange/80 text-white text-xs font-bold px-2 py-1 rounded-full">
-                دسته اصلی
+                {messages.categories.parentCategory}
               </span>
             </div>
           )}
@@ -98,7 +108,7 @@ export default function CategoryCard({
               <svg className="w-4 h-4 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
-              <span>{productCount} محصول</span>
+              <span>{productCount} {messages?.categories?.products || "محصول"}</span>
             </div>
             
             {subcategoryCount > 0 && (
@@ -106,7 +116,7 @@ export default function CategoryCard({
                 <svg className="w-4 h-4 text-primary-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <span>{subcategoryCount} زیردسته</span>
+                <span>{subcategoryCount} {messages?.categories?.subcategoriesCount || "زیردسته"}</span>
               </div>
             )}
           </div>
@@ -116,7 +126,7 @@ export default function CategoryCard({
             isHovered ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
           }`}>
             <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-              <span className="text-sm font-medium">مشاهده دسته</span>
+              <span className="text-sm font-medium">{messages?.categories?.viewCategory || "مشاهده دسته"}</span>
               <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>

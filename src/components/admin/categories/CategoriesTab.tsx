@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import { AdminCategory, CreateCategoryData, UpdateCategoryData } from "@/types/admin";
 import CategoryList from "./CategoryList";
 import CategoryForm from "./CategoryForm";
+import { useParams } from "next/navigation";
 
 export default function CategoriesTab() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'fa';
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -173,6 +176,7 @@ export default function CategoriesTab() {
           onSave={handleSave}
           onCancel={handleCancel}
           isLoading={isSaving}
+          locale={locale}
         />
       </div>
     );

@@ -34,15 +34,6 @@ export async function GET(
             customerTier: true,
             healthScore: true
           }
-        },
-        opportunity: {
-          select: {
-            id: true,
-            title: true,
-            stage: true,
-            value: true,
-            probability: true
-          }
         }
       }
     });
@@ -119,15 +110,6 @@ export async function PUT(
             phone: true,
             customerTier: true,
             healthScore: true
-          }
-        },
-        opportunity: {
-          select: {
-            id: true,
-            title: true,
-            stage: true,
-            value: true,
-            probability: true
           }
         }
       }

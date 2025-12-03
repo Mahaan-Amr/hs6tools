@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { AdminUser, CreateUserData, UpdateUserData } from "@/types/admin";
 import { UserRole } from "@prisma/client";
 import UserList from "./UserList";
@@ -8,6 +9,8 @@ import UserForm from "./UserForm";
 
 
 export default function UsersTab() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'fa';
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -368,6 +371,7 @@ export default function UsersTab() {
       {showUserForm && (
         <UserForm
           user={selectedUser || undefined}
+          locale={locale}
           onSave={async (data: CreateUserData | UpdateUserData) => {
             if (selectedUser) {
               await handleUserUpdate(data as UpdateUserData);

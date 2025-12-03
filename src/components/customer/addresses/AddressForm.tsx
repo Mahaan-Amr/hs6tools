@@ -269,7 +269,7 @@ export default function AddressForm({
           value={formData.company}
           onChange={(e) => handleInputChange('company', e.target.value)}
           className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
-          placeholder={messages?.customer?.addresses?.company || 'شرکت (اختیاری)'}
+          placeholder={messages?.customer?.addresses?.companyOptional || messages?.customer?.addresses?.company || 'شرکت (اختیاری)'}
         />
       </div>
 
@@ -304,7 +304,7 @@ export default function AddressForm({
             value={formData.addressLine2}
             onChange={(e) => handleInputChange('addressLine2', e.target.value)}
             className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
-            placeholder={messages?.customer?.addresses?.addressLine2 || 'آدرس تکمیلی (اختیاری)'}
+            placeholder={messages?.customer?.addresses?.addressLine2Optional || messages?.customer?.addresses?.addressLine2 || 'آدرس تکمیلی (اختیاری)'}
           />
         </div>
       </div>
@@ -384,11 +384,11 @@ export default function AddressForm({
             onChange={(e) => handleInputChange('country', e.target.value)}
             className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
           >
-            <option value="Iran">ایران</option>
-            <option value="Afghanistan">افغانستان</option>
-            <option value="Iraq">عراق</option>
-            <option value="Turkey">ترکیه</option>
-            <option value="Other">سایر</option>
+            <option value="Iran">{messages?.customer?.addresses?.countries?.iran || 'ایران'}</option>
+            <option value="Afghanistan">{messages?.customer?.addresses?.countries?.afghanistan || 'افغانستان'}</option>
+            <option value="Iraq">{messages?.customer?.addresses?.countries?.iraq || 'عراق'}</option>
+            <option value="Turkey">{messages?.customer?.addresses?.countries?.turkey || 'ترکیه'}</option>
+            <option value="Other">{messages?.customer?.addresses?.countries?.other || 'سایر'}</option>
           </select>
         </div>
 

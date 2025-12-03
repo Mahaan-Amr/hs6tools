@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import LeadList from "@/components/admin/crm/LeadList";
 import LeadForm from "@/components/admin/crm/LeadForm";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface LeadFormData extends Record<string, unknown> {
   firstName: string;
@@ -18,8 +19,6 @@ interface LeadFormData extends Record<string, unknown> {
   assignedTo: string;
   notes: string;
   tags: string[];
-  expectedValue: number | null;
-  expectedClose: string | null;
   nextFollowUp: string | null;
 }
 
@@ -33,23 +32,9 @@ interface Lead {
   position?: string;
   source: string;
   status: string;
-  score: number;
   assignedTo?: string;
-  expectedValue?: number;
-  expectedClose?: string;
   nextFollowUp?: string;
   createdAt: string;
-  activities: Array<{
-    id: string;
-    type: string;
-    subject: string;
-    description: string;
-    outcome?: string;
-    nextAction?: string;
-    scheduledAt?: string;
-    completedAt?: string;
-    createdAt: string;
-  }>;
   interactions: Array<{
     id: string;
     type: string;
@@ -89,6 +74,15 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
   const [showForm, setShowForm] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   // Filters
   const [currentPage, setCurrentPage] = useState(1);
@@ -120,15 +114,17 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
         setTotalPages(result.data.pagination.totalPages);
         setTotalCount(result.data.pagination.totalCount);
       } else {
-        setError(result.error || "خطا در بارگذاری لیدها");
+        const t = messages?.admin?.crm?.leads;
+        setError(result.error || (t?.error ? String(t.error) : "Error loading leads"));
       }
     } catch (error) {
       console.error("Error fetching leads:", error);
-      setError("خطا در بارگذاری لیدها");
+      const t = messages?.admin?.crm?.leads;
+      setError(t?.error ? String(t.error) : "Error loading leads");
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, search, status, source, assignedTo]);
+  }, [currentPage, search, status, source, assignedTo, messages]);
 
   useEffect(() => {
     fetchLeads();
@@ -151,11 +147,13 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
         setShowForm(false);
         fetchLeads(); // Refresh the list
       } else {
-        setError(result.error || "خطا در ایجاد لید");
+        const t = messages?.admin?.crm?.leads;
+        setError(result.error || (t?.createError ? String(t.createError) : "Error creating lead"));
       }
     } catch (error) {
       console.error("Error creating lead:", error);
-      setError("خطا در ایجاد لید");
+      const t = messages?.admin?.crm?.leads;
+      setError(t?.createError ? String(t.createError) : "Error creating lead");
     } finally {
       setIsSubmitting(false);
     }
@@ -180,11 +178,13 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
         setEditingLead(undefined);
         fetchLeads(); // Refresh the list
       } else {
-        setError(result.error || "خطا در به‌روزرسانی لید");
+        const t = messages?.admin?.crm?.leads;
+        setError(result.error || (t?.updateError ? String(t.updateError) : "Error updating lead"));
       }
     } catch (error) {
       console.error("Error updating lead:", error);
-      setError("خطا در به‌روزرسانی لید");
+      const t = messages?.admin?.crm?.leads;
+      setError(t?.updateError ? String(t.updateError) : "Error updating lead");
     } finally {
       setIsSubmitting(false);
     }
@@ -200,23 +200,29 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
     setEditingLead(undefined);
   };
 
+  if (!messages || !messages.admin?.crm?.leads) {
+    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
+  }
+
+  const t = messages.admin.crm.leads;
+
   if (showForm) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white">
-              {editingLead ? "ویرایش لید" : "ایجاد لید جدید"}
+              {editingLead ? String(t.editLead) : String(t.createLead)}
             </h1>
             <p className="text-gray-300 mt-2">
-              {editingLead ? "اطلاعات لید را ویرایش کنید" : "لید جدید را ایجاد کنید"}
+              {editingLead ? String(t.leadDetails) : String(t.createLead)}
             </p>
           </div>
           <button
             onClick={handleCancelForm}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
-            بازگشت
+            {String(messages.common.back)}
           </button>
         </div>
 
@@ -225,6 +231,7 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
           onSubmit={editingLead ? handleUpdateLead : handleCreateLead}
           onCancel={handleCancelForm}
           isLoading={isSubmitting}
+          locale={locale}
         />
       </div>
     );
@@ -235,14 +242,14 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">مدیریت لیدها</h1>
-          <p className="text-gray-300 mt-2">مدیریت و پیگیری لیدهای فروش</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">{String(t.title)}</h1>
+          <p className="text-gray-300 mt-2">{String(t.leadManagement)}</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
           className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-primary-orange-dark transition-colors"
         >
-          ایجاد لید جدید
+          {String(t.createLead)}
         </button>
       </div>
 
@@ -250,100 +257,97 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="glass rounded-3xl p-4 text-center">
           <div className="text-2xl font-bold text-white">{metrics.total}</div>
-          <div className="text-sm text-gray-300">کل لیدها</div>
+          <div className="text-sm text-gray-300">{String(t.metrics?.total || 'Total')}</div>
         </div>
         <div className="glass rounded-3xl p-4 text-center">
           <div className="text-2xl font-bold text-blue-400">{metrics.new}</div>
-          <div className="text-sm text-gray-300">جدید</div>
+          <div className="text-sm text-gray-300">{String(t.metrics?.new || 'New')}</div>
         </div>
         <div className="glass rounded-3xl p-4 text-center">
           <div className="text-2xl font-bold text-yellow-400">{metrics.contacted}</div>
-          <div className="text-sm text-gray-300">تماس گرفته شده</div>
+          <div className="text-sm text-gray-300">{String(t.metrics?.contacted || 'Contacted')}</div>
         </div>
         <div className="glass rounded-3xl p-4 text-center">
           <div className="text-2xl font-bold text-green-400">{metrics.qualified}</div>
-          <div className="text-sm text-gray-300">صلاحیت‌دار</div>
+          <div className="text-sm text-gray-300">{String(t.metrics?.qualified || 'Qualified')}</div>
         </div>
         <div className="glass rounded-3xl p-4 text-center">
           <div className="text-2xl font-bold text-emerald-400">{metrics.converted}</div>
-          <div className="text-sm text-gray-300">تبدیل شده</div>
+          <div className="text-sm text-gray-300">{String(t.metrics?.converted || 'Converted')}</div>
         </div>
         <div className="glass rounded-3xl p-4 text-center">
           <div className="text-2xl font-bold text-red-400">{metrics.lost}</div>
-          <div className="text-sm text-gray-300">از دست رفته</div>
+          <div className="text-sm text-gray-300">{String(t.metrics?.lost || 'Lost')}</div>
         </div>
       </div>
 
       {/* Filters */}
       <div className="glass rounded-3xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">فیلتر و جستجو</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">{String(messages.common.filter)}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              جستجو در لیدها
+              {String(messages.common.search)}
             </label>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
-              placeholder="نام، ایمیل، شرکت..."
+              placeholder={String(messages.common.search)}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              وضعیت
+              {String(t.status)}
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">همه وضعیت‌ها</option>
-              <option value="NEW">جدید</option>
-              <option value="CONTACTED">تماس گرفته شده</option>
-              <option value="QUALIFIED">صلاحیت‌دار</option>
-              <option value="PROPOSAL">پیشنهاد</option>
-              <option value="NEGOTIATION">مذاکره</option>
-              <option value="CONVERTED">تبدیل شده</option>
-              <option value="LOST">از دست رفته</option>
-              <option value="UNQUALIFIED">غیر صلاحیت‌دار</option>
+              <option value="">{String(messages.common.filter)}</option>
+              <option value="NEW">{String(t.statusOptions?.new || '')}</option>
+              <option value="CONTACTED">{String(t.statusOptions?.contacted || '')}</option>
+              <option value="QUALIFIED">{String(t.statusOptions?.qualified || '')}</option>
+              <option value="CONVERTED">{String(t.statusOptions?.converted || '')}</option>
+              <option value="LOST">{String(t.statusOptions?.lost || '')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              منبع
+              {String(t.source)}
             </label>
             <select
               value={source}
               onChange={(e) => setSource(e.target.value)}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">همه منابع</option>
-              <option value="WEBSITE">وب‌سایت</option>
-              <option value="REFERRAL">معرفی</option>
-              <option value="SOCIAL_MEDIA">شبکه‌های اجتماعی</option>
-              <option value="EMAIL_CAMPAIGN">کمپین ایمیل</option>
-              <option value="TRADE_SHOW">نمایشگاه</option>
-              <option value="COLD_CALL">تماس سرد</option>
-              <option value="PARTNER">شریک</option>
-              <option value="ADVERTISING">تبلیغات</option>
-              <option value="OTHER">سایر</option>
+              <option value="">{String(messages.common.filter)}</option>
+              <option value="WEBSITE">{String(t.sourceOptions?.website || '')}</option>
+              <option value="REFERRAL">{String(t.sourceOptions?.referral || '')}</option>
+              <option value="SOCIAL_MEDIA">{String(t.sourceOptions?.socialMedia || '')}</option>
+              <option value="EMAIL">{String(t.sourceOptions?.email || '')}</option>
+              <option value="TRADE_SHOW">{String(t.sourceOptions?.tradeShow || '')}</option>
+              <option value="PHONE">{String(t.sourceOptions?.phone || '')}</option>
+              <option value="PARTNER">{String(t.sourceOptions?.partner || '')}</option>
+              <option value="ADVERTISING">{String(t.sourceOptions?.advertising || '')}</option>
+              <option value="OTHER">{String(t.sourceOptions?.other || '')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              اختصاص داده شده به
+              {String(t.assignedTo)}
             </label>
             <input
               type="text"
               value={assignedTo}
               onChange={(e) => setAssignedTo(e.target.value)}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
-              placeholder="نام فروشنده"
+              placeholder={String(t.assignedToPlaceholder)}
             />
           </div>
 
@@ -358,7 +362,7 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
               }}
               className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              بازنشانی
+              {String(messages.common.reset)}
             </button>
           </div>
         </div>
@@ -374,7 +378,7 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
       {/* Leads List */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="text-white">در حال بارگذاری لیدها...</div>
+          <div className="text-white">{String(t.loading)}</div>
         </div>
       ) : (
         <LeadList

@@ -1,8 +1,10 @@
 import { Metadata } from "next";
 
+// Note: Layout metadata is static as layouts don't receive params in the same way as pages
+// The actual page metadata will override this for specific pages
 export const metadata: Metadata = {
-  title: "پنل مدیریت | HS6Tools",
-  description: "مدیریت کامل سیستم و محصولات HS6Tools",
+  title: "Admin Panel | HS6Tools",
+  description: "Complete system and product management"
 };
 
 export default function AdminLayout({

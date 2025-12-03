@@ -84,13 +84,15 @@ export default function AddressList({ locale }: AddressListProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">خطا در بارگذاری آدرس‌ها</h3>
+        <h3 className="text-lg font-semibold text-white mb-2">
+          {messages?.customer?.addresses?.errorLoadingAddresses || 'خطا در بارگذاری آدرس‌ها'}
+        </h3>
         <p className="text-gray-400 mb-4">{addressesError}</p>
         <button
           onClick={() => window.location.reload()}
           className="px-6 py-3 bg-primary-orange text-white font-medium rounded-xl hover:bg-orange-600 transition-colors duration-200"
         >
-          تلاش مجدد
+          {messages?.customer?.addresses?.retry || messages?.common?.retry || 'تلاش مجدد'}
         </button>
       </div>
     );
@@ -202,7 +204,7 @@ export default function AddressList({ locale }: AddressListProps) {
                   {messages?.customer?.addresses?.deleteAddress || 'حذف آدرس'}
                 </h3>
                 <p className="text-gray-300 mb-6">
-                  آیا مطمئن هستید که می‌خواهید این آدرس را حذف کنید؟ این عملیات قابل بازگشت نیست.
+                  {messages?.customer?.addresses?.deleteConfirmMessage || 'آیا مطمئن هستید که می‌خواهید این آدرس را حذف کنید؟ این عملیات قابل بازگشت نیست.'}
                 </p>
                 <div className="flex gap-3">
                   <button

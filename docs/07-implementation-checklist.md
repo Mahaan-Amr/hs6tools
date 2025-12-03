@@ -4,29 +4,27 @@
 
 ### **COMPLETED PHASES** ✅
 
-#### **Phase 8.1: CRM Phase 1 - Enhanced Customer Management - ✅ COMPLETED**
-- [x] **Database Schema Extensions**: Added CRM models (CustomerInteraction, Opportunity, Quote, Campaign, etc.)
+#### **Phase 8.1: CRM Rebuild - Simplified CRM System - ✅ COMPLETED**
+- [x] **Analysis & Planning**: Deep analysis of CRM system and rebuild plan created
+- [x] **Database Schema Simplification**: Removed Opportunity, Campaign, OpportunityActivity, LeadActivity models
+- [x] **Quote Model Update**: Removed opportunityId dependency, made quotes standalone
+- [x] **Lead Model Simplification**: Removed score, expectedValue, expectedClose fields
+- [x] **Lead Status Simplification**: Simplified to NEW → CONTACTED → QUALIFIED → CONVERTED/LOST
+- [x] **API Endpoints Update**: Removed opportunity/campaign endpoints, updated quote/lead endpoints
+- [x] **UI Components Update**: Removed opportunity components, simplified lead/quote forms
+- [x] **Navigation Update**: Removed opportunity links from admin navigation
+
+#### **Phase 8.2: CRM Core Features - ✅ COMPLETED**
 - [x] **Customer 360 View**: Comprehensive customer dashboard with all interactions and metrics
 - [x] **Customer Health Scoring**: Automated health score calculation based on engagement metrics
 - [x] **Customer Lifecycle Management**: Lead → Prospect → Customer → Loyal Customer tracking
-- [x] **Customer Segmentation**: Advanced segmentation with tiers (Platinum, Gold, Silver, Bronze)
+- [x] **Customer Segmentation**: Segmentation with tiers (Platinum, Gold, Silver, Bronze)
 - [x] **Customer Interaction Tracking**: Complete interaction history with types and outcomes
 - [x] **Customer List Management**: Advanced filtering and search capabilities
-- [x] **API Endpoints**: Full CRUD operations for customer management and interactions
-- [x] **Admin Navigation**: Added CRM navigation links to admin panel
-- [x] **Real-time Updates**: Dynamic health score recalculation and lifecycle stage updates
-
-#### **Phase 8.2: CRM Phase 2.1 - Lead Management System - ✅ COMPLETED**
-- [x] **Database Schema Extensions**: Added Lead, LeadActivity, LeadInteraction models with enums
-- [x] **Lead Capture System**: Manual lead entry with comprehensive form validation
-- [x] **Lead Qualification**: Automated lead scoring based on provided information
-- [x] **Lead Assignment**: Manual assignment to sales representatives
-- [x] **Lead Status Management**: Complete lifecycle from NEW to CONVERTED/LOST
-- [x] **Lead Activity Tracking**: Log calls, emails, meetings, demos, and follow-ups
-- [x] **Lead Interaction History**: Complete interaction timeline with outcomes
+- [x] **Lead Management**: Simplified lead tracking with basic status flow
 - [x] **Lead Conversion**: Convert leads to customers with automatic user creation
-- [x] **Lead List Management**: Advanced filtering, search, and pagination
-- [x] **API Endpoints**: Full CRUD operations for leads, activities, and interactions
+- [x] **Quote Management**: Standalone quote system with conversion to orders
+- [x] **API Endpoints**: Full CRUD operations for customer, lead, and quote management
 - [x] **Admin Navigation**: Added Lead Management to CRM navigation
 - [x] **Lead Metrics Dashboard**: Real-time metrics for lead status distribution
 
@@ -236,7 +234,22 @@
 - [ ] ZarinPal payment gateway integration
 - [ ] Payment processing implementation
 - [ ] Payment status tracking
+
+### Phase 8: CRM System - ✅ COMPLETED
+- [x] CRM system rebuild and simplification
+- [x] Customer management (360 view, health scoring, lifecycle)
+- [x] Lead management (simplified tracking and conversion)
+- [x] Quote management (standalone quotes with order conversion)
+- [x] Customer interactions (support tracking)
 - [ ] Transaction security and encryption
+
+### Phase 7.5: Discount/Coupon System - ✅ COMPLETED
+- [x] Database schema for coupons/discounts
+- [x] Coupon management API endpoints (CRUD)
+- [x] Coupon validation API endpoint
+- [x] UI for entering coupon codes in checkout
+- [x] Discount calculation logic
+- [x] Order-coupon integration
 
 ## 📋 PLANNED FEATURES
 
@@ -463,10 +476,11 @@
 - **Analytics Dashboard**: 100% ✅
 - **Image Management**: 100% ✅
 - **Payment Integration**: 20% 🔄
+- **CRM System**: 100% ✅ (Rebuilt and simplified for e-commerce)
 - **Testing & QA**: 0% 📋
 - **Production Deployment**: 0% 📋
 
-**Overall Progress: 95%** ✅
+**Overall Progress: 96%** ✅
 
 ---
 

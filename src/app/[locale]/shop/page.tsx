@@ -88,10 +88,10 @@ export default async function ShopPage({ params }: ShopPageProps) {
         {/* Header */}
         <div className="text-center mb-12" data-scroll-reveal>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            {t.products.shopTitle || "فروشگاه ابزارهای صنعتی"}
+            {t.products.shopTitle}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
-            {t.products.shopSubtitle || "مجموعه کامل ابزارهای صنعتی و نجاری با کیفیت برتر"}
+            {t.products.shopSubtitle}
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
                   href={`/${locale}/categories/${category.slug}`}
                   className="inline-block px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300"
                 >
-                  {t.products.viewProducts || "مشاهده محصولات"}
+                  {t.products.viewProducts}
                 </Link>
               </div>
             ))}
@@ -136,16 +136,16 @@ export default async function ShopPage({ params }: ShopPageProps) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                {t.products.diamondDiscs || "دیسک‌های الماسه"}
+                {t.products.diamondDiscs}
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6 text-justify leading-relaxed">
-                {t.products.diamondDiscsDesc || "کیفیت برتر برای برش‌های دقیق"}
+                {t.products.diamondDiscsDesc}
               </p>
               <Link 
                 href={`/${locale}/categories`}
                 className="inline-block px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300"
               >
-                {t.products.viewProducts || "مشاهده محصولات"}
+                {t.products.viewProducts}
               </Link>
             </div>
             
@@ -156,16 +156,16 @@ export default async function ShopPage({ params }: ShopPageProps) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                {t.products.cylindricalCutters || "کاترهای استوانه‌ای"}
+                {t.products.cylindricalCutters}
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6 text-justify leading-relaxed">
-                {t.products.cylindricalCuttersDesc || "ابزارهای حرفه‌ای برای نجاری"}
+                {t.products.cylindricalCuttersDesc}
               </p>
               <Link 
                 href={`/${locale}/categories`}
                 className="inline-block px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300"
               >
-                {t.products.viewProducts || "مشاهده محصولات"}
+                {t.products.viewProducts}
               </Link>
             </div>
             
@@ -176,16 +176,16 @@ export default async function ShopPage({ params }: ShopPageProps) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                {t.products.holdingClamps || "گیره‌های نگهدارنده"}
+                {t.products.holdingClamps}
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6 text-justify leading-relaxed">
-                {t.products.holdingClampsDesc || "ایمنی و دقت در کار"}
+                {t.products.holdingClampsDesc}
               </p>
               <Link 
                 href={`/${locale}/categories`}
                 className="inline-block px-6 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:scale-105 transition-transform duration-300"
               >
-                {t.products.viewProducts || "مشاهده محصولات"}
+                {t.products.viewProducts}
               </Link>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
         <div className="mb-12">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              جدیدترین محصولات
+              {t.products.latestProducts}
             </h2>
           </div>
 
@@ -216,7 +216,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
         {products.length >= 12 && (
           <div className="text-center" data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
             <button className="px-8 py-4 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:shadow-glass-orange hover:scale-105 transition-all duration-300">
-              مشاهده محصولات بیشتر
+              {t.products.loadMoreProducts}
             </button>
           </div>
         )}

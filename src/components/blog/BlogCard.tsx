@@ -1,24 +1,59 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Article } from "@/types/content";
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface BlogCardProps {
   article: Article;
 }
 
 export default function BlogCard({ article }: BlogCardProps) {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fa";
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msg = await getMessages(locale);
+      setMessages(msg);
+    };
+    loadMessages();
+  }, [locale]);
+
   const formatDate = (dateString: string) => {
+    if (!messages) return "";
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) return "امروز";
-    if (diffDays === 2) return "دیروز";
-    if (diffDays <= 7) return `${diffDays} روز پیش`;
-    if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} هفته پیش`;
-    if (diffDays <= 365) return `${Math.ceil(diffDays / 30)} ماه پیش`;
-    return `${Math.ceil(diffDays / 365)} سال پیش`;
+    // Use customer.orders.timeAgo if available, otherwise use simple formatting
+    const timeAgo = (messages.customer?.orders as Record<string, unknown>)?.timeAgo as {
+      yesterday?: string;
+      daysAgo?: string;
+      weeksAgo?: string;
+      monthsAgo?: string;
+      yearsAgo?: string;
+    } | undefined;
+    if (timeAgo) {
+      if (diffDays === 1) return timeAgo.yesterday || "Yesterday";
+      if (diffDays === 2) return timeAgo.daysAgo?.replace("{days}", "2") || "2 days ago";
+      if (diffDays <= 7) return timeAgo.daysAgo?.replace("{days}", diffDays.toString()) || `${diffDays} days ago`;
+      if (diffDays <= 30) return timeAgo.weeksAgo?.replace("{weeks}", Math.ceil(diffDays / 7).toString()) || `${Math.ceil(diffDays / 7)} weeks ago`;
+      if (diffDays <= 365) return timeAgo.monthsAgo?.replace("{months}", Math.ceil(diffDays / 30).toString()) || `${Math.ceil(diffDays / 30)} months ago`;
+      return timeAgo.yearsAgo?.replace("{years}", Math.ceil(diffDays / 365).toString()) || `${Math.ceil(diffDays / 365)} years ago`;
+    }
+    
+    // Fallback to simple date formatting
+    return new Intl.DateTimeFormat(locale, { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    }).format(date);
   };
 
   const getCategoryColor = (categoryName: string) => {
@@ -122,7 +157,7 @@ export default function BlogCard({ article }: BlogCardProps) {
           href={`/blog/${article.slug}`}
           className="text-primary-orange hover:text-orange-400 font-medium text-sm transition-colors duration-200 inline-flex items-center"
         >
-          ادامه مطلب →
+          {messages?.blog?.readMore || "Read More →"}
         </Link>
       </div>
     </article>

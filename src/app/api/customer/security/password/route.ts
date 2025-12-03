@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 
 export async function PUT(request: NextRequest) {
   try {
@@ -66,6 +67,18 @@ export async function PUT(request: NextRequest) {
         updatedAt: new Date()
       }
     });
+
+    // Send security alert SMS if phone is available (non-blocking)
+    if (user.phone) {
+      const customerName = `${user.firstName} ${user.lastName}`;
+      sendSMSSafe(
+        {
+          receptor: user.phone,
+          message: SMSTemplates.PASSWORD_CHANGED(customerName),
+        },
+        `Password changed: ${user.email}`
+      );
+    }
 
     return NextResponse.json({
       success: true,

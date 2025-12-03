@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 
 const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
         role: true,
         isActive: true,
         emailVerified: true,
@@ -77,6 +79,18 @@ export async function POST(request: NextRequest) {
         createdAt: true,
       }
     });
+
+    // Send welcome SMS if phone is provided (non-blocking)
+    if (user.phone) {
+      const customerName = `${user.firstName} ${user.lastName}`;
+      sendSMSSafe(
+        {
+          receptor: user.phone,
+          message: SMSTemplates.WELCOME(customerName),
+        },
+        `User registration: ${user.email}`
+      );
+    }
 
     return NextResponse.json(
       { 

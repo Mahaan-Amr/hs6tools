@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useCartStore } from "@/contexts/CartContext";
+import { getMessages, Messages } from "@/lib/i18n";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -37,6 +38,15 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   useEffect(() => {
     if (session?.user) {
@@ -119,16 +129,16 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
           </svg>
         </div>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          برای مشاهده لیست علاقه‌مندی وارد شوید
+          {messages?.wishlist?.loginRequiredTitle || 'برای مشاهده لیست علاقه‌مندی وارد شوید'}
         </h3>
         <p className="text-gray-700 dark:text-gray-400 mb-6">
-          محصولات مورد علاقه خود را ذخیره کنید و بعداً به آنها دسترسی داشته باشید
+          {messages?.wishlist?.loginRequiredMessage || 'محصولات مورد علاقه خود را ذخیره کنید و بعداً به آنها دسترسی داشته باشید'}
         </p>
         <Link
           href={`/${locale}/auth/login`}
           className="inline-block px-6 py-3 bg-primary-orange text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors duration-200"
         >
-          ورود به حساب کاربری
+          {messages?.wishlist?.loginButton || 'ورود به حساب کاربری'}
         </Link>
       </div>
     );
@@ -160,16 +170,16 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
           </svg>
         </div>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          لیست علاقه‌مندی شما خالی است
+          {messages?.wishlist?.empty || 'لیست علاقه‌مندی شما خالی است'}
         </h3>
         <p className="text-gray-700 dark:text-gray-400 mb-6">
-          محصولات مورد علاقه خود را به لیست علاقه‌مندی اضافه کنید
+          {messages?.wishlist?.emptyMessage || 'محصولات مورد علاقه خود را به لیست علاقه‌مندی اضافه کنید'}
         </p>
         <Link
           href={`/${locale}/shop`}
           className="inline-block px-6 py-3 bg-primary-orange text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors duration-200"
         >
-          مشاهده محصولات
+          {messages?.wishlist?.browseProducts || 'مشاهده محصولات'}
         </Link>
       </div>
     );
@@ -206,7 +216,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
               onClick={() => removeFromWishlist(item.product.id)}
               disabled={removingItems.has(item.product.id)}
               className="absolute top-3 right-3 p-2 bg-red-500/20 backdrop-blur-sm text-red-400 hover:text-red-300 rounded-full transition-colors duration-200 disabled:opacity-50"
-              title="حذف از لیست علاقه‌مندی"
+              title={messages?.wishlist?.removeFromWishlist || 'حذف از لیست علاقه‌مندی'}
             >
               {removingItems.has(item.product.id) ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -262,14 +272,17 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
                     : "bg-gray-600 text-gray-300 cursor-not-allowed"
                 }`}
               >
-                {item.product.isInStock ? "افزودن به سبد خرید" : "ناموجود"}
+                {item.product.isInStock 
+                  ? (messages?.products?.addToCart || 'افزودن به سبد خرید')
+                  : (messages?.products?.outOfStock || 'ناموجود')
+                }
               </button>
               
               <Link
                 href={`/${locale}/products/${item.product.slug}`}
                 className="block w-full py-3 px-4 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-center rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200"
               >
-                مشاهده جزئیات
+                {messages?.products?.viewDetails || 'مشاهده جزئیات'}
               </Link>
             </div>
           </div>

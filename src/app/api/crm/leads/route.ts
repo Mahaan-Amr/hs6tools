@@ -60,10 +60,6 @@ export async function GET(request: NextRequest) {
         take: limit,
         orderBy: { [sortBy]: sortOrder },
         include: {
-          activities: {
-            orderBy: { createdAt: "desc" },
-            take: 1
-          },
           interactions: {
             orderBy: { createdAt: "desc" },
             take: 1
@@ -140,8 +136,6 @@ export async function POST(request: NextRequest) {
       assignedTo,
       notes,
       tags = [],
-      expectedValue,
-      expectedClose,
       nextFollowUp
     } = body;
 
@@ -165,15 +159,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate initial lead score based on provided information
-    let score = 0;
-    if (company) score += 10;
-    if (phone) score += 10;
-    if (position) score += 5;
-    if (industry) score += 5;
-    if (companySize) score += 5;
-    if (expectedValue) score += 15;
-
     // Create lead
     const lead = await prisma.lead.create({
       data: {
@@ -190,13 +175,9 @@ export async function POST(request: NextRequest) {
         assignedTo,
         notes,
         tags,
-        expectedValue: expectedValue ? parseFloat(expectedValue) : null,
-        expectedClose: expectedClose ? new Date(expectedClose) : null,
-        nextFollowUp: nextFollowUp ? new Date(nextFollowUp) : null,
-        score
+        nextFollowUp: nextFollowUp ? new Date(nextFollowUp) : null
       },
       include: {
-        activities: true,
         interactions: true
       }
     });

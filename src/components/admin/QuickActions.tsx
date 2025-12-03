@@ -1,15 +1,31 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface QuickActionsProps {
   locale: string;
 }
 
 export default function QuickActions({ locale }: QuickActionsProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  if (!messages) {
+    return <div className="text-white p-4">Loading...</div>;
+  }
+
   const actions = [
     {
-      name: "افزودن محصول",
+      name: String(messages.admin?.products || "افزودن محصول"),
       href: `/${locale}/admin/products`,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,10 +33,10 @@ export default function QuickActions({ locale }: QuickActionsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-primary-orange to-orange-500",
-      description: "افزودن محصول جدید به فروشگاه"
+      description: String(messages.admin?.quickActions?.addProductDesc || "افزودن محصول جدید به فروشگاه")
     },
     {
-      name: "مدیریت دسته‌بندی",
+      name: String(messages.admin?.categories || "مدیریت دسته‌بندی"),
       href: `/${locale}/admin/categories`,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,10 +44,10 @@ export default function QuickActions({ locale }: QuickActionsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-primary-orange to-orange-500",
-      description: "سازماندهی دسته‌بندی محصولات"
+      description: String(messages.admin?.quickActions?.manageCategoriesDesc || "سازماندهی دسته‌بندی محصولات")
     },
     {
-      name: "مدیریت کاربران",
+      name: String(messages.admin?.users || "مدیریت کاربران"),
       href: `/${locale}/admin/users`,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,10 +55,10 @@ export default function QuickActions({ locale }: QuickActionsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-primary-orange to-orange-500",
-      description: "مدیریت حساب‌های کاربری"
+      description: String(messages.admin?.quickActions?.manageUsersDesc || "مدیریت حساب‌های کاربری")
     },
     {
-      name: "گزارش‌ها",
+      name: String(messages.admin?.analytics || "گزارش‌ها"),
       href: `/${locale}/admin/analytics`,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,10 +66,10 @@ export default function QuickActions({ locale }: QuickActionsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-purple-500 to-purple-600",
-      description: "مشاهده آمار و گزارش‌ها"
+      description: String(messages.admin?.quickActions?.viewAnalyticsDesc || "مشاهده آمار و گزارش‌ها")
     },
     {
-      name: "محتوا",
+      name: String(messages.admin?.content || "محتوا"),
       href: `/${locale}/admin/content`,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,10 +77,10 @@ export default function QuickActions({ locale }: QuickActionsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-indigo-500 to-indigo-600",
-      description: "مدیریت مقالات و محتوا"
+      description: String(messages.admin?.quickActions?.manageContentDesc || "مدیریت مقالات و محتوا")
     },
     {
-      name: "تنظیمات",
+      name: String(messages.admin?.settings || "تنظیمات"),
       href: `/${locale}/admin/settings`,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,13 +89,13 @@ export default function QuickActions({ locale }: QuickActionsProps) {
         </svg>
       ),
       color: "bg-gradient-to-r from-gray-500 to-gray-600",
-      description: "تنظیمات سیستم و پلتفرم"
+      description: String(messages.admin?.quickActions?.systemSettingsDesc || "تنظیمات سیستم و پلتفرم")
     }
   ];
 
   return (
     <div className="glass rounded-3xl p-4 sm:p-6 lg:p-8">
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">عملیات سریع</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">{String(messages.admin?.quickActions?.title || "عملیات سریع")}</h2>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {actions.map((action) => (
@@ -104,7 +120,7 @@ export default function QuickActions({ locale }: QuickActionsProps) {
             </div>
             
             <div className="mt-4 flex items-center text-primary-orange text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <span>شروع کنید</span>
+              <span>{String(messages.admin?.quickActions?.getStarted || "شروع کنید")}</span>
               <svg className="w-4 h-4 mr-2 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -115,23 +131,23 @@ export default function QuickActions({ locale }: QuickActionsProps) {
       
       {/* Additional Quick Stats */}
       <div className="mt-8 pt-6 border-t border-white/10">
-        <h3 className="text-lg font-semibold text-white mb-4">آمار سریع</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">{String(messages.admin?.quickActions?.quickStats || "آمار سریع")}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-white/5 rounded-xl">
             <div className="text-2xl font-bold text-primary-orange mb-1">۱۲</div>
-            <div className="text-gray-400 text-sm">سفارشات جدید</div>
+            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.newOrders || "سفارشات جدید")}</div>
           </div>
           <div className="text-center p-4 bg-white/5 rounded-xl">
             <div className="text-2xl font-bold text-primary-orange mb-1">۸</div>
-            <div className="text-gray-400 text-sm">محصولات کم‌موجود</div>
+            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.lowStockProducts || "محصولات کم‌موجود")}</div>
           </div>
           <div className="text-center p-4 bg-white/5 rounded-xl">
             <div className="text-2xl font-bold text-primary-orange mb-1">۲۴</div>
-            <div className="text-gray-400 text-sm">نظرات جدید</div>
+            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.newReviews || "نظرات جدید")}</div>
           </div>
           <div className="text-center p-4 bg-white/5 rounded-xl">
             <div className="text-2xl font-bold text-purple-400 mb-1">۵</div>
-            <div className="text-gray-400 text-sm">پیام‌های جدید</div>
+            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.newMessages || "پیام‌های جدید")}</div>
           </div>
         </div>
       </div>

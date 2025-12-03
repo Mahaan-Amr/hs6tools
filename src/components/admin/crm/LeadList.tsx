@@ -1,20 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getMessages, Messages } from "@/lib/i18n";
 
-interface LeadActivity {
-  id: string;
-  type: string;
-  subject?: string;
-  description?: string;
-  content?: string;
-  outcome?: string;
-  nextAction?: string;
-  scheduledAt?: string;
-  completedAt?: string;
-  createdAt: string;
-}
 
 interface LeadInteraction {
   id: string;
@@ -37,13 +26,9 @@ interface Lead {
   position?: string;
   source: string;
   status: string;
-  score: number;
   assignedTo?: string;
-  expectedValue?: number;
-  expectedClose?: string;
   nextFollowUp?: string;
   createdAt: string;
-  activities: LeadActivity[];
   interactions: LeadInteraction[];
 }
 
@@ -63,17 +48,29 @@ export default function LeadList({
   locale
 }: LeadListProps) {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  if (!messages || !messages.admin?.crm?.leads) {
+    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
+  }
+
+  const t = messages.admin.crm.leads;
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "NEW": return "bg-blue-500/20 text-blue-400";
       case "CONTACTED": return "bg-yellow-500/20 text-yellow-400";
       case "QUALIFIED": return "bg-green-500/20 text-green-400";
-      case "PROPOSAL": return "bg-purple-500/20 text-purple-400";
-      case "NEGOTIATION": return "bg-orange-500/20 text-orange-400";
       case "CONVERTED": return "bg-emerald-500/20 text-emerald-400";
       case "LOST": return "bg-red-500/20 text-red-400";
-      case "UNQUALIFIED": return "bg-gray-500/20 text-gray-400";
       default: return "bg-gray-500/20 text-gray-400";
     }
   };
@@ -83,32 +80,44 @@ export default function LeadList({
       case "WEBSITE": return "bg-blue-500/20 text-blue-400";
       case "REFERRAL": return "bg-green-500/20 text-green-400";
       case "SOCIAL_MEDIA": return "bg-purple-500/20 text-purple-400";
-      case "EMAIL_CAMPAIGN": return "bg-orange-500/20 text-orange-400";
+      case "EMAIL": return "bg-orange-500/20 text-orange-400";
       case "TRADE_SHOW": return "bg-pink-500/20 text-pink-400";
-      case "COLD_CALL": return "bg-red-500/20 text-red-400";
+      case "PHONE": return "bg-red-500/20 text-red-400";
       case "PARTNER": return "bg-indigo-500/20 text-indigo-400";
       case "ADVERTISING": return "bg-yellow-500/20 text-yellow-400";
       default: return "bg-gray-500/20 text-gray-400";
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-400";
-    if (score >= 60) return "text-yellow-400";
-    if (score >= 40) return "text-orange-400";
-    return "text-red-400";
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fa-IR', {
-      style: 'currency',
-      currency: 'IRR',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fa-IR');
+    const localeCode = locale === 'fa' ? 'fa-IR' : locale === 'ar' ? 'ar-SA' : 'en-US';
+    return new Date(dateString).toLocaleDateString(localeCode);
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'NEW': String(t.statusOptions?.new || ''),
+      'CONTACTED': String(t.statusOptions?.contacted || ''),
+      'QUALIFIED': String(t.statusOptions?.qualified || ''),
+      'CONVERTED': String(t.statusOptions?.converted || ''),
+      'LOST': String(t.statusOptions?.lost || '')
+    };
+    return statusMap[status] || status;
+  };
+
+  const getSourceLabel = (source: string): string => {
+    const sourceMap: Record<string, string> = {
+      'WEBSITE': String(t.sourceOptions?.website || ''),
+      'REFERRAL': String(t.sourceOptions?.referral || ''),
+      'SOCIAL_MEDIA': String(t.sourceOptions?.socialMedia || ''),
+      'EMAIL': String(t.sourceOptions?.email || ''),
+      'TRADE_SHOW': String(t.sourceOptions?.tradeShow || ''),
+      'PHONE': String(t.sourceOptions?.phone || ''),
+      'PARTNER': String(t.sourceOptions?.partner || ''),
+      'ADVERTISING': String(t.sourceOptions?.advertising || ''),
+      'OTHER': String(t.sourceOptions?.other || '')
+    };
+    return sourceMap[source] || source;
   };
 
   const handleSelectAll = () => {
@@ -132,13 +141,13 @@ export default function LeadList({
       {/* Results Summary */}
       <div className="flex items-center justify-between text-gray-300">
         <div className="text-sm">
-          نمایش {leads.length} از {totalCount} لید
+          {typeof t.showLeads === 'string' ? t.showLeads.replace('{count}', leads.length.toString()).replace('{total}', totalCount.toString()) : `Showing ${leads.length} of ${totalCount} leads`}
         </div>
         {selectedLeads.length > 0 && (
           <div className="flex items-center space-x-4 space-x-reverse">
-            <span className="text-sm">{selectedLeads.length} مورد انتخاب شده</span>
+            <span className="text-sm">{typeof t.selectedCount === 'string' ? t.selectedCount.replace('{count}', selectedLeads.length.toString()) : `${selectedLeads.length} selected`}</span>
             <button className="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors">
-              حذف انتخاب شده
+              {String(t.deleteSelected)}
             </button>
           </div>
         )}
@@ -158,14 +167,12 @@ export default function LeadList({
                     className="w-4 h-4 text-primary-orange bg-gray-700 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
                   />
                 </th>
-                <th className="text-right p-4 text-white font-medium">لید</th>
-                <th className="text-right p-4 text-white font-medium">شرکت</th>
-                <th className="text-right p-4 text-white font-medium">منبع</th>
-                <th className="text-right p-4 text-white font-medium">وضعیت</th>
-                <th className="text-right p-4 text-white font-medium">امتیاز</th>
-                <th className="text-right p-4 text-white font-medium">ارزش مورد انتظار</th>
-                <th className="text-right p-4 text-white font-medium">تاریخ ایجاد</th>
-                <th className="text-right p-4 text-white font-medium">عملیات</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.lead)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.company)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.source)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.status)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.createdAt)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.actions)}</th>
               </tr>
             </thead>
             <tbody>
@@ -207,27 +214,13 @@ export default function LeadList({
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSourceColor(lead.source)}`}>
-                      {lead.source.replace('_', ' ')}
+                      {getSourceLabel(lead.source)}
                     </span>
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.status)}`}>
-                      {lead.status.replace('_', ' ')}
+                      {getStatusLabel(lead.status)}
                     </span>
-                  </td>
-                  <td className="p-4">
-                    <div className={`font-bold ${getScoreColor(lead.score)}`}>
-                      {lead.score}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    {lead.expectedValue ? (
-                      <div className="text-white font-medium">
-                        {formatCurrency(lead.expectedValue)}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
                   </td>
                   <td className="p-4">
                     <div className="text-gray-300 text-sm">
@@ -239,7 +232,7 @@ export default function LeadList({
                       <Link
                         href={`/${locale}/admin/crm/leads/${lead.id}`}
                         className="p-2 text-primary-orange hover:bg-primary-orange/20 rounded-lg transition-colors"
-                        title="مشاهده جزئیات"
+                        title={String(t.viewDetails)}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -248,7 +241,7 @@ export default function LeadList({
                       </Link>
                       <button
                         className="p-2 text-green-400 hover:bg-green-400/20 rounded-lg transition-colors"
-                        title="تبدیل به مشتری"
+                        title={String(t.convertToCustomer)}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -270,7 +263,7 @@ export default function LeadList({
                 disabled={currentPage === 1}
                 className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                قبلی
+                {String(t.previous)}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -293,12 +286,12 @@ export default function LeadList({
                 disabled={currentPage === totalPages}
                 className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                بعدی
+                {String(t.next)}
               </button>
             </div>
             
             <div className="text-gray-300 text-sm">
-              صفحه {currentPage} از {totalPages}
+              {typeof t.page === 'string' ? t.page.replace('{current}', currentPage.toString()).replace('{total}', totalPages.toString()) : `Page ${currentPage} of ${totalPages}`}
             </div>
           </div>
         )}

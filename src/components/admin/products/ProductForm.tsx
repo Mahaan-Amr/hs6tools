@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AdminProduct, CreateProductData, UpdateProductData, AdminCategory } from "@/types/admin";
 import { formatPrice } from "@/utils/format";
 import ImageUpload from "@/components/admin/common/ImageUpload";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface ImageFile {
   id: string;
@@ -24,6 +25,7 @@ interface ProductFormProps {
   onSave: (data: CreateProductData | UpdateProductData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  locale: string;
 }
 
 export default function ProductForm({ 
@@ -31,10 +33,21 @@ export default function ProductForm({
   categories, 
   onSave, 
   onCancel, 
-  isLoading = false 
+  isLoading = false,
+  locale
 }: ProductFormProps) {
   const isEditing = !!product;
   
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
   const [formData, setFormData] = useState<CreateProductData>({
     sku: product?.sku || '',
     name: product?.name || '',                    // Persian name (for admin)
@@ -103,6 +116,12 @@ export default function ProductForm({
       .trim();
   };
 
+  if (!messages || !messages.admin?.productsForm) {
+    return <div className="text-white p-4">Loading...</div>;
+  }
+
+  const t = messages.admin.productsForm;
+
   const handleInputChange = (field: keyof CreateProductData, value: string | number | boolean | Record<string, unknown>) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
@@ -121,27 +140,27 @@ export default function ProductForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.sku.trim()) {
-      newErrors.sku = 'SKU الزامی است';
+      newErrors.sku = String(t.skuRequired);
     }
 
     if (!formData.name.trim()) {
-      newErrors.name = 'نام محصول الزامی است';
+      newErrors.name = String(t.nameRequired);
     }
 
     if (!formData.slug.trim()) {
-      newErrors.slug = 'نامک الزامی است';
+      newErrors.slug = String(t.slugRequired);
     }
 
     if (formData.price <= 0) {
-      newErrors.price = 'قیمت باید بیشتر از صفر باشد';
+      newErrors.price = String(t.priceRequired);
     }
 
     if (formData.stockQuantity < 0) {
-      newErrors.stockQuantity = 'موجودی نمی‌تواند منفی باشد';
+      newErrors.stockQuantity = String(t.stockRequired);
     }
 
     if (!formData.categoryId) {
-      newErrors.categoryId = 'انتخاب دسته‌بندی الزامی است';
+      newErrors.categoryId = String(t.categoryRequired);
     }
 
     setErrors(newErrors);
@@ -155,7 +174,7 @@ export default function ProductForm({
 
     // Validate that at least one image is uploaded
     if (images.length === 0) {
-      setErrors(prev => ({ ...prev, images: 'حداقل یک تصویر برای محصول الزامی است' }));
+      setErrors(prev => ({ ...prev, images: String(t.imagesRequired) }));
       return;
     }
 
@@ -194,7 +213,7 @@ export default function ProductForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات اصلی</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.basicInfo)}</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* SKU */}
@@ -218,7 +237,7 @@ export default function ProductForm({
             {/* Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                نام محصول <span className="text-red-400">*</span>
+                {String(t.productName)} <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -227,7 +246,7 @@ export default function ProductForm({
                 className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
                   errors.name ? 'border-red-500' : ''
                 }`}
-                placeholder="نام کامل محصول"
+                placeholder={String(t.productName)}
               />
               {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
             </div>
@@ -235,7 +254,7 @@ export default function ProductForm({
             {/* Slug */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                نامک <span className="text-red-400">*</span>
+                {String(t.slug)} <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -244,7 +263,7 @@ export default function ProductForm({
                 className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange ${
                   errors.slug ? 'border-red-500' : ''
                 }`}
-                placeholder="نامک محصول"
+                placeholder={String(t.slug)}
               />
               {errors.slug && <p className="mt-1 text-sm text-red-400">{errors.slug}</p>}
             </div>
@@ -252,7 +271,7 @@ export default function ProductForm({
             {/* Category */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                دسته‌بندی <span className="text-red-400">*</span>
+                {String(t.category)} <span className="text-red-400">*</span>
               </label>
               <select
                 value={formData.categoryId}
@@ -261,7 +280,7 @@ export default function ProductForm({
                   errors.categoryId ? 'border-red-500' : ''
                 }`}
               >
-                <option value="">انتخاب دسته‌بندی</option>
+                <option value="">{String(t.selectCategory)}</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -274,7 +293,7 @@ export default function ProductForm({
             {/* Price */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                قیمت (تومان) <span className="text-red-400">*</span>
+                {String(t.price)} <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"
@@ -298,7 +317,7 @@ export default function ProductForm({
             {/* Compare Price */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                قیمت مقایسه‌ای (تومان)
+                {String(t.comparePrice)}
               </label>
               <input
                 type="number"
@@ -319,7 +338,7 @@ export default function ProductForm({
             {/* Stock Quantity */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                موجودی <span className="text-red-400">*</span>
+                {String(t.stock)} <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"
@@ -337,7 +356,7 @@ export default function ProductForm({
             {/* Low Stock Threshold */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                حداقل موجودی
+                {String(t.lowStockThreshold)}
               </label>
               <input
                 type="number"
@@ -360,7 +379,7 @@ export default function ProductForm({
               onChange={(e) => handleInputChange('shortDescription', e.target.value)}
               rows={3}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
-              placeholder="توضیحات مختصر محصول"
+              placeholder={String(t.shortDescription)}
             />
           </div>
 
@@ -374,39 +393,39 @@ export default function ProductForm({
               onChange={(e) => handleInputChange('description', e.target.value)}
               rows={6}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
-              placeholder="توضیحات کامل محصول"
+              placeholder={String(t.description)}
             />
           </div>
         </div>
 
         {/* Product Images */}
         <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تصاویر محصول</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.productImages)}</h3>
           <ImageUpload
             images={images}
             onImagesChange={setImages}
             multiple={true}
             maxImages={10}
-            label="تصاویر محصول"
+            label={String(t.productImages)}
             required={true}
             category="products"
           />
           {errors.images && <p className="mt-1 text-sm text-red-400">{errors.images}</p>}
           <p className="text-sm text-gray-400 mt-2">
-            حداقل یک تصویر برای محصول الزامی است. تصویر اول به عنوان تصویر اصلی در نظر گرفته می‌شود.
+            {String(t.imagesRequiredMessage)}
           </p>
         </div>
 
         {/* Multilingual Section */}
         <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">ترجمه‌ها (برای مشتریان)</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{String(t.translations)}</h3>
             <button
               type="button"
               onClick={() => setShowMultilingual(!showMultilingual)}
               className="flex items-center space-x-2 space-x-reverse text-primary-orange hover:text-orange-400 transition-colors"
             >
-              <span>{showMultilingual ? 'مخفی کردن' : 'نمایش'}</span>
+              <span>{showMultilingual ? String(t.hide) : String(t.show)}</span>
               <svg
                 className={`w-5 h-5 transition-transform ${showMultilingual ? 'rotate-180' : ''}`}
                 fill="none"
@@ -424,13 +443,13 @@ export default function ProductForm({
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2 space-x-reverse">
                   <span className="w-6 h-6 bg-primary-orange/20 text-primary-orange rounded-full flex items-center justify-center text-sm font-bold">EN</span>
-                  <span>انگلیسی</span>
+                  <span>{String(t.english)}</span>
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                      نام (انگلیسی)
+                      {String(t.nameEn)}
                     </label>
                     <input
                       type="text"
@@ -443,7 +462,7 @@ export default function ProductForm({
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                      توضیحات کوتاه (انگلیسی)
+                      {String(t.shortDescriptionEn)}
                     </label>
                     <textarea
                       value={formData.shortDescriptionEn}
@@ -457,7 +476,7 @@ export default function ProductForm({
 
                 <div className="mt-4">
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    توضیحات کامل (انگلیسی)
+                    {String(t.descriptionEn)}
                   </label>
                   <textarea
                     value={formData.descriptionEn}
@@ -473,13 +492,13 @@ export default function ProductForm({
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2 space-x-reverse">
                   <span className="w-6 h-6 bg-primary-orange/20 text-primary-orange rounded-full flex items-center justify-center text-sm font-bold">AR</span>
-                  <span>عربی</span>
+                  <span>{String(t.arabic)}</span>
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                      نام (عربی)
+                      {String(t.nameAr)}
                     </label>
                     <input
                       type="text"
@@ -493,7 +512,7 @@ export default function ProductForm({
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                      توضیحات کوتاه (عربی)
+                      {String(t.shortDescriptionAr)}
                     </label>
                     <textarea
                       value={formData.shortDescriptionAr}
@@ -508,7 +527,7 @@ export default function ProductForm({
 
                 <div className="mt-4">
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    توضیحات کامل (عربی)
+                    {String(t.descriptionAr)}
                   </label>
                   <textarea
                     value={formData.descriptionAr}
@@ -527,13 +546,13 @@ export default function ProductForm({
         {/* Advanced Options */}
         <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">تنظیمات پیشرفته</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{String(t.advancedSettings)}</h3>
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="flex items-center space-x-2 space-x-reverse text-primary-orange hover:text-orange-400 transition-colors"
             >
-              <span>{showAdvanced ? 'مخفی کردن' : 'نمایش'}</span>
+              <span>{showAdvanced ? String(t.hide) : String(t.show)}</span>
               <svg 
                 className={`w-5 h-5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} 
                 fill="none" 
@@ -551,7 +570,7 @@ export default function ProductForm({
                 {/* Cost Price */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    قیمت تمام شده (تومان)
+                    {String(t.costPrice)}
                   </label>
                   <input
                     type="number"
@@ -567,7 +586,7 @@ export default function ProductForm({
                 {/* Weight */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    وزن (گرم)
+                    {String(t.weight)}
                   </label>
                   <input
                     type="number"
@@ -583,7 +602,7 @@ export default function ProductForm({
                 {/* Material */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    جنس
+                    {String(t.material)}
                   </label>
                   <input
                     type="text"
@@ -597,21 +616,21 @@ export default function ProductForm({
                 {/* Brand */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    برند
+                    {String(t.brand)}
                   </label>
                   <input
                     type="text"
                     value={formData.brand}
                     onChange={(e) => handleInputChange('brand', e.target.value)}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
-                    placeholder="نام برند"
+                    placeholder={String(t.brand)}
                   />
                 </div>
 
                 {/* Warranty */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    گارانتی
+                    {String(t.warranty)}
                   </label>
                   <input
                     type="text"
@@ -786,10 +805,10 @@ export default function ProductForm({
             {isLoading ? (
               <div className="flex items-center space-x-2 space-x-reverse">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>در حال ذخیره...</span>
+                <span>{String(t.saving)}</span>
               </div>
             ) : (
-              isEditing ? 'بروزرسانی محصول' : 'ایجاد محصول'
+              isEditing ? String(t.update) : String(t.create)
             )}
           </button>
         </div>

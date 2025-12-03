@@ -228,20 +228,143 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
     return methodMap[method] || method;
   };
 
-  const handleReorder = () => {
-    // TODO: Implement reorder functionality
-    console.log('Reorder order:', orderId);
+  const handleReorder = async () => {
+    if (!order) return;
+    
+    try {
+      // Import cart store dynamically to avoid SSR issues
+      const { useCartStore } = await import('@/contexts/CartContext');
+      const { addItem } = useCartStore.getState();
+      
+      // Add all items from the order back to the cart
+      for (const item of order.items) {
+        addItem({
+          productId: item.productId || '',
+          variantId: item.variantId || undefined,
+          name: item.name,
+          price: item.unitPrice,
+          quantity: item.quantity,
+          image: item.image || undefined,
+          sku: item.sku,
+          category: item.description || ''
+        });
+      }
+      
+      // Redirect to cart
+      router.push(`/${locale}/cart`);
+    } catch (error) {
+      console.error('Error reordering:', error);
+      const reorderError = (messages?.customer?.orderDetails as Record<string, unknown>)?.reorderError as string;
+      alert(reorderError || 'خطا در افزودن محصولات به سبد خرید');
+    }
   };
 
   const handleDownloadInvoice = () => {
-    // TODO: Implement invoice download
-    console.log('Download invoice for order:', orderId);
+    if (!order || !messages) return;
+    
+    const t = messages.customer?.orderDetails as Record<string, unknown>;
+    const invoiceTitle = String(t?.invoiceTitle || 'فاکتور سفارش');
+    const invoiceDate = String(t?.invoiceDate || 'تاریخ');
+    const customerInfo = String(t?.customerInfo || 'اطلاعات مشتری');
+    const product = String(t?.product || 'محصول');
+    const quantity = String(t?.quantity || 'تعداد');
+    const unitPrice = String(t?.unitPrice || 'قیمت واحد');
+    const total = String(t?.total || 'جمع');
+    const subtotal = String(t?.subtotal || 'جمع جزء');
+    const shippingAmount = String(t?.shippingAmount || 'هزینه ارسال');
+    const taxAmount = String(t?.taxAmount || 'مالیات');
+    const discount = String(t?.discount || 'تخفیف');
+    const totalAmount = String(t?.totalAmount || 'مجموع کل');
+    
+    // Generate HTML invoice
+    const invoiceHTML = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="fa">
+      <head>
+        <meta charset="UTF-8">
+        <title>${invoiceTitle} ${order.orderNumber}</title>
+        <style>
+          body { font-family: 'Vazirmatn', Arial, sans-serif; padding: 20px; direction: rtl; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+          th { background-color: #f2f2f2; }
+          .total { text-align: left; font-weight: bold; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>HS6Tools</h1>
+          <h2>${invoiceTitle} #${order.orderNumber}</h2>
+          <p>${invoiceDate}: ${formatDate(order.createdAt)}</p>
+        </div>
+        <div class="info">
+          <div>
+            <h3>${customerInfo}</h3>
+            <p>${order.billingAddress.firstName} ${order.billingAddress.lastName}</p>
+            <p>${order.billingAddress.phone}</p>
+            <p>${order.billingAddress.addressLine1}</p>
+            <p>${order.billingAddress.city}، ${order.billingAddress.state}</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>${product}</th>
+              <th>${quantity}</th>
+              <th>${unitPrice}</th>
+              <th>${total}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map(item => `
+              <tr>
+                <td>${item.name}</td>
+                <td>${item.quantity}</td>
+                <td>${formatPrice(item.unitPrice)}</td>
+                <td>${formatPrice(item.totalPrice)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="total">
+          <p>${subtotal}: ${formatPrice(order.subtotal)}</p>
+          <p>${shippingAmount}: ${formatPrice(order.shippingAmount)}</p>
+          <p>${taxAmount}: ${formatPrice(order.taxAmount)}</p>
+          ${order.discountAmount > 0 ? `<p>${discount}: ${formatPrice(order.discountAmount)}</p>` : ''}
+          <p style="font-size: 1.2em; margin-top: 10px;">${totalAmount}: ${formatPrice(order.totalAmount)}</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Create blob and download
+    const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `invoice-${order.orderNumber}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleTrackOrder = () => {
-    if (order?.trackingNumber) {
-      // TODO: Implement tracking functionality
-      console.log('Track order:', order.trackingNumber);
+    if (!order?.trackingNumber) return;
+    
+    // For TIPAX shipping
+    if (order.shippingMethod === 'TIPAX') {
+      window.open(`https://tipaxco.com/tracking/${order.trackingNumber}`, '_blank');
+    } 
+    // For POST shipping
+    else if (order.shippingMethod === 'POST') {
+      window.open(`https://tracking.post.ir/?code=${order.trackingNumber}`, '_blank');
+    }
+    // For other shipping methods, show tracking number
+    else {
+      alert(`${messages?.customer?.orderDetails?.trackingNumber || 'شماره پیگیری'}: ${order.trackingNumber}`);
     }
   };
 

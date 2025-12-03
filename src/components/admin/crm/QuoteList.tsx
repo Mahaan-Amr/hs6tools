@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface Quote {
   id: string;
@@ -28,12 +29,6 @@ interface Quote {
     company?: string;
     phone?: string;
   };
-  opportunity?: {
-    id: string;
-    title: string;
-    stage: string;
-    value: number;
-  };
 }
 
 interface QuoteListProps {
@@ -52,6 +47,15 @@ export default function QuoteList({
   locale
 }: QuoteListProps) {
   const [selectedQuotes, setSelectedQuotes] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -65,20 +69,27 @@ export default function QuoteList({
     }
   };
 
+  if (!messages || !messages.admin?.crm?.quotes) {
+    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
+  }
+
+  const t = messages.admin.crm.quotes;
+
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "DRAFT": return "پیش‌نویس";
-      case "SENT": return "ارسال شده";
-      case "VIEWED": return "مشاهده شده";
-      case "ACCEPTED": return "پذیرفته شده";
-      case "REJECTED": return "رد شده";
-      case "EXPIRED": return "منقضی شده";
+      case "DRAFT": return String(t.statusOptions.draft);
+      case "SENT": return String(t.statusOptions.sent);
+      case "VIEWED": return String(t.statusOptions.viewed);
+      case "ACCEPTED": return String(t.statusOptions.accepted);
+      case "REJECTED": return String(t.statusOptions.rejected);
+      case "EXPIRED": return String(t.statusOptions.expired);
       default: return status;
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fa-IR', {
+    const localeCode = locale === 'fa' ? 'fa-IR' : locale === 'ar' ? 'ar-SA' : 'en-US';
+    return new Intl.NumberFormat(localeCode, {
       style: 'currency',
       currency: 'IRR',
       minimumFractionDigits: 0
@@ -86,7 +97,8 @@ export default function QuoteList({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fa-IR');
+    const localeCode = locale === 'fa' ? 'fa-IR' : locale === 'ar' ? 'ar-SA' : 'en-US';
+    return new Date(dateString).toLocaleDateString(localeCode);
   };
 
   const isExpired = (validUntil: string) => {
@@ -114,13 +126,13 @@ export default function QuoteList({
       {/* Results Summary */}
       <div className="flex items-center justify-between text-gray-300">
         <div className="text-sm">
-          نمایش {quotes.length} از {totalCount} پیشنهاد
+          {t.showQuotes ? t.showQuotes.replace('{count}', quotes.length.toString()).replace('{total}', totalCount.toString()) : `نمایش ${quotes.length} از ${totalCount} پیشنهاد`}
         </div>
         {selectedQuotes.length > 0 && (
           <div className="flex items-center space-x-4 space-x-reverse">
-            <span className="text-sm">{selectedQuotes.length} مورد انتخاب شده</span>
+            <span className="text-sm">{t.selectedCount ? t.selectedCount.replace('{count}', selectedQuotes.length.toString()) : `${selectedQuotes.length} مورد انتخاب شده`}</span>
             <button className="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors">
-              حذف انتخاب شده
+              {String(t.deleteSelected || 'حذف انتخاب شده')}
             </button>
           </div>
         )}
@@ -140,12 +152,12 @@ export default function QuoteList({
                     className="w-4 h-4 text-primary-orange bg-gray-700 border-gray-600 rounded focus:ring-primary-orange focus:ring-2"
                   />
                 </th>
-                <th className="text-right p-4 text-white font-medium">شماره پیشنهاد</th>
-                <th className="text-right p-4 text-white font-medium">مشتری</th>
-                <th className="text-right p-4 text-white font-medium">وضعیت</th>
-                <th className="text-right p-4 text-white font-medium">مبلغ کل</th>
-                <th className="text-right p-4 text-white font-medium">اعتبار تا</th>
-                <th className="text-right p-4 text-white font-medium">عملیات</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.quoteNumber)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.customer)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.status)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.totalAmount)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.validUntil)}</th>
+                <th className="text-right p-4 text-white font-medium">{String(t.actions)}</th>
               </tr>
             </thead>
             <tbody>
@@ -163,10 +175,10 @@ export default function QuoteList({
                     <div>
                       <div className="text-white font-medium">{quote.quoteNumber}</div>
                       <div className="text-gray-400 text-sm mt-1">
-                        {quote.items.length} آیتم
+                        {quote.items.length} {String(messages.common?.items || 'آیتم')}
                       </div>
                       <div className="text-gray-500 text-xs mt-1">
-                        ایجاد شده: {formatDate(quote.createdAt)}
+                        {String(messages.common?.createdAt || 'ایجاد شده')}: {formatDate(quote.createdAt)}
                       </div>
                     </div>
                   </td>
@@ -191,11 +203,6 @@ export default function QuoteList({
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(quote.status)}`}>
                         {getStatusLabel(quote.status)}
                       </span>
-                      {quote.opportunity && (
-                        <span className="text-xs text-gray-400">
-                          از فرصت: {quote.opportunity.title}
-                        </span>
-                      )}
                     </div>
                   </td>
                   <td className="p-4">
@@ -203,7 +210,7 @@ export default function QuoteList({
                       {formatCurrency(quote.total)}
                     </div>
                     <div className="text-gray-400 text-sm">
-                      شامل مالیات: {formatCurrency(quote.tax)}
+                      {String(t.tax)}: {formatCurrency(quote.tax)}
                     </div>
                   </td>
                   <td className="p-4">
@@ -211,7 +218,7 @@ export default function QuoteList({
                       {formatDate(quote.validUntil)}
                     </div>
                     {isExpired(quote.validUntil) && (
-                      <div className="text-red-400 text-xs">منقضی شده</div>
+                      <div className="text-red-400 text-xs">{String(t.statusOptions.expired)}</div>
                     )}
                   </td>
                   <td className="p-4">
@@ -219,7 +226,7 @@ export default function QuoteList({
                       <Link
                         href={`/${locale}/admin/crm/quotes/${quote.id}`}
                         className="p-2 text-primary-orange hover:bg-primary-orange/20 rounded-lg transition-colors"
-                        title="مشاهده جزئیات"
+                        title={String(t.viewDetails || 'مشاهده جزئیات')}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -228,7 +235,7 @@ export default function QuoteList({
                       </Link>
                       <button
                         className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-lg transition-colors"
-                        title="ویرایش"
+                        title={String(messages.common?.edit || 'ویرایش')}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -237,7 +244,7 @@ export default function QuoteList({
                       {quote.status === "DRAFT" && (
                         <button
                           className="p-2 text-green-400 hover:bg-green-400/20 rounded-lg transition-colors"
-                          title="ارسال"
+                          title={String(t.sendQuote || 'ارسال')}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -247,7 +254,7 @@ export default function QuoteList({
                       {quote.status === "ACCEPTED" && (
                         <button
                           className="p-2 text-purple-400 hover:bg-purple-400/20 rounded-lg transition-colors"
-                          title="تبدیل به سفارش"
+                          title={String(t.convertQuote || 'تبدیل به سفارش')}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -270,7 +277,7 @@ export default function QuoteList({
                 disabled={currentPage === 1}
                 className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                قبلی
+                {String(messages.common?.previous || 'قبلی')}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -293,12 +300,12 @@ export default function QuoteList({
                 disabled={currentPage === totalPages}
                 className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                بعدی
+                {String(messages.common?.next || 'بعدی')}
               </button>
             </div>
             
             <div className="text-gray-300 text-sm">
-              صفحه {currentPage} از {totalPages}
+              {t.page ? `${String(t.page)} ${currentPage} ${String(t.of || 'از')} ${totalPages}` : `صفحه ${currentPage} از ${totalPages}`}
             </div>
           </div>
         )}

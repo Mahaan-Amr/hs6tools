@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface LeadFormData extends Record<string, unknown> {
   firstName: string;
@@ -16,8 +17,6 @@ interface LeadFormData extends Record<string, unknown> {
   assignedTo: string;
   notes: string;
   tags: string[];
-  expectedValue: number | null;
-  expectedClose: string | null;
   nextFollowUp: string | null;
 }
 
@@ -36,8 +35,6 @@ interface Lead {
   assignedTo?: string;
   notes?: string;
   tags?: string[];
-  expectedValue?: number | null;
-  expectedClose?: string | null;
   nextFollowUp?: string | null;
 }
 
@@ -46,9 +43,19 @@ interface LeadFormProps {
   onSubmit: (data: LeadFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  locale: string;
 }
 
-export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }: LeadFormProps) {
+export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false, locale }: LeadFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
   const [formData, setFormData] = useState({
     firstName: lead?.firstName || "",
     lastName: lead?.lastName || "",
@@ -63,8 +70,6 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
     assignedTo: lead?.assignedTo || "",
     notes: lead?.notes || "",
     tags: lead?.tags?.join(", ") || "",
-    expectedValue: lead?.expectedValue || "",
-    expectedClose: lead?.expectedClose || "",
     nextFollowUp: lead?.nextFollowUp || ""
   });
 
@@ -82,28 +87,35 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+    const t = messages?.admin?.crm?.leads;
 
     if (!formData.firstName.trim()) {
-      newErrors.firstName = "نام الزامی است";
+      newErrors.firstName = (t && typeof t === 'object' && 'firstNameRequired' in t) ? String(t.firstNameRequired) : "First name is required";
     }
 
     if (!formData.lastName.trim()) {
-      newErrors.lastName = "نام خانوادگی الزامی است";
+      newErrors.lastName = (t && typeof t === 'object' && 'lastNameRequired' in t) ? String(t.lastNameRequired) : "Last name is required";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "ایمیل الزامی است";
+      newErrors.email = (t && typeof t === 'object' && 'emailRequired' in t) ? String(t.emailRequired) : "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "فرمت ایمیل صحیح نیست";
+      newErrors.email = (t && typeof t === 'object' && 'emailInvalid' in t) ? String(t.emailInvalid) : "Email format is invalid";
     }
 
     if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = "فرمت شماره تلفن صحیح نیست";
+      newErrors.phone = (t && typeof t === 'object' && 'phoneInvalid' in t) ? String(t.phoneInvalid) : "Phone format is invalid";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  if (!messages || !messages.admin?.crm?.leads) {
+    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
+  }
+
+  const t = messages.admin.crm.leads;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,8 +127,6 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
     const submitData = {
       ...formData,
       tags: formData.tags ? formData.tags.split(",").map((tag: string) => tag.trim()).filter((tag: string) => tag) : [],
-      expectedValue: formData.expectedValue ? parseFloat(formData.expectedValue.toString()) : null,
-      expectedClose: formData.expectedClose || null,
       nextFollowUp: formData.nextFollowUp || null
     };
 
@@ -127,11 +137,11 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Personal Information */}
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات شخصی</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.personalInfo)}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              نام *
+              {String(t.firstName)} *
             </label>
             <input
               type="text"
@@ -141,7 +151,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                 errors.firstName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
-              placeholder="نام"
+              placeholder={String(t.firstName)}
             />
             {errors.firstName && (
               <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.firstName}</p>
@@ -150,7 +160,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              نام خانوادگی *
+              {String(t.lastName)} *
             </label>
             <input
               type="text"
@@ -160,7 +170,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                 errors.lastName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
               }`}
-              placeholder="نام خانوادگی"
+              placeholder={String(t.lastName)}
             />
             {errors.lastName && (
               <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.lastName}</p>
@@ -169,7 +179,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              ایمیل *
+              {String(t.email)} *
             </label>
             <input
               type="email"
@@ -188,7 +198,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              شماره تلفن
+              {String(t.phone)}
             </label>
             <input
               type="tel"
@@ -209,11 +219,11 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
 
       {/* Company Information */}
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات شرکت</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.companyInfo)}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              نام شرکت
+              {String(t.company)}
             </label>
             <input
               type="text"
@@ -221,13 +231,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               value={formData.company}
               onChange={handleChange}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-              placeholder="نام شرکت"
+              placeholder={String(t.company)}
             />
           </div>
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              سمت
+              {String(t.position)}
             </label>
             <input
               type="text"
@@ -235,13 +245,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               value={formData.position}
               onChange={handleChange}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-              placeholder="مدیر، مهندس، ..."
+              placeholder={String(t.positionPlaceholder)}
             />
           </div>
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              صنعت
+              {String(t.industry)}
             </label>
             <input
               type="text"
@@ -249,13 +259,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               value={formData.industry}
               onChange={handleChange}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-              placeholder="صنعت"
+              placeholder={String(t.industry)}
             />
           </div>
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              اندازه شرکت
+              {String(t.companySize)}
             </label>
             <select
               name="companySize"
@@ -263,12 +273,12 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               onChange={handleChange}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             >
-              <option value="">انتخاب کنید</option>
-              <option value="STARTUP">استارتاپ (1-10 نفر)</option>
-              <option value="SMALL">کوچک (11-50 نفر)</option>
-              <option value="MEDIUM">متوسط (51-200 نفر)</option>
-              <option value="LARGE">بزرگ (201-1000 نفر)</option>
-              <option value="ENTERPRISE">سازمانی (1000+ نفر)</option>
+              <option value="">{String(t.selectCompanySize)}</option>
+              <option value="STARTUP">{String(t.startup)}</option>
+              <option value="SMALL">{String(t.small)}</option>
+              <option value="MEDIUM">{String(t.medium)}</option>
+              <option value="LARGE">{String(t.large)}</option>
+              <option value="ENTERPRISE">{String(t.enterprise)}</option>
             </select>
           </div>
         </div>
@@ -276,11 +286,11 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
 
       {/* Lead Information */}
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات لید</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.leadInfo)}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              منبع لید *
+              {String(t.source)} *
             </label>
             <select
               name="source"
@@ -288,21 +298,21 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               onChange={handleChange}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             >
-              <option value="WEBSITE">وب‌سایت</option>
-              <option value="REFERRAL">معرفی</option>
-              <option value="SOCIAL_MEDIA">شبکه‌های اجتماعی</option>
-              <option value="EMAIL_CAMPAIGN">کمپین ایمیل</option>
-              <option value="TRADE_SHOW">نمایشگاه</option>
-              <option value="COLD_CALL">تماس سرد</option>
-              <option value="PARTNER">شریک</option>
-              <option value="ADVERTISING">تبلیغات</option>
-              <option value="OTHER">سایر</option>
+              <option value="WEBSITE">{String(t.sourceOptions?.website || '')}</option>
+              <option value="REFERRAL">{String(t.sourceOptions?.referral || '')}</option>
+              <option value="SOCIAL_MEDIA">{String(t.sourceOptions?.socialMedia || '')}</option>
+              <option value="EMAIL">{String(t.sourceOptions?.email || '')}</option>
+              <option value="TRADE_SHOW">{String(t.sourceOptions?.tradeShow || '')}</option>
+              <option value="PHONE">{String(t.sourceOptions?.phone || '')}</option>
+              <option value="PARTNER">{String(t.sourceOptions?.partner || '')}</option>
+              <option value="ADVERTISING">{String(t.sourceOptions?.advertising || '')}</option>
+              <option value="OTHER">{String(t.sourceOptions?.other || '')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              وضعیت
+              {String(t.status)}
             </label>
             <select
               name="status"
@@ -310,20 +320,17 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               onChange={handleChange}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
             >
-              <option value="NEW">جدید</option>
-              <option value="CONTACTED">تماس گرفته شده</option>
-              <option value="QUALIFIED">صلاحیت‌دار</option>
-              <option value="PROPOSAL">پیشنهاد</option>
-              <option value="NEGOTIATION">مذاکره</option>
-              <option value="CONVERTED">تبدیل شده</option>
-              <option value="LOST">از دست رفته</option>
-              <option value="UNQUALIFIED">غیر صلاحیت‌دار</option>
+              <option value="NEW">{String(t.statusOptions?.new || '')}</option>
+              <option value="CONTACTED">{String(t.statusOptions?.contacted || '')}</option>
+              <option value="QUALIFIED">{String(t.statusOptions?.qualified || '')}</option>
+              <option value="CONVERTED">{String(t.statusOptions?.converted || '')}</option>
+              <option value="LOST">{String(t.statusOptions?.lost || '')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              اختصاص داده شده به
+              {String(t.assignedTo)}
             </label>
             <input
               type="text"
@@ -331,41 +338,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
               value={formData.assignedTo}
               onChange={handleChange}
               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-              placeholder="نام فروشنده"
+              placeholder={String(t.assignedToPlaceholder)}
             />
           </div>
 
           <div>
             <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              ارزش مورد انتظار
-            </label>
-            <input
-              type="number"
-              name="expectedValue"
-              value={formData.expectedValue}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-              placeholder="0"
-              min="0"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              تاریخ بسته شدن مورد انتظار
-            </label>
-            <input
-              type="date"
-              name="expectedClose"
-              value={formData.expectedClose}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-              پیگیری بعدی
+              {String(t.nextFollowUp)}
             </label>
             <input
               type="datetime-local"
@@ -379,7 +358,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
 
         <div className="mt-6">
           <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-            برچسب‌ها
+            {String(t.tags)}
           </label>
           <input
             type="text"
@@ -387,13 +366,13 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
             value={formData.tags}
             onChange={handleChange}
             className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-            placeholder="برچسب‌ها را با کاما جدا کنید"
+            placeholder={String(t.tagsPlaceholder)}
           />
         </div>
 
         <div className="mt-6">
           <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-            یادداشت‌ها
+            {String(t.notes)}
           </label>
           <textarea
             name="notes"
@@ -401,7 +380,7 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
             onChange={handleChange}
             rows={4}
             className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
-            placeholder="یادداشت‌های مربوط به لید..."
+            placeholder={String(t.notesPlaceholder)}
           />
         </div>
       </div>
@@ -413,14 +392,14 @@ export default function LeadForm({ lead, onSubmit, onCancel, isLoading = false }
           onClick={onCancel}
           className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
         >
-          انصراف
+          {String(t.cancel)}
         </button>
         <button
           type="submit"
           disabled={isLoading}
           className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
         >
-          {isLoading ? "در حال ذخیره..." : lead ? "به‌روزرسانی" : "ایجاد"}
+          {isLoading ? String(t.saving) : lead ? String(t.update) : String(t.create)}
         </button>
       </div>
     </form>

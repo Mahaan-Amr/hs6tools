@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { QuoteStatus } from "@prisma/client";
+import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 
 // POST /api/crm/quotes/[id]/convert - Convert quote to order
 export async function POST(
@@ -32,10 +33,10 @@ export async function POST(
             firstName: true,
             lastName: true,
             email: true,
+            phone: true,
             company: true
           }
         },
-        opportunity: true
       }
     });
 
@@ -112,7 +113,7 @@ export async function POST(
           discountAmount: 0,
           totalAmount: quote.total,
           customerEmail: quote.customer.email,
-          customerPhone: "",
+          customerPhone: shippingAddress.phone || quote.customer.phone || "",
           shippingAddressId: shippingAddr.id,
           billingAddressId: billingAddr.id,
           shippingMethod: shippingMethod || "STANDARD",
@@ -165,6 +166,22 @@ export async function POST(
 
       return newOrder;
     });
+
+    // Send order confirmation SMS (non-blocking)
+    const customerPhone = shippingAddress.phone || quote.customer.phone;
+    if (customerPhone) {
+      const customerName = quote.customer 
+        ? `${quote.customer.firstName} ${quote.customer.lastName}` 
+        : 'کاربر گرامی';
+      
+      sendSMSSafe(
+        {
+          receptor: customerPhone,
+          message: SMSTemplates.ORDER_CONFIRMED(orderNumber, customerName),
+        },
+        `Quote converted to order: ${orderNumber}`
+      );
+    }
 
     return NextResponse.json({
       success: true,

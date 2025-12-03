@@ -245,9 +245,15 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
               onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
               className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="IRR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">ریال ایران (IRR)</option>
-              <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">دلار آمریکا (USD)</option>
-              <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">یورو (EUR)</option>
+              <option value="IRR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.currencies?.irr || 'ریال ایران (IRR)'}
+              </option>
+              <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.currencies?.usd || 'دلار آمریکا (USD)'}
+              </option>
+              <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.currencies?.eur || 'یورو (EUR)'}
+              </option>
             </select>
           </div>
 
@@ -260,9 +266,15 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
               onChange={(e) => setSettings(prev => ({ ...prev, timezone: e.target.value }))}
               className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="Asia/Tehran" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">تهران (UTC+3:30)</option>
-              <option value="UTC" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">UTC</option>
-              <option value="Europe/London" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">لندن (UTC+0)</option>
+              <option value="Asia/Tehran" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.timezones?.tehran || 'تهران (UTC+3:30)'}
+              </option>
+              <option value="UTC" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.timezones?.utc || 'UTC'}
+              </option>
+              <option value="Europe/London" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.timezones?.london || 'لندن (UTC+0)'}
+              </option>
             </select>
           </div>
         </div>
@@ -471,9 +483,15 @@ export default function SettingsTab({ locale }: SettingsTabProps) {
               onChange={(e) => handleDisplayChange('dateFormat', e.target.value)}
               className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer"
             >
-              <option value="persian" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">فارسی (۱۴۰۳/۱۲/۲۹)</option>
-              <option value="gregorian" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">میلادی (2024/12/29)</option>
-              <option value="islamic" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">هجری قمری</option>
+              <option value="persian" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.dateFormats?.persian || 'فارسی (۱۴۰۳/۱۲/۲۹)'}
+              </option>
+              <option value="gregorian" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.dateFormats?.gregorian || 'میلادی (2024/12/29)'}
+              </option>
+              <option value="islamic" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                {messages?.customer?.settings?.dateFormats?.islamic || 'هجری قمری'}
+              </option>
             </select>
           </div>
 

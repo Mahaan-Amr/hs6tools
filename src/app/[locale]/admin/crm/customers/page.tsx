@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import CustomerList from "@/components/admin/crm/CustomerList";
 import { Prisma } from "@prisma/client";
+import { getMessages } from "@/lib/i18n";
 
 interface CustomersPageProps {
   params: Promise<{
@@ -26,6 +27,13 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
 
   const { locale } = await params;
   const { search, tier, stage, page } = await searchParams;
+  const messages = await getMessages(locale);
+  
+  if (!messages.admin.customersPage) {
+    return <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black"><div className="text-white p-4">Loading...</div></div>;
+  }
+  
+  const t = messages.admin.customersPage;
   
   const currentPage = parseInt(page || "1");
   const limit = 20;
@@ -148,20 +156,20 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
       {/* Clean Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">مدیریت مشتریان</h1>
+          <h1 className="text-3xl font-bold text-white">{String(t.title)}</h1>
           <p className="text-gray-300 mt-2">
-            مدیریت و تحلیل روابط مشتریان
+            {String(t.subtitle)}
           </p>
         </div>
         <div className="flex items-center space-x-4 space-x-reverse">
           <div className="text-right">
             <div className="text-2xl font-bold text-white">{totalCount}</div>
-            <div className="text-sm text-gray-300">کل مشتریان</div>
+            <div className="text-sm text-gray-300">{String(t.totalCustomers)}</div>
           </div>
           <div className="w-px h-12 bg-gray-600"></div>
           <div className="text-right">
             <div className="text-2xl font-bold text-white">{customersWithMetrics.length}</div>
-            <div className="text-sm text-gray-300">نمایش داده شده</div>
+            <div className="text-sm text-gray-300">{String(t.showing)}</div>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { QuoteStatus } from "@prisma/client";
+import { sendQuoteEmail } from "@/lib/email";
 
 // POST /api/crm/quotes/[id]/send - Send quote to customer
 export async function POST(
@@ -70,15 +71,25 @@ export async function POST(
       }
     });
 
-    // TODO: Implement actual email sending logic here
-    // For now, we'll just log the email details
-    console.log("Quote sent:", {
-      quoteId: id,
-      quoteNumber: quote.quoteNumber,
-      customerEmail: email || quote.customer.email,
-      customerName: `${quote.customer.firstName} ${quote.customer.lastName}`,
-      message: message || "Your quote is ready for review"
-    });
+    // Send email to customer
+    const customerEmail = email || quote.customer.email;
+    const customerName = `${quote.customer.firstName} ${quote.customer.lastName}`;
+    
+    if (customerEmail) {
+      const emailResult = await sendQuoteEmail(
+        customerEmail,
+        customerName,
+        quote.quoteNumber,
+        message
+      );
+      
+      if (!emailResult.success) {
+        console.warn(`Failed to send quote email: ${emailResult.error}`);
+        // Continue even if email fails - quote status is already updated
+      }
+    } else {
+      console.warn(`No email address found for customer ${quote.customer.id}`);
+    }
 
     return NextResponse.json({
       success: true,

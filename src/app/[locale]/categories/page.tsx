@@ -1,4 +1,5 @@
 import CategoryCard from "@/components/ecommerce/CategoryCard";
+import { getMessages } from "@/lib/i18n";
 
 interface Category {
   id: string;
@@ -38,6 +39,7 @@ async function getCategories(): Promise<Category[]> {
 
 export default async function CategoriesPage({ params }: CategoriesPageProps) {
   const { locale } = await params;
+  const t = await getMessages(locale);
   const categories = await getCategories();
   
   // Separate parent and child categories
@@ -50,10 +52,10 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
         {/* Header */}
         <div className="text-center mb-12" data-scroll-reveal>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            دسته‌بندی محصولات
+            {t.categories.pageTitle}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-justify leading-relaxed">
-            دسته‌بندی کامل ابزارهای صنعتی و نجاری برای انتخاب آسان
+            {t.categories.pageSubtitle}
           </p>
         </div>
 
@@ -61,7 +63,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
         {parentCategories.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-              دسته‌های اصلی
+              {t.categories.parentCategories}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {parentCategories.map((category: Category, index: number) => (
@@ -88,7 +90,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
         {childCategories.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-              زیردسته‌ها
+              {t.categories.subcategories}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {childCategories.map((category: Category, index: number) => (
@@ -120,9 +122,9 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">دسته‌بندی‌ای یافت نشد</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t.categories.noCategoriesFound}</h3>
               <p className="text-gray-600 dark:text-gray-300 text-sm">
-                در حال حاضر هیچ دسته‌بندی محصولی موجود نیست.
+                {t.categories.noCategoriesMessage}
               </p>
             </div>
           </div>

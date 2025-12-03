@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") as QuoteStatus | null;
     const customerId = searchParams.get("customerId") || "";
-    const opportunityId = searchParams.get("opportunityId") || "";
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
@@ -52,10 +51,6 @@ export async function GET(request: NextRequest) {
       where.customerId = customerId;
     }
 
-    if (opportunityId) {
-      where.opportunityId = opportunityId;
-    }
-
     // Get quotes with pagination
     const [quotes, totalCount] = await Promise.all([
       prisma.quote.findMany({
@@ -72,14 +67,6 @@ export async function GET(request: NextRequest) {
               email: true,
               company: true,
               phone: true
-            }
-          },
-          opportunity: {
-            select: {
-              id: true,
-              title: true,
-              stage: true,
-              value: true
             }
           }
         }
@@ -154,7 +141,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       customerId,
-      opportunityId,
       items,
       subtotal,
       tax,
@@ -191,7 +177,6 @@ export async function POST(request: NextRequest) {
     const quote = await prisma.quote.create({
       data: {
         customerId,
-        opportunityId: opportunityId || null,
         quoteNumber,
         items: items,
         subtotal: parseFloat(subtotal),
@@ -209,14 +194,6 @@ export async function POST(request: NextRequest) {
             email: true,
             company: true,
             phone: true
-          }
-        },
-        opportunity: {
-          select: {
-            id: true,
-            title: true,
-            stage: true,
-            value: true
           }
         }
       }

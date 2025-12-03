@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface QuoteFormData extends Record<string, unknown> {
   customerId: string;
-  opportunityId: string;
   items: Array<{
     productId: string;
     productName: string;
@@ -29,12 +29,6 @@ interface Customer {
   company?: string;
 }
 
-interface Opportunity {
-  id: string;
-  title: string;
-  stage: string;
-  value: number;
-}
 
 interface Product {
   id: string;
@@ -48,7 +42,6 @@ interface Product {
 interface Quote {
   id?: string;
   customerId?: string;
-  opportunityId?: string;
   items?: Array<{
     productId: string;
     productName: string;
@@ -69,17 +62,27 @@ interface QuoteFormProps {
   onSubmit: (data: QuoteFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  locale: string;
 }
 
 export default function QuoteForm({
   quote,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
+  locale
 }: QuoteFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
   const [formData, setFormData] = useState<QuoteFormData>({
     customerId: "",
-    opportunityId: "",
     items: [],
     subtotal: 0,
     tax: 0,
@@ -89,10 +92,8 @@ export default function QuoteForm({
   });
 
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [loadingOpportunities, setLoadingOpportunities] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showProductSelector, setShowProductSelector] = useState(false);
 
@@ -100,7 +101,6 @@ export default function QuoteForm({
     if (quote) {
       setFormData({
         customerId: quote.customerId || "",
-        opportunityId: quote.opportunityId || "",
         items: quote.items || [],
         subtotal: quote.subtotal || 0,
         tax: quote.tax || 0,
@@ -121,7 +121,6 @@ export default function QuoteForm({
 
   useEffect(() => {
     fetchCustomers();
-    fetchOpportunities();
     fetchProducts();
   }, []);
 
@@ -160,21 +159,6 @@ export default function QuoteForm({
     }
   };
 
-  const fetchOpportunities = async () => {
-    try {
-      setLoadingOpportunities(true);
-      const response = await fetch("/api/crm/opportunities?limit=100");
-      const result = await response.json();
-      
-      if (result.success) {
-        setOpportunities(result.data.opportunities || []);
-      }
-    } catch (error) {
-      console.error("Error fetching opportunities:", error);
-    } finally {
-      setLoadingOpportunities(false);
-    }
-  };
 
   const fetchProducts = async () => {
     try {
@@ -248,17 +232,23 @@ export default function QuoteForm({
     onSubmit(formData);
   };
 
+  if (!messages || !messages.admin?.crm?.quotes) {
+    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
+  }
+
+  const t = messages.admin.crm.quotes;
   const statusOptions = [
-    { value: "DRAFT", label: "پیش‌نویس" },
-    { value: "SENT", label: "ارسال شده" },
-    { value: "VIEWED", label: "مشاهده شده" },
-    { value: "ACCEPTED", label: "پذیرفته شده" },
-    { value: "REJECTED", label: "رد شده" },
-    { value: "EXPIRED", label: "منقضی شده" }
+    { value: "DRAFT", label: String(t.statusOptions.draft) },
+    { value: "SENT", label: String(t.statusOptions.sent) },
+    { value: "VIEWED", label: String(t.statusOptions.viewed) },
+    { value: "ACCEPTED", label: String(t.statusOptions.accepted) },
+    { value: "REJECTED", label: String(t.statusOptions.rejected) },
+    { value: "EXPIRED", label: String(t.statusOptions.expired) }
   ];
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fa-IR', {
+    const localeCode = locale === 'fa' ? 'fa-IR' : locale === 'ar' ? 'ar-SA' : 'en-US';
+    return new Intl.NumberFormat(localeCode, {
       style: 'currency',
       currency: 'IRR',
       minimumFractionDigits: 0
@@ -269,7 +259,7 @@ export default function QuoteForm({
     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {quote ? "ویرایش پیشنهاد" : "ایجاد پیشنهاد جدید"}
+          {quote ? String(t.editQuote) : String(t.createQuote)}
         </h2>
         <button
           onClick={onCancel}
@@ -282,13 +272,13 @@ export default function QuoteForm({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Customer and Opportunity Selection */}
+        {/* Customer Selection */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات پایه</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.baseInfo)}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                مشتری *
+                {String(t.customer)} *
               </label>
               <select
                 name="customerId"
@@ -299,34 +289,12 @@ export default function QuoteForm({
                 className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">
-                  {loadingCustomers ? "در حال بارگذاری..." : "انتخاب مشتری"}
+                  {loadingCustomers ? String(messages.common.loading) : String(t.selectCustomer)}
                 </option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.firstName} {customer.lastName} - {customer.email}
                     {customer.company && ` (${customer.company})`}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                فرصت فروش
-              </label>
-              <select
-                name="opportunityId"
-                value={formData.opportunityId}
-                onChange={handleInputChange}
-                disabled={loadingOpportunities}
-                className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">
-                  {loadingOpportunities ? "در حال بارگذاری..." : "انتخاب فرصت (اختیاری)"}
-                </option>
-                {opportunities.map((opportunity) => (
-                  <option key={opportunity.id} value={opportunity.id}>
-                    {opportunity.title} - {formatCurrency(opportunity.value)}
                   </option>
                 ))}
               </select>
@@ -337,13 +305,13 @@ export default function QuoteForm({
         {/* Quote Items */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">آیتم‌های پیشنهاد</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{String(t.quoteItems)}</h3>
             <button
               type="button"
               onClick={() => setShowProductSelector(true)}
               className="px-6 py-2 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200"
             >
-              افزودن محصول
+              {String(t.addProduct)}
             </button>
           </div>
 
@@ -354,8 +322,8 @@ export default function QuoteForm({
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="text-gray-900 dark:text-white font-medium">{item.productName}</div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm">SKU: {item.productSku}</div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm">قیمت: {formatCurrency(item.price)}</div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm">{String(t.productSelector.sku)}: {item.productSku}</div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm">{String(messages.products.price)}: {formatCurrency(item.price)}</div>
                     </div>
                     <div className="flex items-center space-x-4 space-x-reverse">
                       <div className="flex items-center space-x-2 space-x-reverse">
@@ -394,25 +362,25 @@ export default function QuoteForm({
             </div>
           ) : (
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-              <p className="text-gray-600 dark:text-gray-400">هیچ محصولی اضافه نشده است</p>
+              <p className="text-gray-600 dark:text-gray-400">{String(t.noProducts)}</p>
             </div>
           )}
         </div>
 
         {/* Quote Totals */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">خلاصه قیمت</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.priceSummary)}</h3>
           <div className="space-y-3">
             <div className="flex justify-between text-gray-600 dark:text-gray-400">
-              <span>جمع کل:</span>
+              <span>{String(t.subtotal)}:</span>
               <span className="font-medium">{formatCurrency(formData.subtotal)}</span>
             </div>
             <div className="flex justify-between text-gray-600 dark:text-gray-400">
-              <span>مالیات (9%):</span>
+              <span>{String(t.tax)}:</span>
               <span className="font-medium">{formatCurrency(formData.tax)}</span>
             </div>
             <div className="flex justify-between text-gray-900 dark:text-white font-bold text-lg border-t-2 border-gray-200 dark:border-gray-700 pt-3">
-              <span>مبلغ نهایی:</span>
+              <span>{String(t.total)}:</span>
               <span>{formatCurrency(formData.total)}</span>
             </div>
           </div>
@@ -420,11 +388,11 @@ export default function QuoteForm({
 
         {/* Additional Settings */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تنظیمات اضافی</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.additionalSettings)}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                اعتبار تا *
+                {String(t.validUntilLabel)} *
               </label>
               <input
                 type="date"
@@ -438,7 +406,7 @@ export default function QuoteForm({
 
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                وضعیت
+                {String(t.statusLabel)}
               </label>
               <select
                 name="status"
@@ -463,14 +431,14 @@ export default function QuoteForm({
             onClick={onCancel}
             className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
           >
-            انصراف
+            {String(t.cancel)}
           </button>
           <button
             type="submit"
             disabled={isLoading || formData.items.length === 0}
             className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
           >
-            {isLoading ? "در حال ذخیره..." : quote ? "به‌روزرسانی" : "ایجاد"}
+            {isLoading ? String(t.saving) : quote ? String(t.update) : String(t.create)}
           </button>
         </div>
       </form>
@@ -495,7 +463,7 @@ export default function QuoteForm({
             }}
           >
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">انتخاب محصول</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{String(t.productSelector.title)}</h3>
               <button
                 onClick={() => setShowProductSelector(false)}
                 className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
@@ -508,7 +476,7 @@ export default function QuoteForm({
             
             <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
               {loadingProducts ? (
-                <div className="text-center text-gray-600 dark:text-gray-400 py-8">در حال بارگذاری محصولات...</div>
+                <div className="text-center text-gray-600 dark:text-gray-400 py-8">{String(t.productSelector.loading)}</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {products.map((product) => (
@@ -518,10 +486,10 @@ export default function QuoteForm({
                       onClick={() => handleAddProduct(product)}
                     >
                       <div className="text-gray-900 dark:text-white font-medium">{product.name}</div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm">SKU: {product.sku}</div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm">{String(t.productSelector.sku)}: {product.sku}</div>
                       <div className="text-primary-orange font-semibold mt-2">{formatCurrency(product.price)}</div>
                       <div className={`text-xs mt-1 ${product.isInStock ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {product.isInStock ? `موجود (${product.stockQuantity})` : 'ناموجود'}
+                        {product.isInStock ? t.productSelector.inStock.replace('{quantity}', product.stockQuantity.toString()) : String(t.productSelector.outOfStock)}
                       </div>
                     </div>
                   ))}

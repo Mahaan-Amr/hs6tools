@@ -50,7 +50,7 @@ export default function CategoryList({
     );
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedCategories.length === 0) return;
     
     switch (action) {
@@ -61,10 +61,48 @@ export default function CategoryList({
         }
         break;
       case "activate":
-        // TODO: Implement bulk activate
+        if (confirm(`آیا از فعال کردن ${selectedCategories.length} دسته‌بندی اطمینان دارید؟`)) {
+          try {
+            const response = await fetch('/api/categories/bulk', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: selectedCategories, action: 'activate' })
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert(result.message);
+              setSelectedCategories([]);
+              window.location.reload(); // Refresh to show updated status
+            } else {
+              alert(`خطا: ${result.error}`);
+            }
+          } catch (error) {
+            console.error('Error activating categories:', error);
+            alert('خطا در فعال کردن دسته‌بندی‌ها');
+          }
+        }
         break;
       case "deactivate":
-        // TODO: Implement bulk deactivate
+        if (confirm(`آیا از غیرفعال کردن ${selectedCategories.length} دسته‌بندی اطمینان دارید؟`)) {
+          try {
+            const response = await fetch('/api/categories/bulk', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: selectedCategories, action: 'deactivate' })
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert(result.message);
+              setSelectedCategories([]);
+              window.location.reload(); // Refresh to show updated status
+            } else {
+              alert(`خطا: ${result.error}`);
+            }
+          } catch (error) {
+            console.error('Error deactivating categories:', error);
+            alert('خطا در غیرفعال کردن دسته‌بندی‌ها');
+          }
+        }
         break;
     }
   };

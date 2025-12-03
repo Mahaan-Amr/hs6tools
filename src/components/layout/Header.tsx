@@ -91,13 +91,13 @@ export default function Header({ locale, messages }: HeaderProps) {
                 href={`/${locale}/categories`} 
                 className="px-2 py-1.5 rounded-md text-gray-700 dark:text-white/80 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-200"
               >
-                دسته‌بندی‌ها
+                {messages.navigation.categories}
               </Link>
               <Link 
                 href={`/${locale}/education`} 
                 className="px-2 py-1.5 rounded-md text-gray-700 dark:text-white/80 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-200"
               >
-                آموزش
+                {messages.navigation.education}
               </Link>
               <Link 
                 href={`/${locale}/about`} 
@@ -122,7 +122,7 @@ export default function Header({ locale, messages }: HeaderProps) {
                   href={`/${locale}/admin`} 
                   className="px-2 py-1.5 rounded-md text-primary-orange hover:text-orange-600 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors duration-200 font-medium"
                 >
-                  پنل مدیریت
+                  {messages.navigation.adminPanel || 'پنل مدیریت'}
                 </Link>
               )}
             </nav>

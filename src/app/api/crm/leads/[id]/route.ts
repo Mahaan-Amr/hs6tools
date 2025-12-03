@@ -23,9 +23,6 @@ export async function GET(
     const lead = await prisma.lead.findUnique({
       where: { id },
       include: {
-        activities: {
-          orderBy: { createdAt: "desc" }
-        },
         interactions: {
           orderBy: { createdAt: "desc" }
         }
@@ -82,21 +79,6 @@ export async function PUT(
       );
     }
 
-    // Recalculate lead score if relevant fields are updated
-    let score = existingLead.score;
-    if (body.company !== undefined || body.phone !== undefined || 
-        body.position !== undefined || body.industry !== undefined || 
-        body.companySize !== undefined || body.expectedValue !== undefined) {
-      
-      score = 0;
-      if (body.company || existingLead.company) score += 10;
-      if (body.phone || existingLead.phone) score += 10;
-      if (body.position || existingLead.position) score += 5;
-      if (body.industry || existingLead.industry) score += 5;
-      if (body.companySize || existingLead.companySize) score += 5;
-      if (body.expectedValue || existingLead.expectedValue) score += 15;
-    }
-
     // Update lead
     const lead = await prisma.lead.update({
       where: { id },
@@ -114,16 +96,10 @@ export async function PUT(
         ...(body.assignedTo !== undefined && { assignedTo: body.assignedTo }),
         ...(body.notes !== undefined && { notes: body.notes }),
         ...(body.tags && { tags: body.tags }),
-        ...(body.expectedValue !== undefined && { expectedValue: body.expectedValue ? parseFloat(body.expectedValue) : null }),
-        ...(body.expectedClose && { expectedClose: new Date(body.expectedClose) }),
         ...(body.nextFollowUp && { nextFollowUp: new Date(body.nextFollowUp) }),
-        ...(body.lastContact && { lastContact: new Date(body.lastContact) }),
-        score
+        ...(body.lastContact && { lastContact: new Date(body.lastContact) })
       },
       include: {
-        activities: {
-          orderBy: { createdAt: "desc" }
-        },
         interactions: {
           orderBy: { createdAt: "desc" }
         }
@@ -172,7 +148,7 @@ export async function DELETE(
       );
     }
 
-    // Delete lead (activities and interactions will be deleted due to cascade)
+    // Delete lead (interactions will be deleted due to cascade)
     await prisma.lead.delete({
       where: { id }
     });

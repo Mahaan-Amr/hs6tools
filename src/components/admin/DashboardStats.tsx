@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface StatCardProps {
   title: string;
@@ -23,6 +24,15 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   useEffect(() => {
     // Fetch real stats from API
@@ -91,7 +101,8 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
   };
 
   const formatCurrency = (num: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
+    const localeCode = locale === "fa" ? "fa-IR" : locale === "ar" ? "ar-SA" : "en-US";
+    return new Intl.NumberFormat(localeCode, {
       style: "currency",
       currency: locale === "fa" ? "IRR" : "USD",
       minimumFractionDigits: 0,
@@ -99,17 +110,23 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
     }).format(num);
   };
 
+  if (!messages || !messages.admin?.dashboardStats) {
+    return <div className="text-white p-4">Loading...</div>;
+  }
+
+  const t = messages.admin.dashboardStats;
+
   const StatCard = ({ title, value, change, icon, color }: StatCardProps) => (
     <div className="glass rounded-3xl p-4 sm:p-6 hover:scale-105 transition-transform duration-300">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className={`w-10 h-10 sm:w-12 sm:h-12 ${color} rounded-2xl flex items-center justify-center`}>
           {icon}
         </div>
-        <div className={`text-right ${change >= 0 ? 'text-green-400' : 'text-red-400'} text-xs sm:text-sm`}>
+          <div className={`text-right ${change >= 0 ? 'text-green-400' : 'text-red-400'} text-xs sm:text-sm`}>
           <span className="font-medium">
             {change >= 0 ? '+' : ''}{change}%
           </span>
-          <div className="text-gray-400 text-xs">از ماه گذشته</div>
+          <div className="text-gray-400 text-xs">{String(t.fromLastMonth)}</div>
         </div>
       </div>
       
@@ -118,7 +135,7 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
           {isLoading ? (
             <div className="w-16 sm:w-20 h-6 sm:h-8 bg-white/10 rounded animate-pulse mx-auto"></div>
           ) : (
-            title === 'درآمد ماهانه' ? formatCurrency(value as number) : formatNumber(value as number)
+            title === String(t.monthlyRevenue) ? formatCurrency(value as number) : formatNumber(value as number)
           )}
         </h3>
         <p className="text-gray-300 text-sm sm:text-base">{title}</p>
@@ -129,7 +146,7 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <StatCard
-        title="سفارشات امروز"
+        title={String(t.todayOrders)}
         value={stats.orders.value}
         change={stats.orders.change}
         icon={
@@ -141,7 +158,7 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
       />
       
       <StatCard
-        title="محصولات فعال"
+        title={String(t.activeProducts)}
         value={stats.products.value}
         change={stats.products.change}
         icon={
@@ -153,7 +170,7 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
       />
       
       <StatCard
-        title="کاربران ثبت‌نام شده"
+        title={String(t.registeredUsers)}
         value={stats.users.value}
         change={stats.users.change}
         icon={
@@ -165,7 +182,7 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
       />
       
       <StatCard
-        title="درآمد ماهانه"
+        title={String(t.monthlyRevenue)}
         value={stats.revenue.value}
         change={stats.revenue.change}
         icon={

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { EducationLesson } from "@/types/education";
 import { LessonDifficulty } from "@prisma/client";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface LessonContentProps {
   lesson: EducationLesson;
@@ -12,12 +14,23 @@ interface LessonContentProps {
 }
 
 export default function LessonContent({ lesson, relatedLessons, locale }: LessonContentProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
   const getDifficultyLabel = (difficulty: LessonDifficulty) => {
+    if (!messages?.education?.difficulty) return difficulty;
     const labels = {
-      BEGINNER: "مبتدی",
-      INTERMEDIATE: "متوسط",
-      ADVANCED: "پیشرفته",
-      EXPERT: "حرفه‌ای",
+      BEGINNER: messages.education.difficulty.beginner,
+      INTERMEDIATE: messages.education.difficulty.intermediate,
+      ADVANCED: messages.education.difficulty.advanced,
+      EXPERT: messages.education.difficulty.expert,
     };
     return labels[difficulty];
   };
@@ -33,7 +46,12 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
   };
 
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("fa-IR", {
+    const localeMap: Record<string, string> = {
+      fa: "fa-IR",
+      ar: "ar-SA",
+      en: "en-US"
+    };
+    return new Date(date).toLocaleDateString(localeMap[locale] || "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -70,16 +88,27 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
     return url.startsWith('/uploads/videos/') || url.startsWith('/api/uploads/videos/');
   };
 
+  if (!messages || !messages.education) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-12 h-12 border-4 border-primary-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-900 dark:text-white">{messages?.common?.loading || "Loading..."}</p>
+      </div>
+    );
+  }
+
+  const t = messages.education;
+
   return (
     <div className="space-y-8">
       {/* Breadcrumbs */}
       <nav className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
         <Link href={`/${locale}`} className="hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-          خانه
+          {String(t.breadcrumbs.home)}
         </Link>
         <span>/</span>
         <Link href={`/${locale}/education`} className="hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
-          آموزش
+          {String(t.breadcrumbs.education)}
         </Link>
         {lesson.category && (
           <>
@@ -126,7 +155,7 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span>
-                  {lesson.author ? `${lesson.author.firstName} ${lesson.author.lastName}` : "نویسنده نامشخص"}
+                  {lesson.author ? `${lesson.author.firstName} ${lesson.author.lastName}` : String(t.lesson.unknownAuthor)}
                 </span>
               </div>
               {lesson.publishedAt && (
@@ -142,14 +171,14 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                <span>{lesson.viewCount} بازدید</span>
+                <span>{lesson.viewCount} {String(t.views)}</span>
               </div>
               {lesson.estimatedTime && (
                 <div className="flex items-center space-x-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>{lesson.estimatedTime} دقیقه</span>
+                  <span>{lesson.estimatedTime} {String(t.minutes)}</span>
                 </div>
               )}
             </div>
@@ -158,11 +187,11 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
           {/* Content Type Badges */}
           <div className="flex flex-wrap items-center gap-3">
             <span className={`px-4 py-2 rounded-xl text-sm font-medium ${getDifficultyColor(lesson.difficulty)}`}>
-              سطح: {getDifficultyLabel(lesson.difficulty)}
+              {String(t.lesson.levelLabel)} {getDifficultyLabel(lesson.difficulty)}
             </span>
             <span className="px-4 py-2 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-xl text-sm font-medium">
-              {lesson.contentType === "TEXT" ? "📄 متنی" :
-               lesson.contentType === "VIDEO" ? "🎥 ویدیویی" : "📹 ترکیبی"}
+              {lesson.contentType === "TEXT" ? `📄 ${String(t.contentTypes.text)}` :
+               lesson.contentType === "VIDEO" ? `🎥 ${String(t.contentTypes.video)}` : `📹 ${String(t.contentTypes.mixed)}`}
             </span>
           </div>
 
@@ -178,7 +207,7 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
                     className="w-full h-full"
                     preload="metadata"
                   >
-                    مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                    {String(t.lesson.browserNotSupported)}
                   </video>
                 ) : (
                   // Embedded video for external URLs (YouTube, Vimeo, etc.)
@@ -223,24 +252,24 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
         <div className="space-y-6">
           {/* Lesson Info Card */}
           <div className="glass rounded-3xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">اطلاعات درس</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.lesson.lessonInfo)}</h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">نوع محتوا:</span>
+                <span className="text-gray-600 dark:text-gray-400">{String(t.lesson.contentType)}</span>
                 <span className="text-gray-900 dark:text-white font-medium">
-                  {lesson.contentType === "TEXT" ? "متنی" :
-                   lesson.contentType === "VIDEO" ? "ویدیویی" : "ترکیبی"}
+                  {lesson.contentType === "TEXT" ? String(t.contentTypes.text) :
+                   lesson.contentType === "VIDEO" ? String(t.contentTypes.video) : String(t.contentTypes.mixed)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">سطح:</span>
+                <span className="text-gray-600 dark:text-gray-400">{String(t.lesson.levelLabel)}</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(lesson.difficulty)}`}>
                   {getDifficultyLabel(lesson.difficulty)}
                 </span>
               </div>
               {lesson.videoDuration && (
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">مدت زمان:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{String(t.lesson.duration)}</span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {formatDuration(lesson.videoDuration)}
                   </span>
@@ -248,14 +277,14 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
               )}
               {lesson.estimatedTime && (
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">زمان تخمینی:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{String(t.lesson.estimatedTime)}</span>
                   <span className="text-gray-900 dark:text-white font-medium">
-                    {lesson.estimatedTime} دقیقه
+                    {lesson.estimatedTime} {String(t.minutes)}
                   </span>
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">بازدید:</span>
+                <span className="text-gray-600 dark:text-gray-400">{String(t.lesson.viewsLabel)}</span>
                 <span className="text-gray-900 dark:text-white font-medium">{lesson.viewCount}</span>
               </div>
             </div>
@@ -264,7 +293,7 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
           {/* Related Lessons */}
           {relatedLessons.length > 0 && (
             <div className="glass rounded-3xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">دروس مرتبط</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.lesson.relatedLessons)}</h3>
               <div className="space-y-4">
                 {relatedLessons.map((relatedLesson) => (
                   <Link

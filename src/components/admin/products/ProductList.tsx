@@ -49,7 +49,7 @@ export default function ProductList({
     );
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedProducts.length === 0) return;
     
     switch (action) {
@@ -60,10 +60,48 @@ export default function ProductList({
         }
         break;
       case "activate":
-        // TODO: Implement bulk activate
+        if (confirm(`آیا از فعال کردن ${selectedProducts.length} محصول اطمینان دارید؟`)) {
+          try {
+            const response = await fetch('/api/products/bulk', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: selectedProducts, action: 'activate' })
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert(result.message);
+              setSelectedProducts([]);
+              window.location.reload(); // Refresh to show updated status
+            } else {
+              alert(`خطا: ${result.error}`);
+            }
+          } catch (error) {
+            console.error('Error activating products:', error);
+            alert('خطا در فعال کردن محصولات');
+          }
+        }
         break;
       case "deactivate":
-        // TODO: Implement bulk deactivate
+        if (confirm(`آیا از غیرفعال کردن ${selectedProducts.length} محصول اطمینان دارید؟`)) {
+          try {
+            const response = await fetch('/api/products/bulk', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: selectedProducts, action: 'deactivate' })
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert(result.message);
+              setSelectedProducts([]);
+              window.location.reload(); // Refresh to show updated status
+            } else {
+              alert(`خطا: ${result.error}`);
+            }
+          } catch (error) {
+            console.error('Error deactivating products:', error);
+            alert('خطا در غیرفعال کردن محصولات');
+          }
+        }
         break;
     }
   };

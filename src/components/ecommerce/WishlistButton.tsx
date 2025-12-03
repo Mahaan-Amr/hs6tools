@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface WishlistItem {
   productId: string;
@@ -14,12 +15,22 @@ interface WishlistItem {
 interface WishlistButtonProps {
   productId: string;
   className?: string;
+  locale?: string;
 }
 
-export default function WishlistButton({ productId, className = "" }: WishlistButtonProps) {
+export default function WishlistButton({ productId, className = "", locale = "fa" }: WishlistButtonProps) {
   const { data: session } = useSession();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const checkWishlistStatus = useCallback(async () => {
     try {
@@ -90,7 +101,7 @@ export default function WishlistButton({ productId, className = "" }: WishlistBu
     return (
       <button
         className={`p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 ${className}`}
-        title="ورود برای افزودن به لیست علاقه‌مندی"
+        title={messages?.wishlist?.loginRequired || 'ورود برای افزودن به لیست علاقه‌مندی'}
         disabled
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +124,10 @@ export default function WishlistButton({ productId, className = "" }: WishlistBu
         ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
         ${className}
       `}
-      title={isInWishlist ? "حذف از لیست علاقه‌مندی" : "افزودن به لیست علاقه‌مندی"}
+      title={isInWishlist 
+        ? (messages?.wishlist?.removeFromWishlist || 'حذف از لیست علاقه‌مندی')
+        : (messages?.wishlist?.addToWishlist || 'افزودن به لیست علاقه‌مندی')
+      }
     >
       {isLoading ? (
         <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />

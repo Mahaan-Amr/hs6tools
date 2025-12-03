@@ -6,20 +6,33 @@ import Image from "next/image";
 import { AdminOrder, UpdateOrderData } from "@/types/admin";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 import { formatPrice } from "@/utils/format";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface OrderFormProps {
   order: AdminOrder;
   onSave: (data: UpdateOrderData) => void;
   onCancel: () => void;
   isSaving: boolean;
+  locale: string;
 }
 
 export default function OrderForm({
   order,
   onSave,
   onCancel,
-  isSaving
+  isSaving,
+  locale
 }: OrderFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
   const [formData, setFormData] = useState<UpdateOrderData>({
     id: order.id,
     status: order.status,
@@ -80,18 +93,18 @@ export default function OrderForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.trackingNumber && formData.status === "SHIPPED") {
-      newErrors.trackingNumber = "شماره پیگیری برای سفارشات ارسال شده الزامی است";
+      newErrors.trackingNumber = String(t.trackingRequired);
     }
 
     if (formData.deliveredAt && !formData.shippedAt) {
-      newErrors.deliveredAt = "سفارش باید ابتدا ارسال شود تا بتواند تحویل شود";
+      newErrors.deliveredAt = String(t.shippedFirst);
     }
 
     if (formData.deliveredAt && formData.shippedAt) {
       const shippedDate = new Date(formData.shippedAt);
       const deliveredDate = new Date(formData.deliveredAt);
       if (deliveredDate < shippedDate) {
-        newErrors.deliveredAt = "تاریخ تحویل نمی‌تواند قبل از تاریخ ارسال باشد";
+        newErrors.deliveredAt = String(t.deliveredBeforeShipped);
       }
     }
 
@@ -109,9 +122,16 @@ export default function OrderForm({
 
 
 
+  if (!messages || !messages.admin?.ordersForm) {
+    return null;
+  }
+
+  const t = messages.admin.ordersForm;
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("fa-IR", {
+    const localeCode = locale === 'fa' ? 'fa-IR' : locale === 'ar' ? 'ar-SA' : 'en-US';
+    return new Intl.DateTimeFormat(localeCode, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -141,7 +161,7 @@ export default function OrderForm({
         }}
       >
         <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">ویرایش سفارش</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{String(t.editOrder)}</h2>
           <button
             onClick={onCancel}
             className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
@@ -155,56 +175,56 @@ export default function OrderForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Order Information */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات سفارش</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.orderInfo)}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">شماره سفارش</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.orderNumber)}</label>
                 <div className="text-gray-900 dark:text-white font-medium">{order.orderNumber}</div>
               </div>
               
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تاریخ ایجاد</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.createdAt)}</label>
                 <div className="text-gray-600 dark:text-gray-400">{formatDate(order.createdAt)}</div>
               </div>
               
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">مبلغ کل</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.totalAmount)}</label>
                 <div className="text-gray-900 dark:text-white font-medium">{formatPrice(order.totalAmount)}</div>
               </div>
               
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تعداد آیتم‌ها</label>
-                <div className="text-gray-600 dark:text-gray-400">{order._count.orderItems} آیتم</div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.itemCount)}</label>
+                <div className="text-gray-600 dark:text-gray-400">{order._count.orderItems} {String(t.items)}</div>
               </div>
             </div>
           </div>
 
           {/* Customer Information */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات مشتری</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.customerInfo)}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">نام و نام خانوادگی</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.fullName)}</label>
                 <div className="text-gray-900 dark:text-white">
                   {order.user.firstName} {order.user.lastName}
                 </div>
               </div>
               
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">ایمیل</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.email)}</label>
                 <div className="text-gray-600 dark:text-gray-400">{order.customerEmail}</div>
               </div>
               
               {order.customerPhone && (
                 <div>
-                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">شماره تلفن</label>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.phone)}</label>
                   <div className="text-gray-600 dark:text-gray-400">{order.customerPhone}</div>
                 </div>
               )}
               
               {order.customerNote && (
                 <div className="md:col-span-2">
-                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">یادداشت مشتری</label>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.customerNote)}</label>
                   <div className="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">{order.customerNote}</div>
                 </div>
               )}
@@ -213,7 +233,7 @@ export default function OrderForm({
 
           {/* Order Items */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">آیتم‌های سفارش</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.orderItems)}</h3>
             <div className="space-y-4">
               {order.orderItems.map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -231,14 +251,14 @@ export default function OrderForm({
                       <div className="text-gray-900 dark:text-white font-medium">{item.name}</div>
                       <div className="text-gray-600 dark:text-gray-400 text-sm">SKU: {item.sku}</div>
                       {item.variant && (
-                        <div className="text-gray-600 dark:text-gray-400 text-sm">تنوع: {item.variant.name}</div>
+                        <div className="text-gray-600 dark:text-gray-400 text-sm">{String(t.variant)}: {item.variant.name}</div>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-gray-900 dark:text-white font-medium">{formatPrice(item.totalPrice)}</div>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm">تعداد: {item.quantity}</div>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm">قیمت واحد: {formatPrice(item.unitPrice)}</div>
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">{String(t.quantity)}: {item.quantity}</div>
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">{String(t.unitPrice)}: {formatPrice(item.unitPrice)}</div>
                   </div>
                 </div>
               ))}
@@ -247,46 +267,46 @@ export default function OrderForm({
 
           {/* Order Management */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">مدیریت سفارش</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.orderManagement)}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Order Status */}
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">وضعیت سفارش</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.orderStatus)}</label>
                 <select
                   value={formData.status}
                   onChange={(e) => handleInputChange("status", e.target.value as OrderStatus)}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                 >
-                  <option value="PENDING">در انتظار</option>
-                  <option value="CONFIRMED">تأیید شده</option>
-                  <option value="PROCESSING">در حال پردازش</option>
-                  <option value="SHIPPED">ارسال شده</option>
-                  <option value="DELIVERED">تحویل شده</option>
-                  <option value="CANCELLED">لغو شده</option>
-                  <option value="REFUNDED">بازپرداخت شده</option>
+                  <option value="PENDING">{String(t.statusPending)}</option>
+                  <option value="CONFIRMED">{String(t.statusConfirmed)}</option>
+                  <option value="PROCESSING">{String(t.statusProcessing)}</option>
+                  <option value="SHIPPED">{String(t.statusShipped)}</option>
+                  <option value="DELIVERED">{String(t.statusDelivered)}</option>
+                  <option value="CANCELLED">{String(t.statusCancelled)}</option>
+                  <option value="REFUNDED">{String(t.statusRefunded)}</option>
                 </select>
               </div>
 
               {/* Payment Status */}
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">وضعیت پرداخت</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.paymentStatus)}</label>
                 <select
                   value={formData.paymentStatus}
                   onChange={(e) => handleInputChange("paymentStatus", e.target.value as PaymentStatus)}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                 >
-                  <option value="PENDING">در انتظار</option>
-                  <option value="PAID">پرداخت شده</option>
-                  <option value="FAILED">ناموفق</option>
-                  <option value="REFUNDED">بازپرداخت شده</option>
-                  <option value="PARTIALLY_REFUNDED">بازپرداخت جزئی</option>
+                  <option value="PENDING">{String(t.paymentPending)}</option>
+                  <option value="PAID">{String(t.paymentPaid)}</option>
+                  <option value="FAILED">{String(t.paymentFailed)}</option>
+                  <option value="REFUNDED">{String(t.paymentRefunded)}</option>
+                  <option value="PARTIALLY_REFUNDED">{String(t.paymentPartiallyRefunded)}</option>
                 </select>
               </div>
 
               {/* Tracking Number */}
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  شماره پیگیری
+                  {String(t.trackingNumber)}
                   {formData.status === "SHIPPED" && <span className="text-red-500 mr-1">*</span>}
                 </label>
                 <input
@@ -296,7 +316,7 @@ export default function OrderForm({
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.trackingNumber ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="شماره پیگیری ارسال"
+                  placeholder={String(t.trackingPlaceholder)}
                 />
                 {errors.trackingNumber && (
                   <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.trackingNumber}</p>
@@ -305,7 +325,7 @@ export default function OrderForm({
 
               {/* Shipped Date */}
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تاریخ ارسال</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.shippedAt)}</label>
                 <input
                   type="datetime-local"
                   value={formData.shippedAt ? formData.shippedAt.slice(0, 16) : ""}
@@ -316,7 +336,7 @@ export default function OrderForm({
 
               {/* Delivered Date */}
               <div>
-                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تاریخ تحویل</label>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">{String(t.deliveredAt)}</label>
                 <input
                   type="datetime-local"
                   value={formData.deliveredAt ? formData.deliveredAt.slice(0, 16) : ""}
@@ -339,14 +359,14 @@ export default function OrderForm({
               onClick={onCancel}
               className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
             >
-              انصراف
+              {String(t.cancel)}
             </button>
             <button
               type="submit"
               disabled={isSaving}
               className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
             >
-              {isSaving ? "در حال ذخیره..." : "به‌روزرسانی"}
+              {isSaving ? String(t.saving) : String(t.update)}
             </button>
           </div>
         </form>

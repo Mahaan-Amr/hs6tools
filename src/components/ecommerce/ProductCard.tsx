@@ -3,7 +3,8 @@
 import { useCartStore } from "@/contexts/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 import WishlistButton from "./WishlistButton";
 
 interface ProductImage {
@@ -68,6 +69,15 @@ interface ProductCardProps {
 export default function ProductCard({ product, locale }: ProductCardProps) {
   const { addItem } = useCartStore();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
@@ -132,7 +142,7 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
         {product.isFeatured && (
           <div className="absolute top-3 right-3">
             <span className="bg-gradient-to-r from-primary-orange to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-              ویژه
+              {messages?.products?.featured || 'ویژه'}
             </span>
           </div>
         )}
@@ -142,6 +152,7 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
           <WishlistButton 
             productId={product.id}
             className="bg-black/20 backdrop-blur-sm"
+            locale={locale}
           />
         </div>
         
@@ -152,7 +163,10 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
               ? "bg-primary-orange/20 text-primary-orange" 
               : "bg-red-500/20 text-red-400"
           }`}>
-            {product.isInStock ? "موجود" : "ناموجود"}
+            {product.isInStock 
+              ? (messages?.products?.inStock || 'موجود')
+              : (messages?.products?.outOfStock || 'ناموجود')
+            }
           </span>
         </div>
       </div>
@@ -221,10 +235,12 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
             {isAddingToCart ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>در حال افزودن...</span>
+                <span>{messages?.products?.addingToCart || 'در حال افزودن...'}</span>
               </div>
             ) : (
-              product.isInStock ? "افزودن به سبد خرید" : "ناموجود"
+              product.isInStock 
+                ? (messages?.products?.addToCart || 'افزودن به سبد خرید')
+                : (messages?.products?.outOfStock || 'ناموجود')
             )}
           </button>
           
@@ -232,7 +248,7 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
             href={`/${locale}/products/${product.slug}`}
             className="block w-full py-3 px-4 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-center rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200"
           >
-            مشاهده جزئیات
+            {messages?.products?.viewDetails || 'مشاهده جزئیات'}
           </Link>
         </div>
       </div>

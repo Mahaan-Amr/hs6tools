@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import QuoteList from "@/components/admin/crm/QuoteList";
 import QuoteForm from "@/components/admin/crm/QuoteForm";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface QuoteFormData extends Record<string, unknown> {
   customerId: string;
-  opportunityId: string;
   items: Array<{
     productId: string;
     productName: string;
@@ -47,12 +47,6 @@ interface Quote {
     company?: string;
     phone?: string;
   };
-  opportunity?: {
-    id: string;
-    title: string;
-    stage: string;
-    value: number;
-  };
 }
 
 interface QuoteMetrics {
@@ -74,13 +68,21 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
   const [showForm, setShowForm] = useState(false);
   const [editingQuote, setEditingQuote] = useState<Quote | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   // Filters
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [customerId, setCustomerId] = useState("");
-  const [opportunityId, setOpportunityId] = useState("");
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -94,8 +96,7 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
         limit: "10",
         ...(search && { search }),
         ...(status && { status }),
-        ...(customerId && { customerId }),
-        ...(opportunityId && { opportunityId })
+        ...(customerId && { customerId })
       });
 
       const response = await fetch(`/api/crm/quotes?${params}`);
@@ -107,15 +108,15 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
         setTotalPages(result.data.pagination.totalPages);
         setTotalCount(result.data.pagination.totalCount);
       } else {
-        setError(result.error || "خطا در بارگذاری پیشنهادات");
+        setError(result.error || String(messages?.admin?.crm?.quotes?.error || "Error loading quotes"));
       }
     } catch (error) {
       console.error("Error fetching quotes:", error);
-      setError("خطا در بارگذاری پیشنهادات");
+      setError(String(messages?.admin?.crm?.quotes?.error || "Error loading quotes"));
     } finally {
       setLoading(false);
     }
-  }, [currentPage, search, status, customerId, opportunityId]);
+  }, [currentPage, search, status, customerId, messages]);
 
   useEffect(() => {
     fetchQuotes();
@@ -139,11 +140,11 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
         setEditingQuote(undefined);
         await fetchQuotes();
       } else {
-        setError(result.error || "خطا در ایجاد پیشنهاد");
+        setError(result.error || String(messages?.admin?.crm?.quotes?.createError || "Error creating quote"));
       }
     } catch (error) {
       console.error("Error creating quote:", error);
-      setError("خطا در ایجاد پیشنهاد");
+      setError(String(messages?.admin?.crm?.quotes?.createError || "Error creating quote"));
     } finally {
       setIsSubmitting(false);
     }
@@ -169,11 +170,11 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
         setEditingQuote(undefined);
         await fetchQuotes();
       } else {
-        setError(result.error || "خطا در به‌روزرسانی پیشنهاد");
+        setError(result.error || String(messages?.admin?.crm?.quotes?.updateError || "Error updating quote"));
       }
     } catch (error) {
       console.error("Error updating quote:", error);
-      setError("خطا در به‌روزرسانی پیشنهاد");
+      setError(String(messages?.admin?.crm?.quotes?.updateError || "Error updating quote"));
     } finally {
       setIsSubmitting(false);
     }
@@ -189,8 +190,13 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
     if (newFilters.search !== undefined) setSearch(newFilters.search);
     if (newFilters.status !== undefined) setStatus(newFilters.status);
     if (newFilters.customerId !== undefined) setCustomerId(newFilters.customerId);
-    if (newFilters.opportunityId !== undefined) setOpportunityId(newFilters.opportunityId);
   };
+
+  if (!messages || !messages.admin?.crm?.quotes) {
+    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
+  }
+
+  const t = messages.admin.crm.quotes;
 
   if (showForm) {
     return (
@@ -199,6 +205,7 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
         onSubmit={editingQuote ? handleUpdateQuote : handleCreateQuote}
         onCancel={handleCancelForm}
         isLoading={isSubmitting}
+        locale={locale}
       />
     );
   }
@@ -208,9 +215,9 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">مدیریت پیشنهادات</h1>
+          <h1 className="text-3xl font-bold text-white">{String(t.title)}</h1>
           <p className="text-gray-300 mt-2">
-            مدیریت و پیگیری پیشنهادات فروش در سیستم CRM
+            {String(messages.admin.crm.quotesManagement)}
           </p>
         </div>
         <div className="flex items-center space-x-4 space-x-reverse">
@@ -218,23 +225,23 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
             <div className="flex items-center space-x-6 space-x-reverse text-center">
               <div>
                 <div className="text-2xl font-bold text-white">{metrics.total}</div>
-                <div className="text-sm text-gray-300">کل پیشنهادات</div>
+                <div className="text-sm text-gray-300">{String(t.metrics?.total || '')}</div>
               </div>
               <div className="w-px h-12 bg-gray-600"></div>
               <div>
                 <div className="text-2xl font-bold text-primary-orange">
-                  {new Intl.NumberFormat('fa-IR', {
+                  {new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : locale === 'ar' ? 'ar-SA' : 'en-US', {
                     style: 'currency',
                     currency: 'IRR',
                     minimumFractionDigits: 0
                   }).format(metrics.totalQuoteValue)}
                 </div>
-                <div className="text-sm text-gray-300">ارزش کل پیشنهادات</div>
+                <div className="text-sm text-gray-300">{String(t.metrics?.totalValue || '')}</div>
               </div>
               <div className="w-px h-12 bg-gray-600"></div>
               <div>
                 <div className="text-2xl font-bold text-green-400">{metrics.conversionRate.toFixed(1)}%</div>
-                <div className="text-sm text-gray-300">نرخ تبدیل</div>
+                <div className="text-sm text-gray-300">{String(t.metrics?.conversionRate || '')}</div>
               </div>
             </div>
           )}
@@ -245,7 +252,7 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            <span>ایجاد پیشنهاد جدید</span>
+            <span>{String(t.createQuote)}</span>
           </button>
         </div>
       </div>
@@ -262,55 +269,55 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              جستجو
+              {String(messages.common?.search || '')}
             </label>
             <input
               type="text"
               value={search}
               onChange={(e) => handleFilterChange({ search: e.target.value })}
-              placeholder="جستجو در پیشنهادات..."
+              placeholder={String(t.searchQuotes || '')}
               className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              وضعیت
+              {String(t.statusLabel || '')}
             </label>
             <select
               value={status}
               onChange={(e) => handleFilterChange({ status: e.target.value })}
               className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">همه وضعیت‌ها</option>
-              <option value="DRAFT">پیش‌نویس</option>
-              <option value="SENT">ارسال شده</option>
-              <option value="VIEWED">مشاهده شده</option>
-              <option value="ACCEPTED">پذیرفته شده</option>
-              <option value="REJECTED">رد شده</option>
-              <option value="EXPIRED">منقضی شده</option>
+              <option value="">{String(t.allStatuses || '')}</option>
+              <option value="DRAFT">{String(t.statusOptions.draft)}</option>
+              <option value="SENT">{String(t.statusOptions.sent)}</option>
+              <option value="VIEWED">{String(t.statusOptions.viewed)}</option>
+              <option value="ACCEPTED">{String(t.statusOptions.accepted)}</option>
+              <option value="REJECTED">{String(t.statusOptions.rejected)}</option>
+              <option value="EXPIRED">{String(t.statusOptions.expired)}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              مشتری
+              {String(t.customer || '')}
             </label>
             <input
               type="text"
               value={customerId}
               onChange={(e) => handleFilterChange({ customerId: e.target.value })}
-              placeholder="شناسه مشتری"
+              placeholder={String(t.allCustomers || '')}
               className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
             />
           </div>
 
           <div className="flex items-end">
             <button
-              onClick={() => handleFilterChange({ search: "", status: "", customerId: "", opportunityId: "" })}
+              onClick={() => handleFilterChange({ search: "", status: "", customerId: "" })}
               className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              پاک کردن فیلترها
+              {String(t.resetFilters || '')}
             </button>
           </div>
         </div>
@@ -319,7 +326,7 @@ export default function QuoteManagementClient({ locale }: QuoteManagementClientP
       {/* Quotes List */}
       {loading ? (
         <div className="glass rounded-3xl p-8 text-center">
-          <div className="text-white">در حال بارگذاری پیشنهادات...</div>
+          <div className="text-white">{String(t.loading || messages?.common?.loading || 'Loading...')}</div>
         </div>
       ) : (
         <QuoteList

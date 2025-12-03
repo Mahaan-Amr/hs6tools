@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -8,13 +8,6 @@ import { getMessages, Messages } from "@/lib/i18n";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginPageProps {
   params: Promise<{ locale: string }>;
@@ -25,6 +18,26 @@ export default function LoginPage({ params }: LoginPageProps) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [messages, setMessages] = useState<Messages | null>(null);
+  const [locale, setLocale] = useState<string>("fa");
+
+  // Load messages
+  useEffect(() => {
+    const loadMessages = async () => {
+      const { locale: loc } = await params;
+      setLocale(loc);
+      const msg = await getMessages(loc);
+      setMessages(msg);
+    };
+    loadMessages();
+  }, [params]);
+
+  // Create schema with translated messages
+  const loginSchema = z.object({
+    email: z.string().email(messages?.auth?.invalidEmail || "Invalid email address"),
+    password: z.string().min(1, messages?.auth?.passwordRequired || "Password is required"),
+  });
+
+  type LoginFormData = z.infer<typeof loginSchema>;
 
   const {
     register,
@@ -32,16 +45,7 @@ export default function LoginPage({ params }: LoginPageProps) {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  });
-
-  // Load messages
-  useState(() => {
-    const loadMessages = async () => {
-      const { locale } = await params;
-      const msg = await getMessages(locale);
-      setMessages(msg);
-    };
-    loadMessages();
+    mode: "onChange",
   });
 
   const onSubmit = async (data: LoginFormData) => {
@@ -61,13 +65,13 @@ export default function LoginPage({ params }: LoginPageProps) {
         // Check if user is admin and redirect accordingly
         const session = await getSession();
         if (session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN") {
-          router.push(`/${(await params).locale}/admin`);
+          router.push(`/${locale}/admin`);
         } else {
-          router.push(`/${(await params).locale}`);
+          router.push(`/${locale}`);
         }
       }
     } catch {
-      setError("An unexpected error occurred");
+      setError(messages?.common?.error || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -93,10 +97,10 @@ export default function LoginPage({ params }: LoginPageProps) {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              {messages.auth?.login || "Login"}
+              {messages.auth?.login}
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
-              {messages.auth?.login || "Welcome back to HS6Tools"}
+              {messages.auth?.welcomeBack}
             </p>
           </div>
 
@@ -106,14 +110,14 @@ export default function LoginPage({ params }: LoginPageProps) {
               {/* Email Field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  {messages.auth?.email || "Email"}
+                  {messages.auth?.email}
                 </label>
                 <input
                   {...register("email")}
                   type="email"
                   id="email"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                  placeholder={messages.auth?.email || "Enter your email"}
+                  placeholder={messages.auth?.email}
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
@@ -123,14 +127,14 @@ export default function LoginPage({ params }: LoginPageProps) {
               {/* Password Field */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  {messages.auth?.password || "Password"}
+                  {messages.auth?.password}
                 </label>
                 <input
                   {...register("password")}
                   type="password"
                   id="password"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                  placeholder={messages.auth?.password || "Enter your password"}
+                  placeholder={messages.auth?.password}
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
@@ -153,10 +157,10 @@ export default function LoginPage({ params }: LoginPageProps) {
                 {isLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    {messages.auth?.login || "Logging in..."}
+                    {messages.auth?.loggingIn}
                   </div>
                 ) : (
-                  messages.auth?.login || "Login"
+                  messages.auth?.login
                 )}
               </button>
             </form>
@@ -164,16 +168,16 @@ export default function LoginPage({ params }: LoginPageProps) {
             {/* Links */}
             <div className="mt-6 text-center space-y-3">
               <Link
-                href={`/${messages?.common?.locale || 'fa'}/auth/register`}
+                href={`/${locale}/auth/register`}
                 className="block text-primary-orange hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200"
               >
-                {messages.auth?.register || "Don't have an account? Sign up"}
+                {messages.auth?.dontHaveAccount}
               </Link>
               <Link
-                href={`/${messages?.common?.locale || 'fa'}/auth/forgot-password`}
+                href={`/${locale}/auth/forgot-password`}
                 className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
               >
-                {messages.auth?.forgotPassword || "Forgot your password?"}
+                {messages.auth?.forgotPassword}
               </Link>
             </div>
           </div>

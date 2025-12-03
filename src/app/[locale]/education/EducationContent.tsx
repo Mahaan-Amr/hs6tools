@@ -5,18 +5,28 @@ import Link from "next/link";
 import Image from "next/image";
 import { EducationLesson, EducationCategory } from "@/types/education";
 import { LessonContentType, LessonDifficulty } from "@prisma/client";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface EducationContentProps {
   locale: string;
 }
 
 export default function EducationContent({ locale }: EducationContentProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [categories, setCategories] = useState<EducationCategory[]>([]);
   const [lessons, setLessons] = useState<EducationLesson[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contentTypeFilter, setContentTypeFilter] = useState<LessonContentType | "ALL">("ALL");
   const [difficultyFilter, setDifficultyFilter] = useState<LessonDifficulty | "ALL">("ALL");
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const fetchLessons = useCallback(async () => {
     try {
@@ -85,11 +95,12 @@ export default function EducationContent({ locale }: EducationContentProps) {
   };
 
   const getDifficultyLabel = (difficulty: LessonDifficulty) => {
+    if (!messages?.education?.difficulty) return difficulty;
     const labels = {
-      BEGINNER: "مبتدی",
-      INTERMEDIATE: "متوسط",
-      ADVANCED: "پیشرفته",
-      EXPERT: "حرفه‌ای",
+      BEGINNER: messages.education.difficulty.beginner,
+      INTERMEDIATE: messages.education.difficulty.intermediate,
+      ADVANCED: messages.education.difficulty.advanced,
+      EXPERT: messages.education.difficulty.expert,
     };
     return labels[difficulty];
   };
@@ -111,6 +122,17 @@ export default function EducationContent({ locale }: EducationContentProps) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  if (!messages || !messages.education) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-12 h-12 border-4 border-primary-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-900 dark:text-white">{messages?.common?.loading || "Loading..."}</p>
+      </div>
+    );
+  }
+
+  const t = messages.education;
+
   return (
     <div className="space-y-8">
       {/* Categories Filter */}
@@ -124,7 +146,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
                 : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-white/20"
             }`}
           >
-            همه دسته‌بندی‌ها
+            {String(t.allCategories)}
           </button>
           {categories.map((category) => (
             <button
@@ -149,31 +171,31 @@ export default function EducationContent({ locale }: EducationContentProps) {
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-8" data-scroll-reveal style={{ transitionDelay: "0.05s" }}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">نوع محتوا</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{String(t.contentTypeLabel)}</label>
           <select
             value={contentTypeFilter}
             onChange={(e) => setContentTypeFilter(e.target.value as LessonContentType | "ALL")}
             className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer pr-12"
           >
-            <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">همه انواع</option>
-            <option value="TEXT" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">متنی</option>
-            <option value="VIDEO" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">ویدیویی</option>
-            <option value="MIXED" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">ترکیبی</option>
+            <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.allTypes)}</option>
+            <option value="TEXT" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.contentTypes.text)}</option>
+            <option value="VIDEO" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.contentTypes.video)}</option>
+            <option value="MIXED" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.contentTypes.mixed)}</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">سطح دشواری</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{String(t.difficultyLabel)}</label>
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value as LessonDifficulty | "ALL")}
             className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all appearance-none cursor-pointer pr-12"
           >
-            <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">همه سطوح</option>
-            <option value="BEGINNER" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">مبتدی</option>
-            <option value="INTERMEDIATE" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">متوسط</option>
-            <option value="ADVANCED" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">پیشرفته</option>
-            <option value="EXPERT" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">حرفه‌ای</option>
+            <option value="ALL" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.allLevels)}</option>
+            <option value="BEGINNER" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.difficulty.beginner)}</option>
+            <option value="INTERMEDIATE" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.difficulty.intermediate)}</option>
+            <option value="ADVANCED" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.difficulty.advanced)}</option>
+            <option value="EXPERT" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">{String(t.difficulty.expert)}</option>
           </select>
         </div>
       </div>
@@ -182,7 +204,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
       {isLoading && (
         <div className="text-center py-12" data-scroll-reveal>
           <div className="w-12 h-12 border-4 border-primary-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-900 dark:text-white">در حال بارگذاری...</p>
+          <p className="text-gray-900 dark:text-white">{String(t.loading)}</p>
         </div>
       )}
 
@@ -225,8 +247,8 @@ export default function EducationContent({ locale }: EducationContentProps) {
                   <span className="px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-xs rounded-full flex items-center space-x-1">
                     <span>{getContentTypeIcon(lesson.contentType)}</span>
                     <span>
-                      {lesson.contentType === "TEXT" ? "متنی" :
-                       lesson.contentType === "VIDEO" ? "ویدیویی" : "ترکیبی"}
+                      {lesson.contentType === "TEXT" ? String(t.contentTypes.text) :
+                       lesson.contentType === "VIDEO" ? String(t.contentTypes.video) : String(t.contentTypes.mixed)}
                     </span>
                   </span>
                 </div>
@@ -235,7 +257,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
                 {lesson.isFeatured && (
                   <div className="absolute top-3 left-3">
                     <span className="px-3 py-1 bg-primary-orange text-white text-xs rounded-full">
-                      ویژه
+                      {String(t.featured)}
                     </span>
                   </div>
                 )}
@@ -281,7 +303,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
                     </span>
                     {lesson.estimatedTime && (
                       <span className="text-gray-600 dark:text-gray-400">
-                        ⏱ {lesson.estimatedTime} دقیقه
+                        ⏱ {lesson.estimatedTime} {String(t.minutes)}
                       </span>
                     )}
                   </div>
@@ -303,9 +325,9 @@ export default function EducationContent({ locale }: EducationContentProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">درسی یافت نشد</h3>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{String(t.noLessonsFound)}</h3>
           <p className="text-gray-600 dark:text-gray-300">
-            متأسفانه درسی با این فیلترها پیدا نشد. لطفاً فیلترهای خود را تغییر دهید.
+            {String(t.noLessonsMessage)}
           </p>
         </div>
       )}

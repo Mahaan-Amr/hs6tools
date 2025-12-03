@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface Order {
   id: string;
@@ -19,8 +20,40 @@ interface RecentOrdersProps {
 export default function RecentOrders({ locale }: RecentOrdersProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [messages, setMessages] = useState<Messages | null>(null);
 
   useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  useEffect(() => {
+    if (!messages || !messages.admin?.recentOrders) return;
+
+    const t = messages.admin.recentOrders;
+
+    const formatRelativeTime = (dateString: string) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+      if (diffInDays > 0) {
+        return `${diffInDays} ${String(t.daysAgo)}`;
+      } else if (diffInHours > 0) {
+        return `${diffInHours} ${String(t.hoursAgo)}`;
+      } else if (diffInMinutes > 0) {
+        return `${diffInMinutes} ${String(t.minutesAgo)}`;
+      } else {
+        return String(t.justNow);
+      }
+    };
+
     // Fetch real recent orders from API
     const fetchOrders = async () => {
       setIsLoading(true);
@@ -40,7 +73,7 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
           }) => ({
             id: order.id,
             orderNumber: order.orderNumber,
-            customerName: order.customer?.name || order.customer?.email || 'نامشخص',
+            customerName: order.customer?.name || order.customer?.email || String(t.unknown),
             amount: order.totalAmount,
             status: order.status.toLowerCase(),
             createdAt: formatRelativeTime(order.createdAt)
@@ -59,41 +92,29 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
     };
 
     fetchOrders();
-  }, []);
+  }, [messages]);
 
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  if (!messages || !messages.admin?.recentOrders) {
+    return <div className="text-white p-4">Loading...</div>;
+  }
 
-    if (diffInDays > 0) {
-      return `${diffInDays} روز پیش`;
-    } else if (diffInHours > 0) {
-      return `${diffInHours} ساعت پیش`;
-    } else if (diffInMinutes > 0) {
-      return `${diffInMinutes} دقیقه پیش`;
-    } else {
-      return 'همین الان';
-    }
-  };
+  const t = messages.admin.recentOrders;
 
   const getStatusInfo = (status: string) => {
     const statusMap = {
-      pending: { label: "در انتظار پرداخت", color: "bg-yellow-500/20 text-yellow-400" },
-      processing: { label: "در حال پردازش", color: "bg-blue-500/20 text-blue-400" },
-      shipped: { label: "در حال ارسال", color: "bg-purple-500/20 text-purple-400" },
-      delivered: { label: "تحویل شده", color: "bg-green-500/20 text-green-400" },
-      cancelled: { label: "لغو شده", color: "bg-red-500/20 text-red-400" }
+      pending: { label: String(t.statusPending), color: "bg-yellow-500/20 text-yellow-400" },
+      processing: { label: String(t.statusProcessing), color: "bg-blue-500/20 text-blue-400" },
+      shipped: { label: String(t.statusShipped), color: "bg-purple-500/20 text-purple-400" },
+      delivered: { label: String(t.statusDelivered), color: "bg-green-500/20 text-green-400" },
+      cancelled: { label: String(t.statusCancelled), color: "bg-red-500/20 text-red-400" }
     };
     
     return statusMap[status as keyof typeof statusMap] || statusMap.pending;
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
+    const localeCode = locale === "fa" ? "fa-IR" : locale === "ar" ? "ar-SA" : "en-US";
+    return new Intl.NumberFormat(localeCode, {
       style: "currency",
       currency: locale === "fa" ? "IRR" : "USD",
       minimumFractionDigits: 0,
@@ -105,7 +126,7 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
     return (
       <div className="glass rounded-3xl p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">سفارشات اخیر</h2>
+          <h2 className="text-2xl font-bold text-white">{String(t.title)}</h2>
           <div className="w-24 h-8 bg-white/10 rounded animate-pulse"></div>
         </div>
         
@@ -130,12 +151,12 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
   return (
     <div className="glass rounded-3xl p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white">سفارشات اخیر</h2>
+        <h2 className="text-2xl font-bold text-white">{String(t.title)}</h2>
         <Link 
           href={`/${locale}/admin/orders`}
           className="text-primary-orange hover:text-orange-400 text-sm transition-colors duration-200"
         >
-          مشاهده همه →
+          {String(t.viewAll)} →
         </Link>
       </div>
       
@@ -171,7 +192,7 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
           </div>
-          <p className="text-gray-400">هیچ سفارشی یافت نشد</p>
+          <p className="text-gray-400">{String(t.noOrders)}</p>
         </div>
       )}
     </div>

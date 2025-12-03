@@ -64,20 +64,23 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
   }
 
   const formatDate = (dateString: string) => {
+    if (!messages) return dateString;
+    const t = messages.customer?.orders;
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) return 'دیروز';
-    if (diffDays < 7) return `${diffDays} روز پیش`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} هفته پیش`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ماه پیش`;
-    return `${Math.floor(diffDays / 365)} سال پیش`;
+    if (diffDays === 1) return String(t?.yesterday || 'دیروز');
+    if (diffDays < 7) return `${diffDays} ${String(t?.daysAgo || 'روز پیش')}`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} ${String(t?.weeksAgo || 'هفته پیش')}`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ${String(t?.monthsAgo || 'ماه پیش')}`;
+    return `${Math.floor(diffDays / 365)} ${String(t?.yearsAgo || 'سال پیش')}`;
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+    const currency = messages?.customer?.orders?.currency || 'تومان';
+    return new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : 'en-US').format(price) + ` ${currency}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -96,28 +99,15 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
   };
 
   const getStatusText = (status: string) => {
-    if (!messages?.customer?.orders?.orderStatuses) {
-      // Fallback to hardcoded Persian text if messages not loaded
-      const fallbackMap: Record<string, string> = {
-        'DELIVERED': 'تحویل شده',
-        'SHIPPED': 'در حال ارسال',
-        'PROCESSING': 'در حال پردازش',
-        'PENDING': 'در انتظار',
-        'CONFIRMED': 'تأیید شده',
-        'CANCELLED': 'لغو شده',
-        'REFUNDED': 'بازپرداخت شده'
-      };
-      return fallbackMap[status] || status;
-    }
-    
+    const t = messages?.customer?.orders?.orderStatuses;
     const statusMap: Record<string, string> = {
-      'DELIVERED': messages.customer.orders.orderStatuses.delivered,
-      'SHIPPED': messages.customer.orders.orderStatuses.shipped,
-      'PROCESSING': messages.customer.orders.orderStatuses.processing,
-      'PENDING': messages.customer.orders.orderStatuses.pending,
-      'CONFIRMED': messages.customer.orders.orderStatuses.confirmed,
-      'CANCELLED': messages.customer.orders.orderStatuses.cancelled,
-      'REFUNDED': messages.customer.orders.orderStatuses.refunded
+      'DELIVERED': String(t?.delivered || 'تحویل شده'),
+      'SHIPPED': String(t?.shipped || 'در حال ارسال'),
+      'PROCESSING': String(t?.processing || 'در حال پردازش'),
+      'PENDING': String(t?.pending || 'در انتظار'),
+      'CONFIRMED': String(t?.confirmed || 'تأیید شده'),
+      'CANCELLED': String(t?.cancelled || 'لغو شده'),
+      'REFUNDED': String(t?.refunded || 'بازپرداخت شده')
     };
     return statusMap[status] || status;
   };

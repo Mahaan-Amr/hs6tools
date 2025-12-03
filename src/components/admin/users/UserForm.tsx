@@ -3,16 +3,28 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AdminUser, CreateUserData, UpdateUserData } from "@/types/admin";
 import { UserRole } from "@prisma/client";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface UserFormProps {
   user?: AdminUser;
   onSave: (data: CreateUserData | UpdateUserData) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
+  locale: string;
 }
 
-export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormProps) {
+export default function UserForm({ user, onSave, onCancel, isSaving, locale }: UserFormProps) {
   const isEditing = !!user;
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
   const [formData, setFormData] = useState<CreateUserData | UpdateUserData>({
     firstName: "",
     lastName: "",
@@ -63,34 +75,40 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
     }
   };
 
+  if (!messages || !messages.admin?.usersForm) {
+    return null;
+  }
+
+  const t = messages.admin.usersForm;
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!isEditing) {
       const createData = formData as CreateUserData;
       if (!createData.email) {
-        newErrors.email = "ایمیل الزامی است";
+        newErrors.email = String(t.emailRequired);
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createData.email)) {
-        newErrors.email = "فرمت ایمیل نامعتبر است";
+        newErrors.email = String(t.emailInvalid);
       }
 
       if (!createData.password) {
-        newErrors.password = "رمز عبور الزامی است";
+        newErrors.password = String(t.passwordRequired);
       } else if (createData.password.length < 8) {
-        newErrors.password = "رمز عبور باید حداقل 8 کاراکتر باشد";
+        newErrors.password = String(t.passwordMinLength);
       }
 
       if (createData.phone && !/^[\+]?[0-9\s\-\(\)]{10,}$/.test(createData.phone)) {
-        newErrors.phone = "فرمت شماره تلفن نامعتبر است";
+        newErrors.phone = String(t.phoneInvalid);
       }
     }
 
     if (!formData.firstName) {
-      newErrors.firstName = "نام الزامی است";
+      newErrors.firstName = String(t.firstNameRequired);
     }
 
     if (!formData.lastName) {
-      newErrors.lastName = "نام خانوادگی الزامی است";
+      newErrors.lastName = String(t.lastNameRequired);
     }
 
     setErrors(newErrors);
@@ -129,7 +147,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
       >
         <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isEditing ? "ویرایش کاربر" : "ایجاد کاربر جدید"}
+            {isEditing ? String(t.editUser) : String(t.createUser)}
           </h2>
           <button
             onClick={onCancel}
@@ -144,11 +162,11 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات پایه</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.basicInfo)}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  نام *
+                  {String(t.firstName)} *
                 </label>
                 <input
                   type="text"
@@ -157,7 +175,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.firstName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="نام کاربر"
+                  placeholder={String(t.firstNamePlaceholder)}
                 />
                 {errors.firstName && (
                   <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.firstName}</p>
@@ -166,7 +184,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
 
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  نام خانوادگی *
+                  {String(t.lastName)} *
                 </label>
                 <input
                   type="text"
@@ -175,7 +193,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.lastName ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="نام خانوادگی کاربر"
+                  placeholder={String(t.lastNamePlaceholder)}
                 />
                 {errors.lastName && (
                   <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.lastName}</p>
@@ -185,7 +203,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
               {!isEditing && (
                 <div>
                   <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                    ایمیل *
+                    {String(t.email)} *
                   </label>
                   <input
                     type="email"
@@ -198,7 +216,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                     className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                       errors.email ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                     }`}
-                    placeholder="ایمیل کاربر"
+                    placeholder={String(t.emailPlaceholder)}
                   />
                   {errors.email && (
                     <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.email}</p>
@@ -208,7 +226,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
 
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  شماره تلفن
+                  {String(t.phone)}
                 </label>
                 <input
                   type="tel"
@@ -221,7 +239,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.phone ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="شماره تلفن (اختیاری)"
+                  placeholder={String(t.phonePlaceholder)}
                 />
                 {errors.phone && (
                   <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.phone}</p>
@@ -232,27 +250,27 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
 
           {/* Account Settings */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">تنظیمات حساب</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.accountSettings)}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  نقش *
+                  {String(t.role)} *
                 </label>
                 <select
                   value={formData.role}
                   onChange={(e) => handleInputChange("role", e.target.value as UserRole)}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
                 >
-                  <option value="CUSTOMER">مشتری</option>
-                  <option value="ADMIN">مدیر</option>
-                  <option value="SUPER_ADMIN">مدیر ارشد</option>
+                  <option value="CUSTOMER">{String(t.roleCustomer)}</option>
+                  <option value="ADMIN">{String(t.roleAdmin)}</option>
+                  <option value="SUPER_ADMIN">{String(t.roleSuperAdmin)}</option>
                 </select>
               </div>
 
               {!isEditing && (
                 <div>
                   <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                    رمز عبور *
+                    {String(t.password)} *
                   </label>
                   <input
                     type="password"
@@ -265,7 +283,7 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
                     className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                       errors.password ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                     }`}
-                    placeholder="رمز عبور (حداقل 8 کاراکتر)"
+                    placeholder={String(t.passwordPlaceholder)}
                   />
                   {errors.password && (
                     <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.password}</p>
@@ -277,31 +295,31 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
 
           {/* Company Information */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات شرکت</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{String(t.companyInfo)}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  نام شرکت
+                  {String(t.company)}
                 </label>
                 <input
                   type="text"
                   value={formData.company}
                   onChange={(e) => handleInputChange("company", e.target.value)}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-                  placeholder="نام شرکت (اختیاری)"
+                  placeholder={String(t.companyPlaceholder)}
                 />
               </div>
 
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  سمت
+                  {String(t.position)}
                 </label>
                 <input
                   type="text"
                   value={formData.position}
                   onChange={(e) => handleInputChange("position", e.target.value)}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-                  placeholder="سمت شغلی (اختیاری)"
+                  placeholder={String(t.positionPlaceholder)}
                 />
               </div>
             </div>
@@ -314,14 +332,14 @@ export default function UserForm({ user, onSave, onCancel, isSaving }: UserFormP
               onClick={onCancel}
               className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
             >
-              انصراف
+              {String(t.cancel)}
             </button>
             <button
               type="submit"
               disabled={isSaving}
               className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
             >
-              {isSaving ? "در حال ذخیره..." : (isEditing ? "به‌روزرسانی" : "ایجاد")}
+              {isSaving ? String(t.saving) : (isEditing ? String(t.update) : String(t.create))}
             </button>
           </div>
         </form>

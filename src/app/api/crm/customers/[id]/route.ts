@@ -87,29 +87,7 @@ export async function GET(
           orderBy: { createdAt: "desc" },
           take: 10
         },
-        opportunities: {
-          include: {
-            activities: {
-              orderBy: { createdAt: "desc" },
-              take: 5
-            }
-          },
-          orderBy: { createdAt: "desc" }
-        },
         quotes: {
-          orderBy: { createdAt: "desc" },
-          take: 10
-        },
-        campaigns: {
-          include: {
-            campaign: {
-              select: {
-                name: true,
-                type: true,
-                status: true
-              }
-            }
-          },
           orderBy: { createdAt: "desc" },
           take: 10
         },
@@ -232,7 +210,6 @@ export async function GET(
         totalReviews: customer.reviews?.length || 0,
         totalWishlistItems: customer.wishlistItems?.length || 0,
         totalInteractions: customer.interactions?.length || 0,
-        totalOpportunities: customer.opportunities?.length || 0,
         totalQuotes: customer.quotes?.length || 0
       },
       
@@ -248,9 +225,7 @@ export async function GET(
       reviews: customer.reviews?.slice(0, 5) || [], // Last 5 reviews
       wishlistItems: customer.wishlistItems?.slice(0, 10) || [], // Last 10 wishlist items
       interactions: customer.interactions || [],
-      opportunities: customer.opportunities || [],
       quotes: customer.quotes || [],
-      campaigns: customer.campaigns || [],
       settings: customer.settings
     };
 
