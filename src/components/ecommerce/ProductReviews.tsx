@@ -195,7 +195,7 @@ export default function ProductReviews({ productId, productName, locale }: Produ
       {showReviewForm && session?.user && (
         <div className="glass rounded-2xl p-6">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {(messages?.reviews?.writeReviewFor || 'نظر خود را درباره {productName} بنویسید').replace('{productName}', productName)}
+            {String(messages?.reviews?.writeReviewFor || 'Write your review for {productName}').replace('{productName}', productName)}
           </h4>
           
           <form onSubmit={handleSubmitReview} className="space-y-4">

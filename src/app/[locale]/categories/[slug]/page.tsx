@@ -274,10 +274,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {t.categories.noProductsInCategory}
+                  {String(t.categories.noProductsInCategory)}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 text-sm">
-                  {t.categories.noProductsInCategoryMessage}
+                  {String(t.categories.noProductsInCategoryMessage)}
                 </p>
               </div>
             </div>

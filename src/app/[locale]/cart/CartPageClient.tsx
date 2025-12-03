@@ -58,7 +58,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
   };
 
   if (!messages) {
-    return <div className="min-h-screen pt-20 flex items-center justify-center">{messages?.common?.loading || "Loading..."}</div>;
+    return <div className="min-h-screen pt-20 flex items-center justify-center">Loading...</div>;
   }
 
   const t = messages.cart;

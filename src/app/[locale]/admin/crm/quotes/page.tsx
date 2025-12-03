@@ -7,7 +7,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const messages = await getMessages(locale);
   
   return {
-    title: `${String(messages.admin.crm?.quotes?.title || "Quotes Management")} | ${String(messages.admin.adminLayout?.title || "Admin Panel")}`,
+    title: `${String(messages.admin.crm?.quotes?.title || "Quotes Management")} | ${String(messages.admin.crm?.adminLayout?.title || "Admin Panel")}`,
     description: String(messages.admin.crm?.quotesManagement || "Manage and track sales quotes in CRM system")
   };
 }

@@ -71,11 +71,11 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) return String(t?.yesterday || 'دیروز');
-    if (diffDays < 7) return `${diffDays} ${String(t?.daysAgo || 'روز پیش')}`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} ${String(t?.weeksAgo || 'هفته پیش')}`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ${String(t?.monthsAgo || 'ماه پیش')}`;
-    return `${Math.floor(diffDays / 365)} ${String(t?.yearsAgo || 'سال پیش')}`;
+    if (diffDays === 1) return String(t?.yesterday || 'Yesterday');
+    if (diffDays < 7) return `${diffDays} ${String(t?.daysAgo || 'days ago')}`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} ${String(t?.weeksAgo || 'weeks ago')}`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ${String(t?.monthsAgo || 'months ago')}`;
+    return `${Math.floor(diffDays / 365)} ${String(t?.yearsAgo || 'years ago')}`;
   };
 
   const formatPrice = (price: number) => {

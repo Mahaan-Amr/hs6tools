@@ -69,7 +69,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
   };
 
   const formatPrice = (price: number) => {
-    const currency = messages?.customer?.orders?.currency || 'تومان';
+    const currency = messages?.customer?.orders?.currency || 'USD';
     return new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : 'en-US').format(price) + ` ${currency}`;
   };
 

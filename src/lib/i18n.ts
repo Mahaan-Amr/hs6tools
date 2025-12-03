@@ -1066,6 +1066,12 @@ export interface Messages {
         post: string;
         express: string;
       };
+      currency: string;
+      yesterday: string;
+      daysAgo: string;
+      weeksAgo: string;
+      monthsAgo: string;
+      yearsAgo: string;
     };
     orderDetails: {
       title: string;

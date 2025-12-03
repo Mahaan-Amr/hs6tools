@@ -251,7 +251,7 @@ export default function CheckoutAddressSelector({
             className="w-4 h-4 text-primary-orange bg-gray-100 dark:bg-white/10 border-gray-300 dark:border-white/20 rounded focus:ring-primary-orange focus:ring-2"
           />
           <label htmlFor="useSameAddress" className="ml-2 text-sm text-gray-900 dark:text-white">
-            {messages?.checkout?.useSameAddress || 'استفاده از همان آدرس برای ارسال'}
+            {String(messages?.checkout?.useSameAddress || 'Use same address for shipping')}
           </label>
         </div>
       )}
