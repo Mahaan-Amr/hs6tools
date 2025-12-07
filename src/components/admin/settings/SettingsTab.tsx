@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import SystemSettingsForm from "./SystemSettingsForm";
 import EmailSettingsForm from "./EmailSettingsForm";
 import PaymentSettingsForm from "./PaymentSettingsForm";
@@ -7,6 +8,8 @@ import PaymentSettingsForm from "./PaymentSettingsForm";
 
 
 export default function SettingsTab() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fa";
   const [activeTab, setActiveTab] = useState("system");
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{
@@ -94,6 +97,7 @@ export default function SettingsTab() {
       <div className="glass rounded-3xl p-8">
         {activeTab === "system" && (
           <SystemSettingsForm
+            locale={locale}
             onSaveSuccess={handleSaveSuccess}
             onSaveError={handleSaveError}
             setIsLoading={setIsLoading}
@@ -101,6 +105,7 @@ export default function SettingsTab() {
         )}
         {activeTab === "email" && (
           <EmailSettingsForm
+            locale={locale}
             onSaveSuccess={handleSaveSuccess}
             onSaveError={handleSaveError}
             setIsLoading={setIsLoading}
@@ -108,6 +113,7 @@ export default function SettingsTab() {
         )}
         {activeTab === "payment" && (
           <PaymentSettingsForm
+            locale={locale}
             onSaveSuccess={handleSaveSuccess}
             onSaveError={handleSaveError}
             setIsLoading={setIsLoading}

@@ -5,7 +5,11 @@ import { EducationLesson } from "@/types/education";
 import EducationForm from "./EducationForm";
 import EducationList from "./EducationList";
 
-export default function EducationTab() {
+export interface EducationTabProps {
+  locale: string;
+}
+
+export default function EducationTab({ locale }: EducationTabProps) {
   const [lessons, setLessons] = useState<EducationLesson[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState<EducationLesson | null>(null);
@@ -139,6 +143,7 @@ export default function EducationTab() {
           lesson={editingLesson}
           onClose={handleFormClose}
           onSaved={handleLessonSaved}
+          locale={locale}
         />
       )}
     </div>

@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface CustomerInteractionFormProps {
   customerId: string;
   onSuccess: () => void;
   onCancel: () => void;
+  locale: string;
 }
 
 export default function CustomerInteractionForm({
   customerId,
   onSuccess,
-  onCancel
+  onCancel,
+  locale
 }: CustomerInteractionFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [formData, setFormData] = useState({
     type: "EMAIL",
     subject: "",
@@ -23,6 +27,15 @@ export default function CustomerInteractionForm({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -60,13 +73,63 @@ export default function CustomerInteractionForm({
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    if (error) {
+      setError(null);
+    }
+  };
+
+  const interactions = messages?.admin?.crm?.customer360?.interactions as Record<string, unknown> | undefined;
+  const validation = interactions?.validation as Record<string, string> | undefined;
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.type.trim()) {
+      newErrors.type = validation?.typeRequired 
+        ? String(validation.typeRequired) 
+        : "Interaction type is required";
+    }
+
+    if (!formData.subject.trim()) {
+      newErrors.subject = validation?.subjectRequired 
+        ? String(validation.subjectRequired) 
+        : "Subject is required";
+    } else if (formData.subject.trim().length < 3) {
+      newErrors.subject = validation?.subjectMinLength 
+        ? String(validation.subjectMinLength) 
+        : "Subject must be at least 3 characters";
+    } else if (formData.subject.trim().length > 200) {
+      newErrors.subject = validation?.subjectMaxLength 
+        ? String(validation.subjectMaxLength) 
+        : "Subject must be at most 200 characters";
+    }
+
+    if (!formData.content.trim()) {
+      newErrors.content = validation?.contentRequired 
+        ? String(validation.contentRequired) 
+        : "Content is required";
+    } else if (formData.content.trim().length < 10) {
+      newErrors.content = validation?.contentMinLength 
+        ? String(validation.contentMinLength) 
+        : "Content must be at least 10 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.content.trim()) {
-      setError("Content is required");
+    if (!validateForm()) {
       return;
     }
 
@@ -103,6 +166,10 @@ export default function CustomerInteractionForm({
     }
   };
 
+  if (!messages) {
+    return null;
+  }
+
   const modalContent = (
     <div 
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto"
@@ -118,7 +185,9 @@ export default function CustomerInteractionForm({
         }}
       >
         <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">افزودن تعامل مشتری</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {(messages?.admin?.crm?.customer360?.interactions as Record<string, string> | undefined)?.addInteraction || "Add Interaction"}
+          </h2>
           <button
             onClick={onCancel}
             className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
@@ -138,17 +207,23 @@ export default function CustomerInteractionForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Interaction Details */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">جزئیات تعامل</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+              {interactions?.title as string || "Interaction Details"}
+            </h3>
             <div className="space-y-6">
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  نوع تعامل *
+                  {interactions?.type as string || "Type"} *
                 </label>
                 <select
                   name="type"
                   value={formData.type}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.type 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
                   required
                 >
                   {interactionTypes.map((type) => (
@@ -157,46 +232,61 @@ export default function CustomerInteractionForm({
                     </option>
                   ))}
                 </select>
+                {errors.type && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.type}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  موضوع
+                  {interactions?.subject as string || "Subject"} *
                 </label>
                 <input
                   type="text"
                   name="subject"
                   value={formData.subject}
                   onChange={handleInputChange}
-                  placeholder="موضوع یا عنوان کوتاه"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                  maxLength={200}
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.subject 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 />
+                {errors.subject && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.subject}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  محتوا *
+                  {interactions?.content as string || "Content"} *
                 </label>
                 <textarea
                   name="content"
                   value={formData.content}
                   onChange={handleInputChange}
-                  placeholder="جزئیات تعامل را شرح دهید..."
                   rows={4}
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
+                  className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none ${
+                    errors.content 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
                   required
                 />
+                {errors.content && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.content}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  نتیجه
+                  {interactions?.outcome as string || "Outcome"}
                 </label>
                 <textarea
                   name="outcome"
                   value={formData.outcome}
                   onChange={handleInputChange}
-                  placeholder="نتیجه این تعامل چه بود؟"
                   rows={3}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
                 />
@@ -204,13 +294,12 @@ export default function CustomerInteractionForm({
 
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                  اقدام بعدی
+                  {interactions?.nextAction as string || "Next Action"}
                 </label>
                 <textarea
                   name="nextAction"
                   value={formData.nextAction}
                   onChange={handleInputChange}
-                  placeholder="اقدام بعدی چه باید باشد؟"
                   rows={3}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
                 />
@@ -225,14 +314,16 @@ export default function CustomerInteractionForm({
               onClick={onCancel}
               className="px-8 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
             >
-              انصراف
+              {messages?.common?.cancel || "Cancel"}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-8 py-3 bg-primary-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-orange/30"
             >
-              {isSubmitting ? "در حال ایجاد..." : "ایجاد تعامل"}
+              {isSubmitting 
+                ? (messages?.common?.saving || "Saving...") 
+                : (interactions?.addInteraction as string || "Add Interaction")}
             </button>
           </div>
         </form>

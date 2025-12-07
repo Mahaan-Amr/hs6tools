@@ -46,6 +46,28 @@ KAVENEGAR_SENDER=10004346  # Optional
 2. Get your API key from dashboard
 3. Add to environment variables
 
+## ✅ Recent Updates (2025-01-XX)
+
+### Enhanced SMS Templates
+- **ORDER_CONFIRMED**: Now includes product list and total amount
+- **ORDER_PAYMENT_SUCCESS**: New template for payment success with product details and refId
+
+### SMS Integration Points
+1. **Order Creation** (`src/app/api/customer/orders/route.ts`):
+   - Sends SMS when order is created
+   - Includes product list and total amount
+   - Non-blocking (uses `sendSMSSafe`)
+
+2. **Payment Success** (`src/app/api/payment/zarinpal/callback/route.ts`):
+   - Sends SMS after successful payment verification
+   - Includes product list, total amount, and payment reference ID
+   - Non-blocking (uses `sendSMSSafe`)
+
+### Configuration
+- Kavenegar API key configured in both `.env.local` and `.env.production`
+- Sender number: 2000660110
+- All SMS sending is non-blocking to prevent order/payment flow interruption
+
 ## 🎯 Where to Use SMS in Your Project
 
 ### 1. **Order Notifications** ✅ IMPLEMENTED

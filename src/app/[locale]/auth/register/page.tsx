@@ -25,8 +25,9 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const router = useRouter();
   const [messages, setMessages] = useState<Messages | null>(null);
   const [locale, setLocale] = useState<string>("fa");
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
 
-  // Load messages
+  // Load messages and get callbackUrl from query params
   useEffect(() => {
     const loadMessages = async () => {
       const { locale: loc } = await params;
@@ -35,6 +36,13 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       setMessages(msg);
     };
     loadMessages();
+
+    // Get callbackUrl from URL search params
+    const searchParams = new URLSearchParams(window.location.search);
+    const callback = searchParams.get("callbackUrl");
+    if (callback) {
+      setCallbackUrl(decodeURIComponent(callback));
+    }
   }, [params]);
 
   // Create schema with translated messages
@@ -90,9 +98,13 @@ export default function RegisterPage({ params }: RegisterPageProps) {
           handleSendVerificationCode(data.phone);
         } else {
           setSuccess(messages?.auth?.registerSuccess || "Registration successful!");
-          // Redirect to login after 2 seconds
+          // Redirect to login (with callbackUrl if provided) after 2 seconds
           setTimeout(() => {
-            router.push(`/${locale}/auth/login`);
+            if (callbackUrl) {
+              router.push(`/${locale}/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+            } else {
+              router.push(`/${locale}/auth/login`);
+            }
           }, 2000);
         }
       }
@@ -130,6 +142,13 @@ export default function RegisterPage({ params }: RegisterPageProps) {
             return prev - 1;
           });
         }, 1000);
+        
+        // Show warning if SMS sending failed but code was generated
+        if (result.warning) {
+          console.warn('SMS warning:', result.warning);
+          // Optionally show a warning message to user
+          // setError(result.warning); // Uncomment if you want to show warning
+        }
       } else {
         setError(result.error || messages?.common?.error || "Failed to send verification code");
       }
@@ -286,7 +305,14 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                 {/* Skip Verification */}
                 <button
                   type="button"
-                  onClick={() => router.push(`/${messages?.common?.locale || 'fa'}/auth/login`)}
+                  onClick={() => {
+                    const loc = messages?.common?.locale || 'fa';
+                    if (callbackUrl) {
+                      router.push(`/${loc}/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+                    } else {
+                      router.push(`/${loc}/auth/login`);
+                    }
+                  }}
                   className="w-full py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 text-sm"
                 >
                   {messages.auth?.skipVerification}

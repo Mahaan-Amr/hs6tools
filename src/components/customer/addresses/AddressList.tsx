@@ -11,10 +11,11 @@ interface AddressListProps {
 
 
 export default function AddressList({ locale }: AddressListProps) {
-  const { addresses, addressesLoading, addressesError, deleteAddress, setDefaultAddress } = useCustomer();
+  const { addresses, addressesLoading, addressesError, deleteAddress, setDefaultAddress, fetchAddresses } = useCustomer();
   const [messages, setMessages] = useState<Messages | null>(null);
-  // const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -24,10 +25,31 @@ export default function AddressList({ locale }: AddressListProps) {
     loadMessages();
   }, [locale]);
 
+  // Clear delete error when modal closes
+  useEffect(() => {
+    if (!showDeleteConfirm) {
+      setDeleteError(null);
+    }
+  }, [showDeleteConfirm]);
+
   const handleDelete = async (addressId: string) => {
+    setDeleteError(null);
+    setIsDeleting(addressId);
+    
+    try {
     const success = await deleteAddress(addressId);
     if (success) {
       setShowDeleteConfirm(null);
+        setDeleteError(null);
+      } else {
+        // Error is already set in CustomerContext, get it for display
+        setDeleteError(addressesError || 'Failed to delete address');
+      }
+    } catch (err) {
+      setDeleteError('An unexpected error occurred. Please try again.');
+      console.error('Error deleting address:', err);
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -37,27 +59,19 @@ export default function AddressList({ locale }: AddressListProps) {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'BILLING':
-        return messages?.customer?.addresses?.billing || 'صورتحساب';
       case 'SHIPPING':
         return messages?.customer?.addresses?.shipping || 'ارسال';
-      case 'BOTH':
-        return messages?.customer?.addresses?.both || 'هر دو';
       default:
-        return type;
+        return messages?.customer?.addresses?.shipping || 'ارسال';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'BILLING':
-        return 'bg-blue-500/20 text-blue-400';
       case 'SHIPPING':
         return 'bg-green-500/20 text-green-400';
-      case 'BOTH':
-        return 'bg-purple-500/20 text-purple-400';
       default:
-        return 'bg-gray-500/20 text-gray-400';
+        return 'bg-green-500/20 text-green-400';
     }
   };
 
@@ -76,7 +90,8 @@ export default function AddressList({ locale }: AddressListProps) {
     );
   }
 
-  if (addressesError) {
+  // Only show error screen for initial load errors, not for deletion errors
+  if (addressesError && addressesLoading && addresses.length === 0) {
     return (
       <div className="text-center py-8">
         <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -89,7 +104,9 @@ export default function AddressList({ locale }: AddressListProps) {
         </h3>
         <p className="text-gray-400 mb-4">{addressesError}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={async () => {
+            await fetchAddresses();
+          }}
           className="px-6 py-3 bg-primary-orange text-white font-medium rounded-xl hover:bg-orange-600 transition-colors duration-200"
         >
           {messages?.customer?.addresses?.retry || messages?.common?.retry || 'تلاش مجدد'}
@@ -198,24 +215,60 @@ export default function AddressList({ locale }: AddressListProps) {
 
           {/* Delete Confirmation Modal */}
           {showDeleteConfirm === address.id && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="glass rounded-xl p-6 max-w-md mx-4">
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+              onClick={() => {
+                if (!isDeleting) {
+                  setShowDeleteConfirm(null);
+                  setDeleteError(null);
+                }
+              }}
+            >
+              <div 
+                className="glass rounded-xl p-6 max-w-md mx-4"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <h3 className="text-lg font-semibold text-white mb-4">
                   {messages?.customer?.addresses?.deleteAddress || 'حذف آدرس'}
                 </h3>
                 <p className="text-gray-300 mb-6">
                   {messages?.customer?.addresses?.deleteConfirmMessage || 'آیا مطمئن هستید که می‌خواهید این آدرس را حذف کنید؟ این عملیات قابل بازگشت نیست.'}
                 </p>
+                
+                {/* Error Message */}
+                {deleteError && (
+                  <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-red-300">{deleteError}</p>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex gap-3">
                   <button
                     onClick={() => handleDelete(address.id)}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors duration-200"
+                    disabled={isDeleting === address.id}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
                   >
-                    {messages?.common?.delete || 'حذف'}
+                    {isDeleting === address.id ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>{messages?.common?.deleting || 'در حال حذف...'}</span>
+                      </>
+                    ) : (
+                      <span>{messages?.common?.delete || 'حذف'}</span>
+                    )}
                   </button>
                   <button
-                    onClick={() => setShowDeleteConfirm(null)}
-                    className="flex-1 px-4 py-2 bg-white/10 text-white font-medium rounded-lg hover:bg-white/20 transition-colors duration-200"
+                    onClick={() => {
+                      setShowDeleteConfirm(null);
+                      setDeleteError(null);
+                    }}
+                    disabled={isDeleting === address.id}
+                    className="flex-1 px-4 py-2 bg-white/10 text-white font-medium rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     {messages?.common?.cancel || 'لغو'}
                   </button>

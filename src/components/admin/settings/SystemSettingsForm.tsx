@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SystemSettings } from "@/types/admin";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface SystemSettingsFormProps {
   locale: string;
@@ -10,10 +11,12 @@ interface SystemSettingsFormProps {
 }
 
 export default function SystemSettingsForm({
+  locale,
   onSaveSuccess,
   onSaveError,
   setIsLoading,
-}: Omit<SystemSettingsFormProps, 'locale'>) {
+}: SystemSettingsFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [formData, setFormData] = useState<SystemSettings>({
     siteName: "",
     siteDescription: "",
@@ -31,6 +34,20 @@ export default function SystemSettingsForm({
   });
 
   const [isLoading, setIsLoadingLocal] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  // Helper to access settingsPage messages
+  const settingsPage = useMemo(() => {
+    return messages ? (messages as unknown as Record<string, unknown>)?.settingsPage as Record<string, unknown> | undefined : undefined;
+  }, [messages]);
 
   useEffect(() => {
     fetchSettings();
@@ -58,10 +75,65 @@ export default function SystemSettingsForm({
       ...prev,
       [field]: value,
     }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const validation = (settingsPage?.systemSettings as Record<string, unknown> | undefined)?.validation as Record<string, string> | undefined;
+
+    if (!formData.siteName.trim()) {
+      newErrors.siteName = validation?.siteNameRequired 
+        ? String(validation.siteNameRequired) 
+        : "Site name is required";
+    } else if (formData.siteName.trim().length > 100) {
+      newErrors.siteName = validation?.siteNameMaxLength 
+        ? String(validation.siteNameMaxLength) 
+        : "Site name must be at most 100 characters";
+    }
+
+    if (!formData.siteUrl.trim()) {
+      newErrors.siteUrl = validation?.siteUrlRequired 
+        ? String(validation.siteUrlRequired) 
+        : "Site URL is required";
+    } else {
+      try {
+        new URL(formData.siteUrl);
+      } catch {
+        newErrors.siteUrl = validation?.siteUrlInvalid 
+          ? String(validation.siteUrlInvalid) 
+          : "Site URL must be a valid URL";
+      }
+    }
+
+    if (!formData.contactEmail.trim()) {
+      newErrors.contactEmail = validation?.contactEmailRequired 
+        ? String(validation.contactEmailRequired) 
+        : "Contact email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
+      newErrors.contactEmail = validation?.contactEmailInvalid 
+        ? String(validation.contactEmailInvalid) 
+        : "Contact email format is invalid";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoadingLocal(true);
     setIsLoading(true);
 
@@ -121,37 +193,52 @@ export default function SystemSettingsForm({
                 type="text"
                 value={formData.siteName}
                 onChange={(e) => handleInputChange("siteName", e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-                placeholder="نام سایت"
+                maxLength={100}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.siteName 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder={(settingsPage?.systemSettings as Record<string, string> | undefined)?.siteName || "Site Name"}
                 required
               />
+              {errors.siteName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.siteName}</p>
+              )}
             </div>
 
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                توضیحات سایت
+                {(settingsPage?.systemSettings as Record<string, string> | undefined)?.siteDescription || "Site Description"}
               </label>
               <textarea
                 value={formData.siteDescription}
                 onChange={(e) => handleInputChange("siteDescription", e.target.value)}
                 rows={3}
                 className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
-                placeholder="توضیحات سایت"
+                placeholder={(settingsPage?.systemSettings as Record<string, string> | undefined)?.siteDescription || "Site Description"}
               />
             </div>
 
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                آدرس سایت *
+                {(settingsPage?.systemSettings as Record<string, string> | undefined)?.siteUrl || "Site URL"} *
               </label>
               <input
                 type="url"
                 value={formData.siteUrl}
                 onChange={(e) => handleInputChange("siteUrl", e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.siteUrl 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="https://example.com"
                 required
               />
+              {errors.siteUrl && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.siteUrl}</p>
+              )}
             </div>
           </div>
         </div>
@@ -170,10 +257,17 @@ export default function SystemSettingsForm({
                 type="email"
                 value={formData.contactEmail}
                 onChange={(e) => handleInputChange("contactEmail", e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.contactEmail 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="support@example.com"
                 required
               />
+              {errors.contactEmail && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.contactEmail}</p>
+              )}
             </div>
 
             <div>

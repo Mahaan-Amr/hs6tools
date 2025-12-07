@@ -2,7 +2,8 @@
 
 import { useCartStore } from "@/contexts/CartContext";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import CheckoutAddressSelector from "@/components/checkout/CheckoutAddressSelector";
 import { getMessages, Messages } from "@/lib/i18n";
 
@@ -49,8 +50,12 @@ interface ShippingMethod {
 
 export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) {
   const router = useRouter();
-  const { items, totalPrice, clearCart } = useCartStore();
+  const searchParams = useSearchParams();
+  const { items, clearCart } = useCartStore();
+  const { status } = useSession();
+  const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   const [messages, setMessages] = useState<Messages | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -59,6 +64,80 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     };
     loadMessages();
   }, [locale]);
+
+  // Check authentication status and redirect if not authenticated
+  useEffect(() => {
+    if (status === "loading") return; // Wait for session to load
+    
+    if (status === "unauthenticated") {
+      // Redirect to login with callback URL to return to checkout
+      const callbackUrl = encodeURIComponent(`/${locale}/checkout`);
+      router.push(`/${locale}/auth/login?callbackUrl=${callbackUrl}`);
+    }
+  }, [status, router, locale]);
+
+  // Check for payment success (orderNumber and refId without error) - redirect to success page
+  useEffect(() => {
+    const orderNumber = searchParams.get("orderNumber");
+    const refId = searchParams.get("refId");
+    const error = searchParams.get("error");
+    
+    console.log('🔄 [Checkout] Checking for payment success redirect:', {
+      orderNumber,
+      refId,
+      error,
+      hasOrderNumber: !!orderNumber,
+      hasRefId: !!refId,
+      hasError: !!error,
+    });
+    
+    // If we have orderNumber and refId without error, redirect to success page
+    if (orderNumber && refId && !error) {
+      console.log('✅ [Checkout] Redirecting to success page:', {
+        orderNumber,
+        refId,
+        locale,
+      });
+      router.replace(`/${locale}/checkout/success?orderNumber=${orderNumber}&refId=${refId}`);
+      return;
+    }
+  }, [searchParams, locale, router]);
+
+  // Check for payment errors in URL parameters
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const errorMessage = searchParams.get("message");
+    
+    if (error) {
+      let errorText = "";
+      switch (error) {
+        case "payment_cancelled":
+          errorText = String(messages?.checkout?.paymentCancelled || "پرداخت لغو شد");
+          break;
+        case "payment_failed":
+          errorText = errorMessage 
+            ? decodeURIComponent(errorMessage)
+            : String(messages?.checkout?.paymentFailed || "پرداخت ناموفق بود");
+          break;
+        case "payment_request_failed":
+          errorText = String(messages?.checkout?.paymentRequestFailed || "خطا در ایجاد درخواست پرداخت");
+          break;
+        case "order_not_found":
+          errorText = String(messages?.checkout?.orderNotFound || "سفارش یافت نشد");
+          break;
+        default:
+          errorText = String(messages?.checkout?.paymentError || "خطا در پرداخت");
+      }
+      setPaymentError(errorText);
+      
+      // Clear error from URL after displaying
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      newSearchParams.delete("error");
+      newSearchParams.delete("message");
+      newSearchParams.delete("orderNumber");
+      router.replace(`/${locale}/checkout?${newSearchParams.toString()}`);
+    }
+  }, [searchParams, messages, locale, router]);
 
   // Get shipping methods from translations
   const getShippingMethods = (): ShippingMethod[] => {
@@ -98,7 +177,6 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
   const [selectedShipping, setSelectedShipping] = useState<string>("post");
   const [isProcessing, setIsProcessing] = useState(false);
   const [useSavedAddresses, setUseSavedAddresses] = useState(false);
-  const [selectedBillingAddress, setSelectedBillingAddress] = useState<CustomerAddress | null>(null);
   const [selectedShippingAddress, setSelectedShippingAddress] = useState<CustomerAddress | null>(null);
   const [couponCode, setCouponCode] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
@@ -143,8 +221,8 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     if (currentStep === 1) {
       // Check if using saved addresses or manual form
       if (useSavedAddresses) {
-        if (!selectedBillingAddress || !selectedShippingAddress) {
-          alert(String(t.selectBillingShipping));
+        if (!selectedShippingAddress) {
+          alert(String(t.shippingAddressRequired || 'لطفاً آدرس ارسال را انتخاب کنید'));
           return;
         }
       } else {
@@ -169,12 +247,8 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     return Object.values(address).every(value => value.trim() !== "");
   };
 
-  const handleAddressSelect = (address: CustomerAddress, type: 'billing' | 'shipping') => {
-    if (type === 'billing') {
-      setSelectedBillingAddress(address);
-    } else {
+  const handleAddressSelect = (address: CustomerAddress) => {
       setSelectedShippingAddress(address);
-    }
   };
 
   const handleApplyCoupon = async () => {
@@ -234,10 +308,10 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     
     try {
       // Prepare order data - use saved addresses or manual form
-      let shippingAddressData, billingAddressData;
+      let shippingAddressData;
       
-      if (useSavedAddresses && selectedBillingAddress && selectedShippingAddress) {
-        // Use saved addresses
+      if (useSavedAddresses && selectedShippingAddress) {
+        // Use saved address
         shippingAddressData = {
           firstName: selectedShippingAddress.firstName,
           lastName: selectedShippingAddress.lastName,
@@ -247,27 +321,9 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
           address: selectedShippingAddress.addressLine1,
           postalCode: selectedShippingAddress.postalCode
         };
-        billingAddressData = {
-          firstName: selectedBillingAddress.firstName,
-          lastName: selectedBillingAddress.lastName,
-          phone: selectedBillingAddress.phone,
-          province: selectedBillingAddress.state,
-          city: selectedBillingAddress.city,
-          address: selectedBillingAddress.addressLine1,
-          postalCode: selectedBillingAddress.postalCode
-        };
       } else {
         // Use manual form data
         shippingAddressData = {
-          firstName: address.firstName,
-          lastName: address.lastName,
-          phone: address.phone,
-          province: address.province,
-          city: address.city,
-          address: address.address,
-          postalCode: address.postalCode
-        };
-        billingAddressData = {
           firstName: address.firstName,
           lastName: address.lastName,
           phone: address.phone,
@@ -291,7 +347,6 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
           attributes: {}
         })),
         shippingAddress: shippingAddressData,
-        billingAddress: billingAddressData,
         shippingMethod: selectedShipping,
         paymentMethod: "ZARINPAL", // Default to ZarinPal
         customerNote: "",
@@ -317,12 +372,54 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
       const result = await response.json();
 
       if (!response.ok || !result.success) {
+        // Handle user not found error - redirect to logout
+        if (response.status === 404 && result.error?.includes('User account not found')) {
+          const shouldLogout = window.confirm(
+            String(t.userAccountNotFound || 'Your account was not found. Please log out and log in again. Would you like to log out now?')
+          );
+          if (shouldLogout) {
+            signOut({ callbackUrl: `/${locale}/auth/login` });
+            return;
+          }
+          throw new Error(result.error || 'Failed to create order');
+        }
         throw new Error(result.error || 'Failed to create order');
       }
 
       console.log('🛒 Order created successfully:', result.data);
 
-      // Clear cart and redirect to success page
+      // Request payment from Zarinpal
+      if (orderData.paymentMethod === "ZARINPAL") {
+        console.log('💳 Requesting payment for order:', result.data.id);
+        
+        const paymentResponse = await fetch('/api/payment/zarinpal/request', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: result.data.id
+          })
+        });
+
+        const paymentResult = await paymentResponse.json();
+
+        if (!paymentResponse.ok || !paymentResult.success || !paymentResult.paymentUrl) {
+          console.error('❌ Payment request failed:', paymentResult.error);
+          throw new Error(paymentResult.error || String(t.paymentRequestFailed || 'Failed to create payment request'));
+        }
+
+        console.log('✅ Payment URL received, redirecting to Zarinpal');
+        
+        // Clear cart before redirecting to payment (order is created)
+        clearCart();
+        
+        // Redirect to Zarinpal payment page
+        window.location.href = paymentResult.paymentUrl;
+        return;
+      }
+
+      // For non-Zarinpal payment methods (bank transfer, COD), redirect to success
       clearCart();
       router.push(`/${locale}/checkout/success?orderNumber=${result.data.orderNumber}`);
     } catch (error) {
@@ -362,6 +459,31 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
             {String(t.checkoutSubtitle)}
           </p>
         </div>
+
+        {/* Payment Error Alert */}
+        {paymentError && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border-2 border-red-200 dark:border-red-500/30 rounded-xl">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="text-red-800 dark:text-red-300 font-semibold mb-1">
+                  {String(messages?.checkout?.paymentErrorTitle || "خطا در پرداخت")}
+                </h3>
+                <p className="text-red-700 dark:text-red-400 text-sm">{paymentError}</p>
+              </div>
+              <button
+                onClick={() => setPaymentError(null)}
+                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center mb-12">
@@ -428,7 +550,6 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                   <CheckoutAddressSelector
                     locale={locale}
                     onAddressSelect={handleAddressSelect}
-                    selectedBillingAddress={selectedBillingAddress}
                     selectedShippingAddress={selectedShippingAddress}
                   />
                 ) : (
@@ -568,7 +689,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 
                 {/* Address Summary */}
                 <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.shippingInfoLabel)}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.shippingInfoLabel || t.shippingAddress || 'آدرس ارسال')}</h3>
                   <div className="text-gray-600 dark:text-gray-300">
                     {useSavedAddresses && selectedShippingAddress ? (
                       <>

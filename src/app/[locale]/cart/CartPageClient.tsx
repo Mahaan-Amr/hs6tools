@@ -11,7 +11,9 @@ interface CartPageClientProps {
 }
 
 export default function CartPageClient({ locale }: CartPageClientProps) {
-  const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCartStore();
+  const { items, removeItem, updateQuantity, clearCart } = useCartStore();
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+  const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [messages, setMessages] = useState<Messages | null>(null);
 

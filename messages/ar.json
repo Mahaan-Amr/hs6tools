@@ -124,7 +124,19 @@
       "updateSuccess": "تم تحديث الملف الشخصي بنجاح",
       "updateError": "فشل في تحديث الملف الشخصي",
       "requiredField": "هذا الحقل مطلوب",
-      "errorLoadingProfile": "خطأ في تحميل الملف الشخصي"
+      "errorLoadingProfile": "خطأ في تحميل الملف الشخصي",
+      "validation": {
+        "firstNameRequired": "الاسم الأول مطلوب",
+        "firstNameMinLength": "يجب أن يكون الاسم الأول حرفين على الأقل",
+        "firstNameMaxLength": "يجب أن يكون الاسم الأول 50 حرف كحد أقصى",
+        "lastNameRequired": "اسم العائلة مطلوب",
+        "lastNameMinLength": "يجب أن يكون اسم العائلة حرفين على الأقل",
+        "lastNameMaxLength": "يجب أن يكون اسم العائلة 50 حرف كحد أقصى",
+        "phoneInvalid": "تنسيق رقم الهاتف غير صحيح",
+        "phoneMaxLength": "يجب أن يكون رقم الهاتف 20 حرف كحد أقصى",
+        "companyMaxLength": "يجب أن يكون اسم الشركة 100 حرف كحد أقصى",
+        "positionMaxLength": "يجب أن يكون المنصب 100 حرف كحد أقصى"
+      }
     },
     "orders": {
       "title": "تاريخ الطلبات",
@@ -582,6 +594,13 @@
     "orderProcessing": "معالجة الطلب...",
     "orderSuccess": "تم تقديم الطلب بنجاح",
     "orderError": "خطأ في تقديم الطلب",
+    "userAccountNotFound": "لم يتم العثور على حسابك. يرجى تسجيل الخروج وتسجيل الدخول مرة أخرى. هل تريد تسجيل الخروج الآن؟",
+    "paymentRequestFailed": "فشل في إنشاء طلب الدفع",
+    "paymentCancelled": "تم إلغاء الدفع",
+    "paymentFailed": "فشل الدفع",
+    "paymentError": "خطأ في الدفع",
+    "paymentErrorTitle": "خطأ في الدفع",
+    "orderNotFound": "الطلب غير موجود",
     "successTitle": "تم تقديم طلبك بنجاح!",
     "successMessage": "شكراً لك على الشراء. يتم معالجة طلبك وسيتم إرسال معلومات إضافية عبر البريد الإلكتروني أو الرسائل النصية قريباً.",
     "orderDetails": "تفاصيل الطلب",
@@ -1032,6 +1051,45 @@
     "categoriesForm": {
       "nameRequired": "اسم الفئة مطلوب",
       "slugRequired": "الرابط مطلوب",
+      "nameMaxLength": "يجب أن يكون اسم الفئة 100 حرف كحد أقصى",
+      "slugMaxLength": "يجب أن يكون الرابط 100 حرف كحد أقصى",
+      "descriptionMaxLength": "يجب أن يكون الوصف 500 حرف كحد أقصى"
+    },
+    "contentCategoryForm": {
+      "nameRequired": "اسم الفئة مطلوب",
+      "slugRequired": "الرابط مطلوب",
+      "nameMaxLength": "يجب أن يكون اسم الفئة 100 حرف كحد أقصى",
+      "slugMaxLength": "يجب أن يكون الرابط 100 حرف كحد أقصى",
+      "descriptionMaxLength": "يجب أن يكون الوصف 500 حرف كحد أقصى"
+    },
+    "articleForm": {
+      "titleRequired": "عنوان المقال مطلوب",
+      "slugRequired": "الرابط مطلوب",
+      "contentRequired": "محتوى المقال مطلوب",
+      "titleMaxLength": "يجب أن يكون عنوان المقال 200 حرف كحد أقصى",
+      "slugMaxLength": "يجب أن يكون الرابط 100 حرف كحد أقصى",
+      "excerptMaxLength": "يجب أن يكون الملخص 500 حرف كحد أقصى",
+      "contentMinLength": "يجب أن يكون محتوى المقال 50 حرف على الأقل"
+    },
+    "educationForm": {
+      "titleRequired": "عنوان الدرس مطلوب",
+      "slugRequired": "الرابط مطلوب",
+      "contentRequired": "المحتوى مطلوب للدروس النصية",
+      "videoRequired": "للدروس المرئية، يجب رفع فيديو أو إدخال رابط فيديو",
+      "contentOrVideoRequired": "للدروس المختلطة، يجب أن يكون المحتوى أو الفيديو واحد على الأقل",
+      "titleMaxLength": "يجب أن يكون عنوان الدرس 200 حرف كحد أقصى",
+      "slugMaxLength": "يجب أن يكون الرابط 100 حرف كحد أقصى",
+      "descriptionMaxLength": "يجب أن يكون الوصف 500 حرف كحد أقصى",
+      "videoUrlInvalid": "يجب أن يكون رابط الفيديو رابطًا صالحًا"
+    },
+    "educationCategoryForm": {
+      "nameRequired": "اسم الفئة مطلوب",
+      "slugRequired": "الرابط مطلوب",
+      "parentIdInvalid": "لا يمكن أن تكون الفئة والد نفسها",
+      "nameMaxLength": "يجب أن يكون اسم الفئة 100 حرف كحد أقصى",
+      "slugMaxLength": "يجب أن يكون الرابط 100 حرف كحد أقصى",
+      "descriptionMaxLength": "يجب أن يكون الوصف 500 حرف كحد أقصى"
+    },
       "basicInfo": "المعلومات الأساسية (الفارسية)",
       "categoryName": "اسم الفئة",
       "slug": "الرابط",
@@ -1278,7 +1336,24 @@
         "customerNotFound": "العميل غير موجود",
         "retry": "إعادة المحاولة",
         "activityTimeline": "الجدول الزمني للنشاط",
-        "comingSoon": "قريبًا..."
+        "comingSoon": "قريبًا...",
+        "interactions": {
+          "title": "تفاعلات العملاء",
+          "addInteraction": "إضافة تفاعل",
+          "type": "نوع التفاعل",
+          "subject": "الموضوع",
+          "content": "محتوى التفاعل",
+          "outcome": "النتيجة",
+          "nextAction": "الإجراء التالي",
+          "validation": {
+            "typeRequired": "نوع التفاعل مطلوب",
+            "subjectRequired": "الموضوع مطلوب",
+            "contentRequired": "محتوى التفاعل مطلوب",
+            "contentMinLength": "يجب أن يكون محتوى التفاعل 10 أحرف على الأقل",
+            "subjectMinLength": "يجب أن يكون الموضوع 3 أحرف على الأقل",
+            "subjectMaxLength": "يجب أن يكون الموضوع 200 حرف كحد أقصى"
+          }
+        }
       },
       "leads": {
         "title": "إدارة الفرص",
@@ -1335,6 +1410,13 @@
         "emailRequired": "البريد الإلكتروني مطلوب",
         "emailInvalid": "تنسيق البريد الإلكتروني غير صحيح",
         "phoneInvalid": "تنسيق الهاتف غير صحيح",
+        "validation": {
+          "firstNameRequired": "الاسم الأول مطلوب",
+          "lastNameRequired": "اسم العائلة مطلوب",
+          "emailRequired": "البريد الإلكتروني مطلوب",
+          "emailInvalid": "تنسيق البريد الإلكتروني غير صحيح",
+          "phoneInvalid": "تنسيق الهاتف غير صحيح"
+        },
         "cancel": "إلغاء",
         "save": "حفظ",
         "saving": "جاري الحفظ...",
@@ -1420,6 +1502,14 @@
         "createError": "خطأ في إنشاء عرض الأسعار",
         "updateError": "خطأ في تحديث عرض الأسعار",
         "deleteError": "خطأ في حذف عرض الأسعار",
+        "validation": {
+          "customerRequired": "اختيار العميل مطلوب",
+          "itemsRequired": "يجب إضافة منتج واحد على الأقل إلى العرض",
+          "validUntilRequired": "تاريخ الصلاحية مطلوب",
+          "validUntilInvalid": "يجب أن يكون تاريخ الصلاحية في المستقبل",
+          "itemQuantityInvalid": "يجب أن تكون كمية المنتج أكبر من الصفر",
+          "itemPriceInvalid": "يجب أن يكون سعر المنتج أكبر من الصفر"
+        },
         "metrics": {
           "total": "الإجمالي",
           "totalValue": "القيمة الإجمالية",
@@ -1449,7 +1539,7 @@
         "superAdmin": "المدير العام",
         "admin": "مدير"
       }
-    }
+    
   },
   "settingsPage": {
     "generalSettings": "الإعدادات العامة",
@@ -1495,6 +1585,14 @@
         "Asia/Tehran": "طهران (UTC+3:30)",
         "UTC": "UTC",
         "Europe/London": "لندن (UTC+0)"
+      },
+      "validation": {
+        "siteNameRequired": "اسم الموقع مطلوب",
+        "siteNameMaxLength": "يجب أن يكون اسم الموقع 100 حرف كحد أقصى",
+        "siteUrlRequired": "رابط الموقع مطلوب",
+        "siteUrlInvalid": "يجب أن يكون رابط الموقع رابطًا صالحًا",
+        "contactEmailRequired": "البريد الإلكتروني للاتصال مطلوب",
+        "contactEmailInvalid": "تنسيق البريد الإلكتروني للاتصال غير صحيح"
       }
     },
     "emailSettings": {
@@ -1512,7 +1610,17 @@
       "commonSmtpSettings": "إعدادات SMTP الشائعة",
       "gmail": "Gmail",
       "outlook": "Outlook",
-      "yahoo": "Yahoo"
+      "yahoo": "Yahoo",
+      "validation": {
+        "smtpHostRequired": "مضيف SMTP مطلوب",
+        "smtpHostMaxLength": "يجب أن يكون مضيف SMTP 255 حرف كحد أقصى",
+        "smtpPortRequired": "منفذ SMTP مطلوب",
+        "smtpPortInvalid": "يجب أن يكون منفذ SMTP بين 1 و 65535",
+        "fromEmailRequired": "البريد الإلكتروني للمرسل مطلوب",
+        "fromEmailInvalid": "تنسيق البريد الإلكتروني للمرسل غير صحيح",
+        "fromNameRequired": "اسم المرسل مطلوب",
+        "fromNameMaxLength": "يجب أن يكون اسم المرسل 100 حرف كحد أقصى"
+      }
     },
     "paymentSettings": {
       "title": "إعدادات الدفع",
@@ -1534,7 +1642,13 @@
         "في وضع الاختبار، المدفوعات ليست حقيقية",
         "حدود مبلغ الطلب للتحكم في المخاطر",
         "تفعيل طرق الدفع الإضافية حسب الحاجة"
-      ]
+      ],
+      "validation": {
+        "minimumOrderAmountInvalid": "يجب أن يكون الحد الأدنى لمبلغ الطلب أكبر من أو يساوي الصفر",
+        "maximumOrderAmountInvalid": "يجب أن يكون الحد الأقصى لمبلغ الطلب أكبر من الحد الأدنى",
+        "merchantIdMaxLength": "يجب أن يكون معرف التاجر 100 حرف كحد أقصى",
+        "apiKeyMaxLength": "يجب أن يكون مفتاح API 200 حرف كحد أقصى"
+      }
     }
   },
   "homepage": {

@@ -9,7 +9,6 @@ interface AddressFormModalProps {
   locale: string;
   isOpen: boolean;
   onClose: () => void;
-  addressType: 'billing' | 'shipping';
   onAddressCreated: () => void;
 }
 
@@ -35,7 +34,6 @@ export default function AddressFormModal({
   locale,
   isOpen,
   onClose,
-  addressType,
   onAddressCreated
 }: AddressFormModalProps) {
   const { createAddress } = useCustomer();
@@ -54,10 +52,10 @@ export default function AddressFormModal({
     setIsSubmitting(true);
     
     try {
-      // Set the address type based on the modal type
+      // Set the address type to SHIPPING (only type supported)
       const addressToCreate = {
         ...addressData,
-        type: addressType === 'billing' ? 'BILLING' : 'SHIPPING'
+        type: 'SHIPPING'
       };
       
       const success = await createAddress(addressToCreate);
@@ -66,8 +64,13 @@ export default function AddressFormModal({
         onAddressCreated();
         onClose();
         return true;
+      } else {
+        // Error is already set in CustomerContext, but we can show a toast/notification here if needed
+        console.error('Failed to create address during checkout');
+        return false;
       }
-      
+    } catch (err) {
+      console.error('❌ Address Creation Error in Modal:', err);
       return false;
     } finally {
       setIsSubmitting(false);

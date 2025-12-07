@@ -27,11 +27,6 @@ interface CartState {
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
-  
-  // Computed values
-  totalItems: number;
-  totalPrice: number;
-  itemCount: number;
 }
 
 export const useCartStore = create<CartState>()(
@@ -92,18 +87,6 @@ export const useCartStore = create<CartState>()(
       
       closeCart: () => {
         set({ isOpen: false });
-      },
-      
-      get totalItems() {
-        return get().items.reduce((total, item) => total + item.quantity, 0);
-      },
-      
-      get totalPrice() {
-        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
-      },
-      
-      get itemCount() {
-        return get().items.length;
       },
     }),
     {

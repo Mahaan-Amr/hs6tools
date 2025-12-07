@@ -19,8 +19,9 @@ export default function LoginPage({ params }: LoginPageProps) {
   const router = useRouter();
   const [messages, setMessages] = useState<Messages | null>(null);
   const [locale, setLocale] = useState<string>("fa");
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
 
-  // Load messages
+  // Load messages and get callbackUrl from query params
   useEffect(() => {
     const loadMessages = async () => {
       const { locale: loc } = await params;
@@ -29,6 +30,13 @@ export default function LoginPage({ params }: LoginPageProps) {
       setMessages(msg);
     };
     loadMessages();
+
+    // Get callbackUrl from URL search params
+    const searchParams = new URLSearchParams(window.location.search);
+    const callback = searchParams.get("callbackUrl");
+    if (callback) {
+      setCallbackUrl(decodeURIComponent(callback));
+    }
   }, [params]);
 
   // Create schema with translated messages
@@ -64,7 +72,11 @@ export default function LoginPage({ params }: LoginPageProps) {
       } else {
         // Check if user is admin and redirect accordingly
         const session = await getSession();
-        if (session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN") {
+        
+        // If callbackUrl is provided, redirect there (e.g., back to checkout)
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else if (session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN") {
           router.push(`/${locale}/admin`);
         } else {
           router.push(`/${locale}`);
@@ -168,7 +180,7 @@ export default function LoginPage({ params }: LoginPageProps) {
             {/* Links */}
             <div className="mt-6 text-center space-y-3">
               <Link
-                href={`/${locale}/auth/register`}
+                href={callbackUrl ? `/${locale}/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}` : `/${locale}/auth/register`}
                 className="block text-primary-orange hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200"
               >
                 {messages.auth?.dontHaveAccount}

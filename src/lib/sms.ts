@@ -244,8 +244,40 @@ export async function getSMSStatus(messageId: string): Promise<SMSResponse> {
  */
 export const SMSTemplates = {
   // Order notifications
-  ORDER_CONFIRMED: (orderNumber: string, customerName: string) =>
-    `سلام ${customerName}، سفارش شما با شماره ${orderNumber} ثبت شد. از خرید شما متشکریم.`,
+  ORDER_CONFIRMED: (orderNumber: string, customerName: string, products?: string[], totalAmount?: number) => {
+    let message = `سلام ${customerName}، سفارش شما با شماره ${orderNumber} ثبت شد.`;
+    if (products && products.length > 0) {
+      const productsList = products.length <= 3 
+        ? products.join('، ') 
+        : `${products.slice(0, 2).join('، ')} و ${products.length - 2} محصول دیگر`;
+      message += `\nمحصولات: ${productsList}`;
+    }
+    if (totalAmount) {
+      const formattedAmount = new Intl.NumberFormat('fa-IR').format(totalAmount);
+      message += `\nمبلغ کل: ${formattedAmount} ریال`;
+    }
+    message += '\nاز خرید شما متشکریم.';
+    return message;
+  },
+  
+  ORDER_PAYMENT_SUCCESS: (orderNumber: string, customerName: string, products?: string[], totalAmount?: number, refId?: string) => {
+    let message = `سلام ${customerName}، پرداخت سفارش ${orderNumber} با موفقیت انجام شد.`;
+    if (products && products.length > 0) {
+      const productsList = products.length <= 3 
+        ? products.join('، ') 
+        : `${products.slice(0, 2).join('، ')} و ${products.length - 2} محصول دیگر`;
+      message += `\nمحصولات: ${productsList}`;
+    }
+    if (totalAmount) {
+      const formattedAmount = new Intl.NumberFormat('fa-IR').format(totalAmount);
+      message += `\nمبلغ پرداخت شده: ${formattedAmount} ریال`;
+    }
+    if (refId) {
+      message += `\nکد پیگیری پرداخت: ${refId}`;
+    }
+    message += '\nسفارش شما در حال پردازش است.';
+    return message;
+  },
   
   ORDER_SHIPPED: (orderNumber: string, trackingNumber?: string) =>
     `سفارش شما با شماره ${orderNumber} ارسال شد.${trackingNumber ? ` کد پیگیری: ${trackingNumber}` : ''}`,
@@ -274,20 +306,75 @@ export const SMSTemplates = {
  * Helper function to send SMS safely (non-blocking)
  * This function catches errors and logs them without throwing
  * Use this when SMS failure shouldn't break the main flow
+ * 
+ * In development mode, SMS may be skipped or mocked based on environment variables
  */
 export async function sendSMSSafe(
   options: SendSMSOptions,
   errorContext?: string
 ): Promise<void> {
   try {
+    // Check if SMS is disabled in development
+    const skipSMSInDev = process.env.SKIP_SMS_IN_DEV === 'true';
+    const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+    
+    if (skipSMSInDev && isDevelopment) {
+      console.log(`📱 [SMS] SMS skipped in development mode${errorContext ? ` (${errorContext})` : ''}:`, {
+        receptor: options.receptor,
+        messageLength: options.message.length,
+        messagePreview: options.message.substring(0, 100) + '...',
+        note: 'Set SKIP_SMS_IN_DEV=false to enable SMS in development',
+      });
+      return;
+    }
+
+    // Validate phone number format
+    const phoneDigits = options.receptor.replace(/\D/g, '');
+    if (phoneDigits.length !== 11 || !phoneDigits.startsWith('09')) {
+      console.error(`[SMS] Invalid phone number format${errorContext ? ` (${errorContext})` : ''}:`, options.receptor);
+      return;
+    }
+
+    console.log(`📱 [SMS] Attempting to send SMS${errorContext ? ` (${errorContext})` : ''}:`, {
+      receptor: options.receptor,
+      messageLength: options.message.length,
+      sender: options.sender || 'default',
+      environment: isDevelopment ? 'development' : 'production',
+    });
+
     const result = await sendSMS(options);
     if (!result.success) {
-      console.error(`[SMS] Failed to send SMS${errorContext ? ` (${errorContext})` : ''}:`, result.error);
+      // Check if it's the Kavenegar test account limitation
+      const isTestAccountLimitation = result.status === 501 && 
+        result.error?.includes('صاحب حساب');
+      
+      if (isTestAccountLimitation && isDevelopment) {
+        console.warn(`⚠️ [SMS] Kavenegar test account limitation${errorContext ? ` (${errorContext})` : ''}:`, {
+          error: result.error,
+          status: result.status,
+          receptor: options.receptor,
+          note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
+          messagePreview: options.message.substring(0, 100) + '...',
+        });
+      } else {
+        console.error(`❌ [SMS] Failed to send SMS${errorContext ? ` (${errorContext})` : ''}:`, {
+          error: result.error,
+          status: result.status,
+          receptor: options.receptor,
+        });
+      }
     } else {
-      console.log(`[SMS] SMS sent successfully${errorContext ? ` (${errorContext})` : ''}:`, result.messageId);
+      console.log(`✅ [SMS] SMS sent successfully${errorContext ? ` (${errorContext})` : ''}:`, {
+        messageId: result.messageId,
+        status: result.status,
+        receptor: options.receptor,
+      });
     }
   } catch (error) {
-    console.error(`[SMS] Error sending SMS${errorContext ? ` (${errorContext})` : ''}:`, error);
+    console.error(`❌ [SMS] Error sending SMS${errorContext ? ` (${errorContext})` : ''}:`, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      receptor: options.receptor,
+    });
     // Don't throw - SMS failures shouldn't break main flow
   }
 }

@@ -139,6 +139,72 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
     router.push(`/${locale}/account/orders/${orderId}`);
   };
 
+  const handlePayOrder = async (orderId: string) => {
+    try {
+      const t = messages?.customer?.orders;
+      
+      // Request payment URL from Zarinpal
+      const response = await fetch('/api/payment/zarinpal/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success || !result.paymentUrl) {
+        const errorMessage = result.error || String((t as Record<string, unknown>)?.paymentRequestFailed || 'Failed to create payment request');
+        alert(errorMessage);
+        return;
+      }
+
+      // Redirect to payment gateway
+      window.location.href = result.paymentUrl;
+    } catch (error) {
+      console.error('Error requesting payment:', error);
+      const t = messages?.customer?.orders;
+      alert(String((t as Record<string, unknown>)?.paymentError || 'خطا در درخواست پرداخت. لطفاً دوباره تلاش کنید.'));
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string, orderNumber: string) => {
+    const t = messages?.customer?.orders;
+    const confirmMessage = String((t as Record<string, unknown>)?.cancelOrderConfirm || `آیا از لغو سفارش ${orderNumber} اطمینان دارید؟`);
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/customer/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        const errorMessage = result.error || String((t as Record<string, unknown>)?.cancelOrderError || 'خطا در لغو سفارش');
+        alert(errorMessage);
+        return;
+      }
+
+      // Show success message
+      alert(String((t as Record<string, unknown>)?.cancelOrderSuccess || 'سفارش با موفقیت لغو شد'));
+      
+      // Refresh orders list
+      fetchOrders(currentPage, 10, filters);
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      const t = messages?.customer?.orders;
+      alert(String((t as Record<string, unknown>)?.cancelOrderError || 'خطا در لغو سفارش. لطفاً دوباره تلاش کنید.'));
+    }
+  };
+
   if (!messages) {
     return (
       <div className="space-y-4">
@@ -426,13 +492,47 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                     )}
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={() => handleViewOrder(order.id)}
                       className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
                     >
                       {messages?.customer?.orders?.viewDetails || 'مشاهده جزئیات'}
                     </button>
+                    
+                    {/* Pay Now button - show if payment is pending and order is not cancelled */}
+                    {order.paymentStatus === 'PENDING' && 
+                     order.status !== 'CANCELLED' && 
+                     order.status !== 'DELIVERED' && 
+                     order.status !== 'REFUNDED' && (
+                      <button
+                        onClick={() => handlePayOrder(order.id)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        {(messages?.customer?.orders as Record<string, unknown>)?.payNow as string || 'پرداخت'}
+                      </button>
+                    )}
+                    
+                    {/* Cancel Order button - show if order can be cancelled */}
+                    {/* Orders cannot be cancelled if: paid, cancelled, delivered, or refunded */}
+                    {order.paymentStatus !== 'PAID' &&
+                     order.status !== 'CANCELLED' && 
+                     order.status !== 'DELIVERED' && 
+                     order.status !== 'REFUNDED' && (
+                      <button
+                        onClick={() => handleCancelOrder(order.id, order.orderNumber)}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        {(messages?.customer?.orders as Record<string, unknown>)?.cancelOrder as string || 'لغو سفارش'}
+                      </button>
+                    )}
+                    
                     {order.status === 'DELIVERED' && (
                       <button className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition-colors">
                         {messages?.customer?.orders?.reorder || 'سفارش مجدد'}

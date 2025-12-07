@@ -16,7 +16,8 @@ interface HeaderProps {
 export default function Header({ locale, messages }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { toggleCart, totalItems } = useCartStore();
+  const { toggleCart, items } = useCartStore();
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const { data: session } = useSession();
   const userMenuRef = useRef<HTMLDivElement>(null);
 

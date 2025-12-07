@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { ContentCategory } from "@/types/content";
 import ImageUpload from "@/components/admin/common/ImageUpload";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface ImageFile {
   id: string;
@@ -19,9 +20,11 @@ interface CategoryFormProps {
   category?: ContentCategory | null;
   onClose: () => void;
   onSaved: () => void;
+  locale: string;
 }
 
-export default function CategoryForm({ category, onClose, onSaved }: CategoryFormProps) {
+export default function CategoryForm({ category, onClose, onSaved, locale }: CategoryFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -41,6 +44,19 @@ export default function CategoryForm({ category, onClose, onSaved }: CategoryFor
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isEditing = !!category;
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  // Helper to access admin messages
+  const admin = useMemo(() => {
+    return messages ? (messages as unknown as Record<string, unknown>)?.admin as Record<string, unknown> | undefined : undefined;
+  }, [messages]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -144,13 +160,32 @@ export default function CategoryForm({ category, onClose, onSaved }: CategoryFor
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+    const validation = (messages?.admin as Record<string, unknown> | undefined)?.contentCategoryForm as Record<string, string> | undefined;
 
     if (!formData.name.trim()) {
-      newErrors.name = "نام دسته‌بندی الزامی است";
+      newErrors.name = validation?.nameRequired 
+        ? String(validation.nameRequired) 
+        : "Category name is required";
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = validation?.nameMaxLength 
+        ? String(validation.nameMaxLength) 
+        : "Category name must be at most 100 characters";
     }
 
     if (!formData.slug.trim()) {
-      newErrors.slug = "Slug الزامی است";
+      newErrors.slug = validation?.slugRequired 
+        ? String(validation.slugRequired) 
+        : "Slug is required";
+    } else if (formData.slug.trim().length > 100) {
+      newErrors.slug = validation?.slugMaxLength 
+        ? String(validation.slugMaxLength) 
+        : "Slug must be at most 100 characters";
+    }
+
+    if (formData.description && formData.description.trim().length > 500) {
+      newErrors.description = validation?.descriptionMaxLength 
+        ? String(validation.descriptionMaxLength) 
+        : "Description must be at most 500 characters";
     }
 
     setErrors(newErrors);
@@ -248,10 +283,11 @@ export default function CategoryForm({ category, onClose, onSaved }: CategoryFor
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
+                  maxLength={100}
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.name ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="نام دسته‌بندی را وارد کنید"
+                  placeholder={(admin?.contentCategoryForm as Record<string, string> | undefined)?.nameRequired || "Category Name"}
                 />
                 {errors.name && (
                   <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.name}</p>
@@ -264,6 +300,7 @@ export default function CategoryForm({ category, onClose, onSaved }: CategoryFor
                   type="text"
                   value={formData.slug}
                   onChange={(e) => handleInputChange("slug", e.target.value)}
+                  maxLength={100}
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.slug ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
@@ -276,14 +313,22 @@ export default function CategoryForm({ category, onClose, onSaved }: CategoryFor
             </div>
 
             <div className="mt-6">
-              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">توضیحات</label>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                {(admin?.contentCategoryForm as Record<string, string> | undefined)?.descriptionMaxLength || "Description"}
+              </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange("description", e.target.value)}
                 rows={3}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
-                placeholder="توضیحات دسته‌بندی"
+                maxLength={500}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none ${
+                  errors.description ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
+                }`}
+                placeholder={(admin?.contentCategoryForm as Record<string, string> | undefined)?.descriptionMaxLength || "Category Description"}
               />
+              {errors.description && (
+                <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.description}</p>
+              )}
             </div>
           </div>
 

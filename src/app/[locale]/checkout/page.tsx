@@ -1,4 +1,5 @@
 import CheckoutPageClient from "./CheckoutPageClient";
+import { CustomerProvider } from "@/contexts/CustomerContext";
 
 interface CheckoutPageProps {
   params: Promise<{ locale: string }>;
@@ -7,5 +8,9 @@ interface CheckoutPageProps {
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const { locale } = await params;
   
-  return <CheckoutPageClient locale={locale} />;
+  return (
+    <CustomerProvider>
+      <CheckoutPageClient locale={locale} />
+    </CustomerProvider>
+  );
 }

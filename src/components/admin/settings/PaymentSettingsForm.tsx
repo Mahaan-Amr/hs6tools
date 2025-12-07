@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PaymentSettings } from "@/types/admin";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface PaymentSettingsFormProps {
   locale: string;
@@ -10,10 +11,12 @@ interface PaymentSettingsFormProps {
 }
 
 export default function PaymentSettingsForm({
+  locale,
   onSaveSuccess,
   onSaveError,
   setIsLoading,
-}: Omit<PaymentSettingsFormProps, 'locale'>) {
+}: PaymentSettingsFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [formData, setFormData] = useState<PaymentSettings>({
     zarinpalMerchantId: "",
     zarinpalApiKey: "",
@@ -26,6 +29,20 @@ export default function PaymentSettingsForm({
 
   const [isLoading, setIsLoadingLocal] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  // Helper to access settingsPage messages
+  const settingsPage = useMemo(() => {
+    return messages ? (messages as unknown as Record<string, unknown>)?.settingsPage as Record<string, unknown> | undefined : undefined;
+  }, [messages]);
 
   useEffect(() => {
     fetchSettings();
@@ -53,10 +70,55 @@ export default function PaymentSettingsForm({
       ...prev,
       [field]: value,
     }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const validation = (settingsPage?.paymentSettings as Record<string, unknown> | undefined)?.validation as Record<string, string> | undefined;
+
+    if (formData.minimumOrderAmount < 0) {
+      newErrors.minimumOrderAmount = validation?.minimumOrderAmountInvalid 
+        ? String(validation.minimumOrderAmountInvalid) 
+        : "Minimum order amount must be greater than or equal to zero";
+    }
+
+    if (formData.maximumOrderAmount <= formData.minimumOrderAmount) {
+      newErrors.maximumOrderAmount = validation?.maximumOrderAmountInvalid 
+        ? String(validation.maximumOrderAmountInvalid) 
+        : "Maximum order amount must be greater than minimum amount";
+    }
+
+    if (formData.zarinpalMerchantId && formData.zarinpalMerchantId.length > 100) {
+      newErrors.zarinpalMerchantId = validation?.merchantIdMaxLength 
+        ? String(validation.merchantIdMaxLength) 
+        : "Merchant ID must be at most 100 characters";
+    }
+
+    if (formData.zarinpalApiKey && formData.zarinpalApiKey.length > 200) {
+      newErrors.zarinpalApiKey = validation?.apiKeyMaxLength 
+        ? String(validation.apiKeyMaxLength) 
+        : "API key must be at most 200 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoadingLocal(true);
     setIsLoading(true);
 
@@ -120,22 +182,35 @@ export default function PaymentSettingsForm({
                 type="text"
                 value={formData.zarinpalMerchantId}
                 onChange={(e) => handleInputChange("zarinpalMerchantId", e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                maxLength={100}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.zarinpalMerchantId 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               />
+              {errors.zarinpalMerchantId && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.zarinpalMerchantId}</p>
+              )}
             </div>
 
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                کلید API
+                {(settingsPage?.paymentSettings as Record<string, string> | undefined)?.apiKey || "API Key"}
               </label>
               <div className="relative">
                 <input
                   type={showApiKey ? "text" : "password"}
                   value={formData.zarinpalApiKey}
                   onChange={(e) => handleInputChange("zarinpalApiKey", e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-                  placeholder="کلید API"
+                  maxLength={200}
+                  className={`w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                    errors.zarinpalApiKey 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder={(settingsPage?.paymentSettings as Record<string, string> | undefined)?.apiKey || "API Key"}
                 />
                 <button
                   type="button"
@@ -154,6 +229,9 @@ export default function PaymentSettingsForm({
                   )}
                 </button>
               </div>
+              {errors.zarinpalApiKey && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.zarinpalApiKey}</p>
+              )}
             </div>
 
             <div>
@@ -223,12 +301,19 @@ export default function PaymentSettingsForm({
               <input
                 type="number"
                 value={formData.minimumOrderAmount}
-                onChange={(e) => handleInputChange("minimumOrderAmount", parseInt(e.target.value))}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                onChange={(e) => handleInputChange("minimumOrderAmount", parseInt(e.target.value) || 0)}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.minimumOrderAmount 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="0"
                 min="0"
                 step="1000"
               />
+              {errors.minimumOrderAmount && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.minimumOrderAmount}</p>
+              )}
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-medium">
                 {formatPrice(formData.minimumOrderAmount)}
               </p>
@@ -236,17 +321,24 @@ export default function PaymentSettingsForm({
 
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                حداکثر مبلغ سفارش
+                {(settingsPage?.paymentSettings as Record<string, string> | undefined)?.maxOrderAmount || "Maximum Order Amount"}
               </label>
               <input
                 type="number"
                 value={formData.maximumOrderAmount}
-                onChange={(e) => handleInputChange("maximumOrderAmount", parseInt(e.target.value))}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                onChange={(e) => handleInputChange("maximumOrderAmount", parseInt(e.target.value) || 0)}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.maximumOrderAmount 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="1000000000"
                 min="0"
                 step="1000000"
               />
+              {errors.maximumOrderAmount && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.maximumOrderAmount}</p>
+              )}
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-medium">
                 {formatPrice(formData.maximumOrderAmount)}
               </p>

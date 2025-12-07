@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ArticleStatus } from "@prisma/client";
 import ImageUpload from "@/components/admin/common/ImageUpload";
+import { getMessages, Messages } from "@/lib/i18n";
 
 import { Article, ContentCategory } from "@/types/content";
 
@@ -21,9 +22,11 @@ interface ArticleFormProps {
   article?: Article | null;
   onClose: () => void;
   onSaved: () => void;
+  locale: string;
 }
 
-export default function ArticleForm({ article, onClose, onSaved }: ArticleFormProps) {
+export default function ArticleForm({ article, onClose, onSaved, locale }: ArticleFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -44,6 +47,14 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isEditing = !!article;
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   useEffect(() => {
     fetchCategories();
@@ -144,17 +155,42 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+    const validation = (messages?.admin as Record<string, unknown> | undefined)?.articleForm as Record<string, string> | undefined;
 
     if (!formData.title.trim()) {
-      newErrors.title = "عنوان مقاله الزامی است";
+      newErrors.title = validation?.titleRequired 
+        ? String(validation.titleRequired) 
+        : "Article title is required";
+    } else if (formData.title.trim().length > 200) {
+      newErrors.title = validation?.titleMaxLength 
+        ? String(validation.titleMaxLength) 
+        : "Article title must be at most 200 characters";
     }
 
     if (!formData.slug.trim()) {
-      newErrors.slug = "Slug الزامی است";
+      newErrors.slug = validation?.slugRequired 
+        ? String(validation.slugRequired) 
+        : "Slug is required";
+    } else if (formData.slug.trim().length > 100) {
+      newErrors.slug = validation?.slugMaxLength 
+        ? String(validation.slugMaxLength) 
+        : "Slug must be at most 100 characters";
     }
 
     if (!formData.content.trim()) {
-      newErrors.content = "محتوای مقاله الزامی است";
+      newErrors.content = validation?.contentRequired 
+        ? String(validation.contentRequired) 
+        : "Article content is required";
+    } else if (formData.content.trim().length < 50) {
+      newErrors.content = validation?.contentMinLength 
+        ? String(validation.contentMinLength) 
+        : "Article content must be at least 50 characters";
+    }
+
+    if (formData.excerpt && formData.excerpt.trim().length > 500) {
+      newErrors.excerpt = validation?.excerptMaxLength 
+        ? String(validation.excerptMaxLength) 
+        : "Excerpt must be at most 500 characters";
     }
 
     setErrors(newErrors);
@@ -250,10 +286,11 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange("title", e.target.value)}
+                  maxLength={200}
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.title ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="عنوان مقاله را وارد کنید"
+                  placeholder={((messages?.admin as Record<string, unknown> | undefined)?.articleForm as Record<string, string> | undefined)?.titleRequired || "Article Title"}
                 />
                 {errors.title && (
                   <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.title}</p>
@@ -266,6 +303,7 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
                   type="text"
                   value={formData.slug}
                   onChange={(e) => handleInputChange("slug", e.target.value)}
+                  maxLength={100}
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.slug ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
@@ -283,9 +321,15 @@ export default function ArticleForm({ article, onClose, onSaved }: ArticleFormPr
                 value={formData.excerpt}
                 onChange={(e) => handleInputChange("excerpt", e.target.value)}
                 rows={3}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
-                placeholder="خلاصه کوتاهی از مقاله"
+                maxLength={500}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none ${
+                  errors.excerpt ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
+                }`}
+                placeholder={((messages?.admin as Record<string, unknown> | undefined)?.articleForm as Record<string, string> | undefined)?.excerptMaxLength || "Article Excerpt"}
               />
+              {errors.excerpt && (
+                <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.excerpt}</p>
+              )}
             </div>
           </div>
 

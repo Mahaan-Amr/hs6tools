@@ -282,6 +282,7 @@ export interface Messages {
     invalidCoupon?: string;
     couponValidationError?: string;
     orderError?: string;
+    userAccountNotFound?: string;
     tryAgain?: string;
     previousStep?: string;
     nextStep?: string;

@@ -5,7 +5,11 @@ import { ContentCategory } from "@/types/content";
 import CategoryForm from "./CategoryForm";
 import CategoryList from "./CategoryList";
 
-export default function CategoriesTab() {
+interface CategoriesTabProps {
+  locale: string;
+}
+
+export default function CategoriesTab({ locale }: CategoriesTabProps) {
   const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ContentCategory | null>(null);
@@ -113,6 +117,7 @@ export default function CategoriesTab() {
           category={editingCategory}
           onClose={handleFormClose}
           onSaved={handleCategorySaved}
+          locale={locale}
         />
       )}
     </div>

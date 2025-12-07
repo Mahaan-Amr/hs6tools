@@ -96,6 +96,7 @@ export default function QuoteForm({
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showProductSelector, setShowProductSelector] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (quote) {
@@ -183,6 +184,14 @@ export default function QuoteForm({
       ...prev,
       [name]: name === "subtotal" || name === "tax" || name === "total" ? parseFloat(value) || 0 : value
     }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleAddProduct = (product: Product) => {
@@ -207,6 +216,15 @@ export default function QuoteForm({
       setFormData(prev => ({ ...prev, items: [...prev.items, newItem] }));
     }
     
+    // Clear items error when product is added
+    if (errors.items) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.items;
+        return newErrors;
+      });
+    }
+    
     setShowProductSelector(false);
   };
 
@@ -225,10 +243,70 @@ export default function QuoteForm({
   const handleRemoveItem = (index: number) => {
     const updatedItems = formData.items.filter((_, i) => i !== index);
     setFormData(prev => ({ ...prev, items: updatedItems }));
+    // Clear item-related errors when items change
+    if (errors.items) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.items;
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const validation = messages?.admin?.crm?.quotes?.validation as Record<string, string> | undefined;
+
+    if (!formData.customerId.trim()) {
+      newErrors.customerId = validation?.customerRequired 
+        ? String(validation.customerRequired) 
+        : "Customer selection is required";
+    }
+
+    if (formData.items.length === 0) {
+      newErrors.items = validation?.itemsRequired 
+        ? String(validation.itemsRequired) 
+        : "At least one product must be added to the quote";
+    }
+
+    // Validate each item
+    formData.items.forEach((item, index) => {
+      if (item.quantity <= 0) {
+        newErrors[`itemQuantity_${index}`] = validation?.itemQuantityInvalid 
+          ? String(validation.itemQuantityInvalid) 
+          : "Product quantity must be greater than zero";
+      }
+      if (item.price <= 0) {
+        newErrors[`itemPrice_${index}`] = validation?.itemPriceInvalid 
+          ? String(validation.itemPriceInvalid) 
+          : "Product price must be greater than zero";
+      }
+    });
+
+    if (!formData.validUntil.trim()) {
+      newErrors.validUntil = validation?.validUntilRequired 
+        ? String(validation.validUntilRequired) 
+        : "Valid until date is required";
+    } else {
+      const validUntilDate = new Date(formData.validUntil);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (validUntilDate <= today) {
+        newErrors.validUntil = validation?.validUntilInvalid 
+          ? String(validation.validUntilInvalid) 
+          : "Valid until date must be in the future";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -283,10 +361,23 @@ export default function QuoteForm({
               <select
                 name="customerId"
                 value={formData.customerId}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  if (errors.customerId) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.customerId;
+                      return newErrors;
+                    });
+                  }
+                }}
                 required
                 disabled={loadingCustomers}
-                className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  errors.customerId 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
               >
                 <option value="">
                   {loadingCustomers ? String(messages.common.loading) : String(t.selectCustomer)}
@@ -298,6 +389,9 @@ export default function QuoteForm({
                   </option>
                 ))}
               </select>
+              {errors.customerId && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.customerId}</p>
+              )}
             </div>
           </div>
         </div>
@@ -315,6 +409,11 @@ export default function QuoteForm({
             </button>
           </div>
 
+          {errors.items && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{errors.items}</p>
+            </div>
+          )}
           {formData.items.length > 0 ? (
             <div className="space-y-3">
               {formData.items.map((item, index) => (
@@ -398,10 +497,26 @@ export default function QuoteForm({
                 type="date"
                 name="validUntil"
                 value={formData.validUntil}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  if (errors.validUntil) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.validUntil;
+                      return newErrors;
+                    });
+                  }
+                }}
                 required
-                className="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                className={`w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.validUntil 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
               />
+              {errors.validUntil && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.validUntil}</p>
+              )}
             </div>
 
             <div>

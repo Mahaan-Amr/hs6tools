@@ -58,7 +58,6 @@ interface CustomerOrder {
   deliveredAt?: string | null;
   createdAt: string;
   updatedAt: string;
-  billingAddress: CustomerAddress;
   shippingAddress: CustomerAddress;
   items: CustomerOrderItem[];
 }
@@ -326,7 +325,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   }, [session?.user?.id]);
 
   const createAddress = async (addressData: Omit<CustomerAddress, 'id'>): Promise<boolean> => {
-    if (!session?.user?.id) return false;
+    if (!session?.user?.id) {
+      setAddressesError('You must be logged in to create an address');
+      return false;
+    }
 
     setAddressesLoading(true);
     setAddressesError(null);
@@ -346,12 +348,30 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         await fetchAddresses(); // Refresh addresses
         return true;
       } else {
-        setAddressesError(result.error || 'Failed to create address');
+        // Handle detailed error messages from API
+        let errorMessage = result.error || 'Failed to create address';
+        
+        // If API returns validation details, format them nicely
+        if (result.details && Array.isArray(result.details)) {
+          errorMessage = result.details.join('. ');
+        } else if (result.details && typeof result.details === 'string') {
+          errorMessage = result.details;
+        }
+        
+        setAddressesError(errorMessage);
+        console.error('❌ Address Creation Failed:', {
+          error: errorMessage,
+          details: result.details,
+          status: response.status
+        });
         return false;
       }
     } catch (err) {
-      setAddressesError('Network error occurred');
-      console.error('Error creating address:', err);
+      const errorMessage = err instanceof Error 
+        ? `Network error: ${err.message}` 
+        : 'Network error occurred. Please check your connection and try again.';
+      setAddressesError(errorMessage);
+      console.error('❌ Address Creation: Network error:', err);
       return false;
     } finally {
       setAddressesLoading(false);
@@ -392,9 +412,13 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteAddress = async (id: string): Promise<boolean> => {
-    if (!session?.user?.id) return false;
+    if (!session?.user?.id) {
+      setAddressesError('You must be logged in to delete an address');
+      return false;
+    }
 
-    setAddressesLoading(true);
+    // Don't set loading state for deletion to avoid replacing the list
+    // Only clear previous errors
     setAddressesError(null);
 
     try {
@@ -405,18 +429,37 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       const result = await response.json();
 
       if (result.success) {
-        await fetchAddresses(); // Refresh addresses
+        // Only refresh addresses if deletion was successful
+        await fetchAddresses();
+        setAddressesError(null); // Clear any previous errors
         return true;
       } else {
-        setAddressesError(result.error || 'Failed to delete address');
+        // Handle detailed error messages from API
+        let errorMessage = result.error || 'Failed to delete address';
+        
+        // If API returns validation details, format them nicely
+        if (result.details && Array.isArray(result.details)) {
+          errorMessage = result.details.join('. ');
+        } else if (result.details && typeof result.details === 'string') {
+          errorMessage = result.details;
+        }
+        
+        // Set error but don't set loading state - let the component handle the error display
+        setAddressesError(errorMessage);
+        console.error('❌ Address Deletion Failed:', {
+          error: errorMessage,
+          details: result.details,
+          status: response.status
+        });
         return false;
       }
     } catch (err) {
-      setAddressesError('Network error occurred');
-      console.error('Error deleting address:', err);
+      const errorMessage = err instanceof Error 
+        ? `Network error: ${err.message}` 
+        : 'Network error occurred. Please check your connection and try again.';
+      setAddressesError(errorMessage);
+      console.error('❌ Address Deletion: Network error:', err);
       return false;
-    } finally {
-      setAddressesLoading(false);
     }
   };
 

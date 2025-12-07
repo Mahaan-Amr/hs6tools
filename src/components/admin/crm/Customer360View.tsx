@@ -560,6 +560,7 @@ export default function Customer360View({ customerId, locale }: Customer360ViewP
           customerId={customer.id}
           onSuccess={handleInteractionSuccess}
           onCancel={() => setShowInteractionForm(false)}
+          locale={locale}
         />
       )}
     </div>

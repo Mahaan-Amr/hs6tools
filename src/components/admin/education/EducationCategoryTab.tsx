@@ -5,7 +5,11 @@ import { EducationCategory } from "@/types/education";
 import EducationCategoryForm from "./EducationCategoryForm";
 import EducationCategoryList from "./EducationCategoryList";
 
-export default function EducationCategoryTab() {
+export interface EducationCategoryTabProps {
+  locale: string;
+}
+
+export default function EducationCategoryTab({ locale }: EducationCategoryTabProps) {
   const [categories, setCategories] = useState<EducationCategory[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<EducationCategory | null>(null);
@@ -113,6 +117,7 @@ export default function EducationCategoryTab() {
           category={editingCategory}
           onClose={handleFormClose}
           onSaved={handleCategorySaved}
+          locale={locale}
         />
       )}
     </div>

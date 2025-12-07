@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { EmailSettings } from "@/types/admin";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface EmailSettingsFormProps {
   locale: string;
@@ -10,10 +11,12 @@ interface EmailSettingsFormProps {
 }
 
 export default function EmailSettingsForm({
+  locale,
   onSaveSuccess,
   onSaveError,
   setIsLoading,
-}: Omit<EmailSettingsFormProps, 'locale'>) {
+}: EmailSettingsFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [formData, setFormData] = useState<EmailSettings>({
     smtpHost: "",
     smtpPort: 587,
@@ -27,6 +30,22 @@ export default function EmailSettingsForm({
 
   const [isLoading, setIsLoadingLocal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
+
+  // Helper to access emailSettings from messages
+  const getEmailSettings = () => {
+    if (!messages) return undefined;
+    const settingsPage = (messages as unknown as Record<string, unknown>)?.settingsPage as Record<string, unknown> | undefined;
+    return settingsPage?.emailSettings as Record<string, string> | undefined;
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -54,10 +73,69 @@ export default function EmailSettingsForm({
       ...prev,
       [field]: value,
     }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const settingsPage = messages ? (messages as unknown as Record<string, unknown>)?.settingsPage as Record<string, unknown> | undefined : undefined;
+    const emailSettingsObj = settingsPage?.emailSettings as Record<string, unknown> | undefined;
+    const validation = emailSettingsObj?.validation as Record<string, string> | undefined;
+
+    if (!formData.smtpHost.trim()) {
+      newErrors.smtpHost = validation?.smtpHostRequired 
+        ? String(validation.smtpHostRequired) 
+        : "SMTP server is required";
+    } else if (formData.smtpHost.trim().length > 255) {
+      newErrors.smtpHost = validation?.smtpHostMaxLength 
+        ? String(validation.smtpHostMaxLength) 
+        : "SMTP server must be at most 255 characters";
+    }
+
+    if (!formData.smtpPort || formData.smtpPort < 1 || formData.smtpPort > 65535) {
+      newErrors.smtpPort = validation?.smtpPortInvalid 
+        ? String(validation.smtpPortInvalid) 
+        : "SMTP port must be between 1 and 65535";
+    }
+
+    if (!formData.fromEmail.trim()) {
+      newErrors.fromEmail = validation?.fromEmailRequired 
+        ? String(validation.fromEmailRequired) 
+        : "Sender email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.fromEmail)) {
+      newErrors.fromEmail = validation?.fromEmailInvalid 
+        ? String(validation.fromEmailInvalid) 
+        : "Sender email format is invalid";
+    }
+
+    if (!formData.fromName.trim()) {
+      newErrors.fromName = validation?.fromNameRequired 
+        ? String(validation.fromNameRequired) 
+        : "Sender name is required";
+    } else if (formData.fromName.trim().length > 100) {
+      newErrors.fromName = validation?.fromNameMaxLength 
+        ? String(validation.fromNameMaxLength) 
+        : "Sender name must be at most 100 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoadingLocal(true);
     setIsLoading(true);
 
@@ -131,26 +209,41 @@ export default function EmailSettingsForm({
                 type="text"
                 value={formData.smtpHost}
                 onChange={(e) => handleInputChange("smtpHost", e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                maxLength={255}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.smtpHost 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="smtp.gmail.com"
                 required
               />
+              {errors.smtpHost && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.smtpHost}</p>
+              )}
             </div>
 
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                پورت SMTP *
+                {getEmailSettings()?.smtpPort || "SMTP Port"} *
               </label>
               <input
                 type="number"
                 value={formData.smtpPort}
-                onChange={(e) => handleInputChange("smtpPort", parseInt(e.target.value))}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                onChange={(e) => handleInputChange("smtpPort", parseInt(e.target.value) || 587)}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.smtpPort 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="587"
                 min="1"
                 max="65535"
                 required
               />
+              {errors.smtpPort && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.smtpPort}</p>
+              )}
             </div>
 
             <div>
@@ -228,24 +321,39 @@ export default function EmailSettingsForm({
                 type="email"
                 value={formData.fromEmail}
                 onChange={(e) => handleInputChange("fromEmail", e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.fromEmail 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
                 placeholder="noreply@example.com"
                 required
               />
+              {errors.fromEmail && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.fromEmail}</p>
+              )}
             </div>
 
             <div>
               <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
-                نام فرستنده *
+                {getEmailSettings()?.fromName || "Sender Name"} *
               </label>
               <input
                 type="text"
                 value={formData.fromName}
                 onChange={(e) => handleInputChange("fromName", e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all"
-                placeholder="نام شرکت"
+                maxLength={100}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
+                  errors.fromName 
+                    ? 'border-red-500 dark:border-red-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder={getEmailSettings()?.fromName || "Company Name"}
                 required
               />
+              {errors.fromName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.fromName}</p>
+              )}
             </div>
 
             <div>

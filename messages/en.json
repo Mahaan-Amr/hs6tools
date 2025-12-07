@@ -124,7 +124,19 @@
       "updateSuccess": "Profile updated successfully",
       "updateError": "Failed to update profile",
       "requiredField": "This field is required",
-      "errorLoadingProfile": "Error loading profile"
+      "errorLoadingProfile": "Error loading profile",
+      "validation": {
+        "firstNameRequired": "First name is required",
+        "firstNameMinLength": "First name must be at least 2 characters",
+        "firstNameMaxLength": "First name must be at most 50 characters",
+        "lastNameRequired": "Last name is required",
+        "lastNameMinLength": "Last name must be at least 2 characters",
+        "lastNameMaxLength": "Last name must be at most 50 characters",
+        "phoneInvalid": "Phone number format is invalid",
+        "phoneMaxLength": "Phone number must be at most 20 characters",
+        "companyMaxLength": "Company name must be at most 100 characters",
+        "positionMaxLength": "Position must be at most 100 characters"
+      }
     },
     "orders": {
       "title": "Order History",
@@ -588,6 +600,13 @@
     "orderProcessing": "Processing order...",
     "orderSuccess": "Order placed successfully",
     "orderError": "Error placing order",
+    "userAccountNotFound": "Your account was not found. Please log out and log in again. Would you like to log out now?",
+    "paymentRequestFailed": "Failed to create payment request",
+    "paymentCancelled": "Payment cancelled",
+    "paymentFailed": "Payment failed",
+    "paymentError": "Payment error",
+    "paymentErrorTitle": "Payment Error",
+    "orderNotFound": "Order not found",
     "successTitle": "Your order has been placed successfully!",
     "successMessage": "Thank you for your purchase. Your order is being processed and you will receive additional information via email or SMS shortly.",
     "orderDetails": "Order Details",
@@ -1038,6 +1057,9 @@
     "categoriesForm": {
       "nameRequired": "Category name is required",
       "slugRequired": "Slug is required",
+      "nameMaxLength": "Category name must be at most 100 characters",
+      "slugMaxLength": "Slug must be at most 100 characters",
+      "descriptionMaxLength": "Description must be at most 500 characters",
       "basicInfo": "Basic Information (Persian)",
       "categoryName": "Category Name",
       "slug": "Slug",
@@ -1055,6 +1077,41 @@
       "nameAr": "Name (Arabic)",
       "descriptionAr": "Description (Arabic)",
       "mediaSeo": "Media & SEO",
+      "contentCategoryForm": {
+        "nameRequired": "Category name is required",
+        "slugRequired": "Slug is required",
+        "nameMaxLength": "Category name must be at most 100 characters",
+        "slugMaxLength": "Slug must be at most 100 characters",
+        "descriptionMaxLength": "Description must be at most 500 characters"
+      },
+      "articleForm": {
+        "titleRequired": "Article title is required",
+        "slugRequired": "Slug is required",
+        "contentRequired": "Article content is required",
+        "titleMaxLength": "Article title must be at most 200 characters",
+        "slugMaxLength": "Slug must be at most 100 characters",
+        "excerptMaxLength": "Excerpt must be at most 500 characters",
+        "contentMinLength": "Article content must be at least 50 characters"
+      },
+      "educationForm": {
+        "titleRequired": "Lesson title is required",
+        "slugRequired": "Slug is required",
+        "contentRequired": "Content is required for text lessons",
+        "videoRequired": "For video lessons, you must upload a video or enter a video URL",
+        "contentOrVideoRequired": "For mixed lessons, at least one of content or video is required",
+        "titleMaxLength": "Lesson title must be at most 200 characters",
+        "slugMaxLength": "Slug must be at most 100 characters",
+        "descriptionMaxLength": "Description must be at most 500 characters",
+        "videoUrlInvalid": "Video URL must be a valid URL"
+      },
+      "educationCategoryForm": {
+        "nameRequired": "Category name is required",
+        "slugRequired": "Slug is required",
+        "parentIdInvalid": "Category cannot be its own parent",
+        "nameMaxLength": "Category name must be at most 100 characters",
+        "slugMaxLength": "Slug must be at most 100 characters",
+        "descriptionMaxLength": "Description must be at most 500 characters"
+      },
       "image": "Image",
       "icon": "Icon",
       "metaTitle": "Meta Title",
@@ -1284,7 +1341,24 @@
         "customerNotFound": "Customer not found",
         "retry": "Retry",
         "activityTimeline": "Activity Timeline",
-        "comingSoon": "Coming soon..."
+        "comingSoon": "Coming soon...",
+        "interactions": {
+          "title": "Customer Interactions",
+          "addInteraction": "Add Interaction",
+          "type": "Interaction Type",
+          "subject": "Subject",
+          "content": "Interaction Content",
+          "outcome": "Outcome",
+          "nextAction": "Next Action",
+          "validation": {
+            "typeRequired": "Interaction type is required",
+            "subjectRequired": "Subject is required",
+            "contentRequired": "Interaction content is required",
+            "contentMinLength": "Interaction content must be at least 10 characters",
+            "subjectMinLength": "Subject must be at least 3 characters",
+            "subjectMaxLength": "Subject must be at most 200 characters"
+          }
+        }
       },
       "leads": {
         "title": "Lead Management",
@@ -1341,6 +1415,13 @@
         "emailRequired": "Email is required",
         "emailInvalid": "Email format is invalid",
         "phoneInvalid": "Phone format is invalid",
+        "validation": {
+          "firstNameRequired": "First name is required",
+          "lastNameRequired": "Last name is required",
+          "emailRequired": "Email is required",
+          "emailInvalid": "Email format is invalid",
+          "phoneInvalid": "Phone format is invalid"
+        },
         "cancel": "Cancel",
         "save": "Save",
         "saving": "Saving...",
@@ -1426,6 +1507,14 @@
         "createError": "Error creating quote",
         "updateError": "Error updating quote",
         "deleteError": "Error deleting quote",
+        "validation": {
+          "customerRequired": "Customer selection is required",
+          "itemsRequired": "At least one product must be added to the quote",
+          "validUntilRequired": "Valid until date is required",
+          "validUntilInvalid": "Valid until date must be in the future",
+          "itemQuantityInvalid": "Product quantity must be greater than zero",
+          "itemPriceInvalid": "Product price must be greater than zero"
+        },
         "metrics": {
           "total": "Total",
           "totalValue": "Total Value",
@@ -1501,6 +1590,14 @@
         "Asia/Tehran": "Tehran (UTC+3:30)",
         "UTC": "UTC",
         "Europe/London": "London (UTC+0)"
+      },
+      "validation": {
+        "siteNameRequired": "Site name is required",
+        "siteNameMaxLength": "Site name must be at most 100 characters",
+        "siteUrlRequired": "Site URL is required",
+        "siteUrlInvalid": "Site URL must be a valid URL",
+        "contactEmailRequired": "Contact email is required",
+        "contactEmailInvalid": "Contact email format is invalid"
       }
     },
     "emailSettings": {
@@ -1518,7 +1615,17 @@
       "commonSmtpSettings": "Common SMTP Settings",
       "gmail": "Gmail",
       "outlook": "Outlook",
-      "yahoo": "Yahoo"
+      "yahoo": "Yahoo",
+      "validation": {
+        "smtpHostRequired": "SMTP server is required",
+        "smtpHostMaxLength": "SMTP server must be at most 255 characters",
+        "smtpPortRequired": "SMTP port is required",
+        "smtpPortInvalid": "SMTP port must be between 1 and 65535",
+        "fromEmailRequired": "Sender email is required",
+        "fromEmailInvalid": "Sender email format is invalid",
+        "fromNameRequired": "Sender name is required",
+        "fromNameMaxLength": "Sender name must be at most 100 characters"
+      }
     },
     "paymentSettings": {
       "title": "Payment Settings",

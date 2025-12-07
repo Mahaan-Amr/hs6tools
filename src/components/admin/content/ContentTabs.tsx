@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import ArticlesTab from "./ArticlesTab";
 import CategoriesTab from "./CategoriesTab";
 import EducationTab from "../education/EducationTab";
 import EducationCategoryTab from "../education/EducationCategoryTab";
 
 export default function ContentTabs() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fa";
   const [activeTab, setActiveTab] = useState<"articles" | "categories" | "education" | "educationCategories">("articles");
 
   const tabs = [
@@ -70,10 +73,10 @@ export default function ContentTabs() {
 
       {/* Tab Content */}
       <div className="min-h-[600px]">
-        {activeTab === "articles" && <ArticlesTab />}
-        {activeTab === "categories" && <CategoriesTab />}
-        {activeTab === "education" && <EducationTab />}
-        {activeTab === "educationCategories" && <EducationCategoryTab />}
+        {activeTab === "articles" && <ArticlesTab locale={locale} />}
+        {activeTab === "categories" && <CategoriesTab locale={locale} />}
+        {activeTab === "education" && <EducationTab locale={locale} />}
+        {activeTab === "educationCategories" && <EducationCategoryTab locale={locale} />}
       </div>
     </div>
   );

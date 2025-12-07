@@ -208,7 +208,6 @@ export interface AdminOrder {
   customerEmail: string;
   customerPhone?: string;
   customerNote?: string;
-  billingAddressId: string;
   shippingAddressId: string;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
@@ -227,7 +226,6 @@ export interface AdminOrder {
     email: string;
     phone?: string;
   };
-  billingAddress: AdminAddress;
   shippingAddress: AdminAddress;
   orderItems: AdminOrderItem[];
   _count: {

@@ -35,7 +35,6 @@ export async function GET(
             phone: true
           }
         },
-        billingAddress: true,
         shippingAddress: true,
         orderItems: {
           include: {
@@ -84,7 +83,6 @@ export async function GET(
       customerEmail: order.customerEmail,
       customerPhone: order.customerPhone,
       customerNote: order.customerNote,
-      billingAddressId: order.billingAddressId,
       shippingAddressId: order.shippingAddressId,
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
@@ -97,7 +95,6 @@ export async function GET(
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
       user: order.user,
-      billingAddress: order.billingAddress,
       shippingAddress: order.shippingAddress,
       orderItems: order.orderItems.map(item => ({
         id: item.id,
@@ -210,7 +207,6 @@ export async function PUT(
             phone: true
           }
         },
-        billingAddress: true,
         shippingAddress: true,
         orderItems: {
           include: {
@@ -293,7 +289,6 @@ export async function PUT(
       customerEmail: updatedOrder.customerEmail,
       customerPhone: updatedOrder.customerPhone,
       customerNote: updatedOrder.customerNote,
-      billingAddressId: updatedOrder.billingAddressId,
       shippingAddressId: updatedOrder.shippingAddressId,
       paymentMethod: updatedOrder.paymentMethod,
       paymentStatus: updatedOrder.paymentStatus,
@@ -306,7 +301,6 @@ export async function PUT(
       createdAt: updatedOrder.createdAt.toISOString(),
       updatedAt: updatedOrder.updatedAt.toISOString(),
       user: updatedOrder.user,
-      billingAddress: updatedOrder.billingAddress,
       shippingAddress: updatedOrder.shippingAddress,
       orderItems: updatedOrder.orderItems.map(item => ({
         id: item.id,

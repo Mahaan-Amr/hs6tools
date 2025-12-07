@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { QuoteStatus } from "@prisma/client";
+import { QuoteStatus, Prisma } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 
 // POST /api/crm/quotes/[id]/convert - Convert quote to order
@@ -21,7 +22,7 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
-    const { shippingAddress, billingAddress, shippingMethod, paymentMethod } = body;
+    const { shippingAddress, shippingMethod, paymentMethod } = body;
 
     // Check if quote exists
     const quote = await prisma.quote.findUnique({
@@ -81,45 +82,27 @@ export async function POST(
         }
       });
 
-      // Create billing address
-      const billingAddr = await tx.address.create({
-        data: {
-          userId: quote.customerId,
-          type: "BILLING",
-          title: "آدرس صورتحساب",
-          firstName: billingAddress.firstName,
-          lastName: billingAddress.lastName,
-          company: billingAddress.company,
-          addressLine1: billingAddress.addressLine1,
-          addressLine2: billingAddress.addressLine2,
-          city: billingAddress.city,
-          state: billingAddress.state,
-          postalCode: billingAddress.postalCode,
-          country: billingAddress.country,
-          phone: billingAddress.phone,
-          isDefault: false
-        }
-      });
-
-      // Create order
-      const newOrder = await tx.order.create({
-        data: {
+      // Create order (only shipping address, billing address removed)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const orderData: any = {
           userId: quote.customerId,
           orderNumber,
           status: "PENDING",
           subtotal: quote.subtotal,
           taxAmount: quote.tax,
-          shippingAmount: 0, // Will be calculated based on shipping method
-          discountAmount: 0,
+        shippingAmount: new Decimal(0), // Will be calculated based on shipping method
+        discountAmount: new Decimal(0),
           totalAmount: quote.total,
           customerEmail: quote.customer.email,
           customerPhone: shippingAddress.phone || quote.customer.phone || "",
           shippingAddressId: shippingAddr.id,
-          billingAddressId: billingAddr.id,
-          shippingMethod: shippingMethod || "STANDARD",
-          paymentMethod: paymentMethod || "CASH_ON_DELIVERY",
+        shippingMethod: (shippingMethod || "POST") as "POST" | "TIPAX" | "EXPRESS",
+        paymentMethod: (paymentMethod || "CASH_ON_DELIVERY") as "ZARINPAL" | "BANK_TRANSFER" | "CASH_ON_DELIVERY",
           paymentStatus: "PENDING"
-        }
+      };
+      
+      const newOrder = await tx.order.create({
+        data: orderData as Prisma.OrderUncheckedCreateInput // Type assertion - billingAddressId has been removed from schema
       });
 
       // Create order items from quote items

@@ -116,25 +116,71 @@ export default function AddressForm({
   const validateForm = (): boolean => {
     const newErrors: Partial<AddressFormData> = {};
 
-    if (!formData.title.trim()) newErrors.title = 'required';
-    if (!formData.firstName.trim()) newErrors.firstName = 'required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'required';
-    if (!formData.addressLine1.trim()) newErrors.addressLine1 = 'required';
-    if (!formData.city.trim()) newErrors.city = 'required';
-    if (!formData.state.trim()) newErrors.state = 'required';
-    if (!formData.postalCode.trim()) newErrors.postalCode = 'required';
-    if (!formData.phone.trim()) newErrors.phone = 'required';
-
-    // Phone validation (Iranian format)
-    const phoneRegex = /^(\+98|0)?9\d{9}$/;
-    if (!phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'invalid';
+    // Required field validation
+    if (!formData.title.trim()) {
+      newErrors.title = 'required';
+    } else if (formData.title.trim().length > 100) {
+      newErrors.title = 'maxLength';
     }
 
-    // Postal code validation (Iranian format)
-    const postalCodeRegex = /^\d{10}$/;
-    if (!postalCodeRegex.test(formData.postalCode.replace(/\s/g, ''))) {
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'required';
+    } else if (formData.firstName.trim().length > 50) {
+      newErrors.firstName = 'maxLength';
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'required';
+    } else if (formData.lastName.trim().length > 50) {
+      newErrors.lastName = 'maxLength';
+    }
+
+    if (!formData.addressLine1.trim()) {
+      newErrors.addressLine1 = 'required';
+    } else if (formData.addressLine1.trim().length > 200) {
+      newErrors.addressLine1 = 'maxLength';
+    }
+
+    if (formData.addressLine2 && formData.addressLine2.trim().length > 200) {
+      newErrors.addressLine2 = 'maxLength';
+    }
+
+    if (!formData.city.trim()) {
+      newErrors.city = 'required';
+    } else if (formData.city.trim().length > 100) {
+      newErrors.city = 'maxLength';
+    }
+
+    if (!formData.state.trim()) {
+      newErrors.state = 'required';
+    } else if (formData.state.trim().length > 100) {
+      newErrors.state = 'maxLength';
+    }
+
+    if (!formData.postalCode.trim()) {
+      newErrors.postalCode = 'required';
+    } else {
+      const cleanPostalCode = formData.postalCode.replace(/\s/g, '');
+      if (cleanPostalCode.length > 20) {
+        newErrors.postalCode = 'maxLength';
+      } else if (!/^\d{10}$/.test(cleanPostalCode)) {
       newErrors.postalCode = 'invalid';
+      }
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'required';
+    } else {
+      const cleanPhone = formData.phone.replace(/\s/g, '');
+      if (cleanPhone.length > 20) {
+        newErrors.phone = 'maxLength';
+      } else if (!/^(\+98|0)?9\d{9}$/.test(cleanPhone)) {
+        newErrors.phone = 'invalid';
+      }
+    }
+
+    if (formData.company && formData.company.trim().length > 100) {
+      newErrors.company = 'maxLength';
     }
 
     setErrors(newErrors);
@@ -173,6 +219,23 @@ export default function AddressForm({
     const fieldName = messages.customer.addresses[field as keyof typeof messages.customer.addresses] || field;
     const errorMessage = messages.customer.addresses.validation?.[errorType as keyof typeof messages.customer.addresses.validation];
     
+    if (errorType === 'maxLength') {
+      const maxLengths: Record<string, number> = {
+        title: 100,
+        firstName: 50,
+        lastName: 50,
+        company: 100,
+        addressLine1: 200,
+        addressLine2: 200,
+        city: 100,
+        state: 100,
+        postalCode: 20,
+        phone: 20
+      };
+      const maxLength = maxLengths[field] || 100;
+      return `${fieldName} must be ${maxLength} characters or less`;
+    }
+    
     return errorMessage ? `${fieldName} ${errorMessage}` : `${fieldName} is invalid`;
   };
 
@@ -188,10 +251,9 @@ export default function AddressForm({
             value={formData.type}
             onChange={(e) => handleInputChange('type', e.target.value)}
             className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+            disabled
           >
             <option value="SHIPPING">{messages?.customer?.addresses?.shipping || 'ارسال'}</option>
-            <option value="BILLING">{messages?.customer?.addresses?.billing || 'صورتحساب'}</option>
-            <option value="BOTH">{messages?.customer?.addresses?.both || 'هر دو'}</option>
           </select>
         </div>
 

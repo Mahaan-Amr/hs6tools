@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCustomer } from '@/contexts/CustomerContext';
 import { getMessages, Messages } from '@/lib/i18n';
 
@@ -20,6 +20,7 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -28,6 +29,13 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
     };
     loadMessages();
   }, [locale]);
+
+  // Helper to access customer.profile messages
+  const customerProfile = useMemo(() => {
+    if (!messages) return undefined;
+    const customer = (messages as unknown as Record<string, unknown>)?.customer as Record<string, unknown> | undefined;
+    return customer?.profile as Record<string, unknown> | undefined;
+  }, [messages]);
 
   useEffect(() => {
     if (profile) {
@@ -47,14 +55,81 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const validation = customerProfile?.validation as Record<string, string> | undefined;
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = validation?.firstNameRequired 
+        ? String(validation.firstNameRequired) 
+        : "First name is required";
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = validation?.firstNameMinLength 
+        ? String(validation.firstNameMinLength) 
+        : "First name must be at least 2 characters";
+    } else if (formData.firstName.trim().length > 50) {
+      newErrors.firstName = validation?.firstNameMaxLength 
+        ? String(validation.firstNameMaxLength) 
+        : "First name must be at most 50 characters";
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = validation?.lastNameRequired 
+        ? String(validation.lastNameRequired) 
+        : "Last name is required";
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = validation?.lastNameMinLength 
+        ? String(validation.lastNameMinLength) 
+        : "Last name must be at least 2 characters";
+    } else if (formData.lastName.trim().length > 50) {
+      newErrors.lastName = validation?.lastNameMaxLength 
+        ? String(validation.lastNameMaxLength) 
+        : "Last name must be at most 50 characters";
+    }
+
+    if (formData.phone && formData.phone.trim()) {
+      if (formData.phone.trim().length > 20) {
+        newErrors.phone = validation?.phoneMaxLength 
+          ? String(validation.phoneMaxLength) 
+          : "Phone number must be at most 20 characters";
+      } else if (!/^(\+98|0)?9\d{9}$/.test(formData.phone.replace(/\s/g, ''))) {
+        newErrors.phone = validation?.phoneInvalid 
+          ? String(validation.phoneInvalid) 
+          : "Phone number format is invalid";
+      }
+    }
+
+    if (formData.company && formData.company.trim().length > 100) {
+      newErrors.company = validation?.companyMaxLength 
+        ? String(validation.companyMaxLength) 
+        : "Company name must be at most 100 characters";
+    }
+
+    if (formData.position && formData.position.trim().length > 100) {
+      newErrors.position = validation?.positionMaxLength 
+        ? String(validation.positionMaxLength) 
+        : "Position must be at most 100 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messages) return;
 
-    // Basic validation
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+    if (!validateForm()) {
       return;
     }
 
@@ -106,7 +181,7 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-white mb-2">
-          {messages?.customer?.profile?.errorLoadingProfile || 'خطا در بارگذاری پروفایل'}
+          {(customerProfile as Record<string, string> | undefined)?.errorLoadingProfile || 'خطا در بارگذاری پروفایل'}
         </h3>
         <p className="text-gray-400 mb-4">{error}</p>
       </div>
@@ -121,37 +196,37 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                {messages?.customer?.profile?.firstName || 'نام'}
+                {(customerProfile as Record<string, string> | undefined)?.firstName || 'نام'}
               </label>
               <p className="text-white">{profile?.firstName || '-'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                {messages?.customer?.profile?.lastName || 'نام خانوادگی'}
+                {(customerProfile as Record<string, string> | undefined)?.lastName || 'نام خانوادگی'}
               </label>
               <p className="text-white">{profile?.lastName || '-'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                {messages?.customer?.profile?.email || 'ایمیل'}
+                {(customerProfile as Record<string, string> | undefined)?.email || 'ایمیل'}
               </label>
               <p className="text-white">{profile?.email || '-'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                {messages?.customer?.profile?.phone || 'شماره تلفن'}
+                {(customerProfile as Record<string, string> | undefined)?.phone || 'شماره تلفن'}
               </label>
               <p className="text-white">{profile?.phone || '-'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                {messages?.customer?.profile?.company || 'شرکت'}
+                {(customerProfile as Record<string, string> | undefined)?.company || 'شرکت'}
               </label>
               <p className="text-white">{profile?.company || '-'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                {messages?.customer?.profile?.position || 'سمت'}
+                {(customerProfile as Record<string, string> | undefined)?.position || 'سمت'}
               </label>
               <p className="text-white">{profile?.position || '-'}</p>
             </div>
@@ -177,9 +252,17 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInputChange}
+                maxLength={50}
                 required
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className={`w-full bg-white/10 border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
+                  errors.firstName 
+                    ? 'border-red-500' 
+                    : 'border-white/20'
+                }`}
               />
+              {errors.firstName && (
+                <p className="mt-1 text-sm text-red-400">{errors.firstName}</p>
+              )}
             </div>
             <div>
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-400 mb-1">
@@ -191,9 +274,17 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInputChange}
+                maxLength={50}
                 required
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                className={`w-full bg-white/10 border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
+                  errors.lastName 
+                    ? 'border-red-500' 
+                    : 'border-white/20'
+                }`}
               />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-red-400">{errors.lastName}</p>
+              )}
             </div>
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-400 mb-1">
@@ -205,8 +296,16 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                maxLength={20}
+                className={`w-full bg-white/10 border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
+                  errors.phone 
+                    ? 'border-red-500' 
+                    : 'border-white/20'
+                }`}
               />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-400">{errors.phone}</p>
+              )}
             </div>
             <div>
               <label htmlFor="company" className="block text-sm font-medium text-gray-400 mb-1">
@@ -218,8 +317,16 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
                 name="company"
                 value={formData.company}
                 onChange={handleInputChange}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                maxLength={100}
+                className={`w-full bg-white/10 border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
+                  errors.company 
+                    ? 'border-red-500' 
+                    : 'border-white/20'
+                }`}
               />
+              {errors.company && (
+                <p className="mt-1 text-sm text-red-400">{errors.company}</p>
+              )}
             </div>
             <div>
               <label htmlFor="position" className="block text-sm font-medium text-gray-400 mb-1">
@@ -231,8 +338,16 @@ export default function ProfileForm({ locale }: ProfileFormProps) {
                 name="position"
                 value={formData.position}
                 onChange={handleInputChange}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                maxLength={100}
+                className={`w-full bg-white/10 border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
+                  errors.position 
+                    ? 'border-red-500' 
+                    : 'border-white/20'
+                }`}
               />
+              {errors.position && (
+                <p className="mt-1 text-sm text-red-400">{errors.position}</p>
+              )}
             </div>
           </div>
           

@@ -54,18 +54,6 @@ interface Order {
   deliveredAt?: string | null;
   createdAt: string;
   updatedAt: string;
-  billingAddress: {
-    firstName: string;
-    lastName: string;
-    company?: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    phone: string;
-  };
   shippingAddress: {
     firstName: string;
     lastName: string;
@@ -302,10 +290,10 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
         <div class="info">
           <div>
             <h3>${customerInfo}</h3>
-            <p>${order.billingAddress.firstName} ${order.billingAddress.lastName}</p>
-            <p>${order.billingAddress.phone}</p>
-            <p>${order.billingAddress.addressLine1}</p>
-            <p>${order.billingAddress.city}، ${order.billingAddress.state}</p>
+            <p>${order.shippingAddress.firstName} ${order.shippingAddress.lastName}</p>
+            <p>${order.shippingAddress.phone}</p>
+            <p>${order.shippingAddress.addressLine1}</p>
+            <p>${order.shippingAddress.city}، ${order.shippingAddress.state}</p>
           </div>
         </div>
         <table>
@@ -365,6 +353,79 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
     // For other shipping methods, show tracking number
     else {
       alert(`${messages?.customer?.orderDetails?.trackingNumber || 'شماره پیگیری'}: ${order.trackingNumber}`);
+    }
+  };
+
+  const handlePayOrder = async () => {
+    if (!order) return;
+    
+    try {
+      const t = messages?.customer?.orderDetails;
+      
+      // Request payment URL from Zarinpal
+      const response = await fetch('/api/payment/zarinpal/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success || !result.paymentUrl) {
+        const errorMessage = result.error || String((t as Record<string, unknown>)?.paymentRequestFailed || 'Failed to create payment request');
+        alert(errorMessage);
+        return;
+      }
+
+      // Redirect to payment gateway
+      window.location.href = result.paymentUrl;
+    } catch (error) {
+      console.error('Error requesting payment:', error);
+      const t = messages?.customer?.orderDetails;
+      alert(String((t as Record<string, unknown>)?.paymentError || 'خطا در درخواست پرداخت. لطفاً دوباره تلاش کنید.'));
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!order) return;
+    
+    const t = messages?.customer?.orderDetails;
+    const confirmMessage = String((t as Record<string, unknown>)?.cancelOrderConfirm || `آیا از لغو سفارش ${order.orderNumber} اطمینان دارید؟`);
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/customer/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        const errorMessage = result.error || String((t as Record<string, unknown>)?.cancelOrderError || 'خطا در لغو سفارش');
+        alert(errorMessage);
+        return;
+      }
+
+      // Show success message
+      alert(String((t as Record<string, unknown>)?.cancelOrderSuccess || 'سفارش با موفقیت لغو شد'));
+      
+      // Reload order details
+      const orderData = await fetchOrderDetails(order.id);
+      if (orderData) {
+        setOrder(orderData as Order);
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      const t = messages?.customer?.orderDetails;
+      alert(String((t as Record<string, unknown>)?.cancelOrderError || 'خطا در لغو سفارش. لطفاً دوباره تلاش کنید.'));
     }
   };
 
@@ -434,6 +495,39 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
 
         {/* Order Actions */}
         <div className="flex flex-wrap gap-3">
+          {/* Pay Now button - show if payment is pending and order is not cancelled */}
+          {order.paymentStatus === 'PENDING' && 
+           order.status !== 'CANCELLED' && 
+           order.status !== 'DELIVERED' && 
+           order.status !== 'REFUNDED' && (
+            <button
+              onClick={handlePayOrder}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              {(messages?.customer?.orderDetails as Record<string, unknown>)?.payNowButton as string || 'پرداخت سفارش'}
+            </button>
+          )}
+          
+          {/* Cancel Order button - show if order can be cancelled */}
+          {/* Orders cannot be cancelled if: paid, cancelled, delivered, or refunded */}
+          {order.paymentStatus !== 'PAID' &&
+           order.status !== 'CANCELLED' && 
+           order.status !== 'DELIVERED' && 
+           order.status !== 'REFUNDED' && (
+            <button
+              onClick={handleCancelOrder}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              {(messages?.customer?.orderDetails as Record<string, unknown>)?.cancelOrderButton as string || 'لغو سفارش'}
+            </button>
+          )}
+          
           {order.status === 'DELIVERED' && (
             <button
               onClick={handleReorder}
@@ -584,30 +678,8 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
         </div>
       </div>
 
-      {/* Addresses */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Billing Address */}
-        <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">{messages?.customer?.orderDetails?.billingAddress || 'آدرس صورتحساب'}</h2>
-          <div className="space-y-2 text-gray-300">
-            <p className="font-medium text-white">
-              {order.billingAddress.firstName} {order.billingAddress.lastName}
-            </p>
-            {order.billingAddress.company && (
-              <p>{order.billingAddress.company}</p>
-            )}
-            <p>{order.billingAddress.addressLine1}</p>
-            {order.billingAddress.addressLine2 && (
-              <p>{order.billingAddress.addressLine2}</p>
-            )}
-            <p>
-              {order.billingAddress.city}، {order.billingAddress.state} {order.billingAddress.postalCode}
-            </p>
-            <p>{order.billingAddress.country}</p>
-            <p>{messages?.customer?.orderDetails?.phone || 'تلفن:'} {order.billingAddress.phone}</p>
-          </div>
-        </div>
-
+      {/* Address */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Shipping Address */}
         <div className="glass rounded-xl p-6">
           <h2 className="text-xl font-semibold text-white mb-4">{messages?.customer?.orderDetails?.shippingAddress || 'آدرس ارسال'}</h2>

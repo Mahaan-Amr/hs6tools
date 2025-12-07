@@ -11,7 +11,9 @@ interface MiniCartProps {
 }
 
 export default function MiniCart({ locale }: MiniCartProps) {
-  const { items, isOpen, closeCart, totalItems, totalPrice, removeItem, updateQuantity } = useCartStore();
+  const { items, isOpen, closeCart, removeItem, updateQuantity } = useCartStore();
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+  const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   const [messages, setMessages] = useState<Messages | null>(null);
 
   useEffect(() => {

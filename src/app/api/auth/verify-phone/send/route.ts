@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationCode, sendSMSSafe } from "@/lib/sms";
+import { sendVerificationCode, sendSMS } from "@/lib/sms";
 import { VerificationType } from "@prisma/client";
 
 /**
@@ -9,6 +9,18 @@ import { VerificationType } from "@prisma/client";
  */
 export async function POST(request: NextRequest) {
   try {
+    // Check if SMS service is configured
+    if (!process.env.KAVENEGAR_API_KEY) {
+      console.error('❌ KAVENEGAR_API_KEY is not set in environment variables');
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "SMS service is not configured. Please contact support." 
+        },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { phone } = body;
 
@@ -68,19 +80,37 @@ export async function POST(request: NextRequest) {
 
     // Send SMS with verification code
     // Try using template first, fallback to simple SMS
-    try {
-      await sendVerificationCode({
-        receptor: phone,
-        token: code,
-        template: 'verify', // Template name in Kavehnegar panel
-      });
-    } catch (templateError) {
-      // Fallback to simple SMS if template doesn't exist
-      console.warn('Template not found, using simple SMS:', templateError);
-      await sendSMSSafe({
+    console.log(`📱 Attempting to send verification code to ${phone}`);
+    
+    const templateResult = await sendVerificationCode({
+      receptor: phone,
+      token: code,
+      template: 'verify', // Template name in Kavehnegar panel
+    });
+
+    if (!templateResult.success) {
+      // Fallback to simple SMS if template doesn't exist or fails
+      console.warn('📱 Template SMS failed, using simple SMS fallback:', templateResult.error);
+      const fallbackResult = await sendSMS({
         receptor: phone,
         message: `کد تأیید شما: ${code} - این کد 5 دقیقه اعتبار دارد.`,
-      }, `Phone verification: ${phone}`);
+      });
+
+      if (!fallbackResult.success) {
+        console.error('📱 Both template and fallback SMS failed:', fallbackResult.error);
+        // Still return success because code is saved in database
+        // User can request a new code if SMS fails
+        return NextResponse.json({
+          success: true,
+          message: "Verification code generated. SMS may not have been sent. Please try requesting a new code if you don't receive it.",
+          expiresIn: 300,
+          warning: "SMS sending failed, but code is saved. You can request a new code."
+        });
+      } else {
+        console.log('📱 Fallback SMS sent successfully:', fallbackResult.messageId);
+      }
+    } else {
+      console.log('📱 Template SMS sent successfully:', templateResult.messageId);
     }
 
     return NextResponse.json({

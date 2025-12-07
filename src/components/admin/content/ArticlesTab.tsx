@@ -5,7 +5,11 @@ import { Article } from "@/types/content";
 import ArticleForm from "./ArticleForm";
 import ArticleList from "./ArticleList";
 
-export default function ArticlesTab() {
+interface ArticlesTabProps {
+  locale: string;
+}
+
+export default function ArticlesTab({ locale }: ArticlesTabProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
@@ -139,6 +143,7 @@ export default function ArticlesTab() {
           article={editingArticle}
           onClose={handleFormClose}
           onSaved={handleArticleSaved}
+          locale={locale}
         />
       )}
     </div>

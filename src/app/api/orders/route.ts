@@ -94,7 +94,6 @@ export async function GET(request: NextRequest) {
               phone: true
             }
           },
-          billingAddress: true,
           shippingAddress: true,
           orderItems: {
             include: {
@@ -141,7 +140,6 @@ export async function GET(request: NextRequest) {
       customerEmail: order.customerEmail,
       customerPhone: order.customerPhone,
       customerNote: order.customerNote,
-      billingAddressId: order.billingAddressId,
       shippingAddressId: order.shippingAddressId,
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
@@ -154,7 +152,6 @@ export async function GET(request: NextRequest) {
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
       user: order.user,
-      billingAddress: order.billingAddress,
       shippingAddress: order.shippingAddress,
       orderItems: order.orderItems.map(item => ({
         id: item.id,

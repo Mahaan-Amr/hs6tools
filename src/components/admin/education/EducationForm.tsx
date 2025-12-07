@@ -6,6 +6,7 @@ import { ArticleStatus, LessonContentType, LessonDifficulty } from "@prisma/clie
 import ImageUpload from "@/components/admin/common/ImageUpload";
 import VideoUpload from "@/components/admin/common/VideoUpload";
 import { EducationLesson, EducationCategory } from "@/types/education";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface ImageFile {
   id: string;
@@ -21,9 +22,11 @@ interface EducationFormProps {
   lesson?: EducationLesson | null;
   onClose: () => void;
   onSaved: () => void;
+  locale: string;
 }
 
-export default function EducationForm({ lesson, onClose, onSaved }: EducationFormProps) {
+export default function EducationForm({ lesson, onClose, onSaved, locale }: EducationFormProps) {
+  const [messages, setMessages] = useState<Messages | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -49,6 +52,14 @@ export default function EducationForm({ lesson, onClose, onSaved }: EducationFor
   const [categories, setCategories] = useState<EducationCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
+    };
+    loadMessages();
+  }, [locale]);
 
   const isEditing = !!lesson;
 
@@ -154,24 +165,45 @@ export default function EducationForm({ lesson, onClose, onSaved }: EducationFor
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+    const validation = (messages?.admin as Record<string, unknown> | undefined)?.educationForm as Record<string, string> | undefined;
 
     if (!formData.title.trim()) {
-      newErrors.title = "عنوان درس الزامی است";
+      newErrors.title = validation?.titleRequired 
+        ? String(validation.titleRequired) 
+        : "Lesson title is required";
+    } else if (formData.title.trim().length > 200) {
+      newErrors.title = validation?.titleMaxLength 
+        ? String(validation.titleMaxLength) 
+        : "Lesson title must be at most 200 characters";
     }
 
     if (!formData.slug.trim()) {
-      newErrors.slug = "Slug الزامی است";
+      newErrors.slug = validation?.slugRequired 
+        ? String(validation.slugRequired) 
+        : "Slug is required";
+    } else if (formData.slug.trim().length > 100) {
+      newErrors.slug = validation?.slugMaxLength 
+        ? String(validation.slugMaxLength) 
+        : "Slug must be at most 100 characters";
     }
 
     // Validate content based on type
     if (formData.contentType === "TEXT" && !formData.content.trim()) {
-      newErrors.content = "برای دروس متنی، محتوا الزامی است";
+      newErrors.content = validation?.contentRequired 
+        ? String(validation.contentRequired) 
+        : "Content is required for text lessons";
     }
 
     if (formData.contentType === "VIDEO") {
       const hasVideo = videoInputMethod === "upload" ? !!videoFile : formData.videoUrl.trim();
       if (!hasVideo) {
-        newErrors.videoUrl = "برای دروس ویدیویی، باید ویدیو آپلود کنید یا آدرس ویدیو را وارد کنید";
+        newErrors.videoUrl = validation?.videoRequired 
+          ? String(validation.videoRequired) 
+          : "For video lessons, you must upload a video or enter a video URL";
+      } else if (formData.videoUrl && !/^https?:\/\/.+/.test(formData.videoUrl)) {
+        newErrors.videoUrl = validation?.videoUrlInvalid 
+          ? String(validation.videoUrlInvalid) 
+          : "Video URL must be a valid URL";
       }
     }
 
@@ -179,8 +211,21 @@ export default function EducationForm({ lesson, onClose, onSaved }: EducationFor
       const hasVideo = videoInputMethod === "upload" ? !!videoFile : formData.videoUrl.trim();
       const hasContent = formData.content.trim();
       if (!hasContent && !hasVideo) {
-        newErrors.content = "برای دروس ترکیبی، حداقل یکی از محتوا یا ویدیو الزامی است";
+        newErrors.content = validation?.contentOrVideoRequired 
+          ? String(validation.contentOrVideoRequired) 
+          : "For mixed lessons, at least one of content or video is required";
       }
+      if (formData.videoUrl && !/^https?:\/\/.+/.test(formData.videoUrl)) {
+        newErrors.videoUrl = validation?.videoUrlInvalid 
+          ? String(validation.videoUrlInvalid) 
+          : "Video URL must be a valid URL";
+      }
+    }
+
+    if (formData.excerpt && formData.excerpt.trim().length > 500) {
+      newErrors.excerpt = validation?.descriptionMaxLength 
+        ? String(validation.descriptionMaxLength) 
+        : "Description must be at most 500 characters";
     }
 
     setErrors(newErrors);
@@ -319,10 +364,11 @@ export default function EducationForm({ lesson, onClose, onSaved }: EducationFor
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange("title", e.target.value)}
+                  maxLength={200}
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all ${
                     errors.title ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="عنوان درس را وارد کنید"
+                  placeholder={((messages?.admin as Record<string, unknown> | undefined)?.educationForm as Record<string, string> | undefined)?.titleRequired || "Lesson Title"}
                 />
                 {errors.title && (
                   <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.title}</p>
@@ -347,14 +393,22 @@ export default function EducationForm({ lesson, onClose, onSaved }: EducationFor
             </div>
 
             <div className="mt-6">
-              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">خلاصه درس</label>
+              <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                {((messages?.admin as Record<string, unknown> | undefined)?.educationForm as Record<string, string> | undefined)?.descriptionMaxLength || "Lesson Description"}
+              </label>
               <textarea
                 value={formData.excerpt}
                 onChange={(e) => handleInputChange("excerpt", e.target.value)}
                 rows={3}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none"
-                placeholder="خلاصه کوتاهی از درس"
+                maxLength={500}
+                className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange transition-all resize-none ${
+                  errors.excerpt ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "border-gray-300 dark:border-gray-600"
+                }`}
+                placeholder={((messages?.admin as Record<string, unknown> | undefined)?.educationForm as Record<string, string> | undefined)?.descriptionMaxLength || "Lesson Description"}
               />
+              {errors.excerpt && (
+                <p className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">{errors.excerpt}</p>
+              )}
             </div>
           </div>
 

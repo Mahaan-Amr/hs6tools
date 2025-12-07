@@ -124,7 +124,19 @@
       "updateSuccess": "پروفایل با موفقیت به‌روزرسانی شد",
       "updateError": "خطا در به‌روزرسانی پروفایل",
       "requiredField": "این فیلد الزامی است",
-      "errorLoadingProfile": "خطا در بارگذاری پروفایل"
+      "errorLoadingProfile": "خطا در بارگذاری پروفایل",
+      "validation": {
+        "firstNameRequired": "نام الزامی است",
+        "firstNameMinLength": "نام باید حداقل 2 کاراکتر باشد",
+        "firstNameMaxLength": "نام باید حداکثر 50 کاراکتر باشد",
+        "lastNameRequired": "نام خانوادگی الزامی است",
+        "lastNameMinLength": "نام خانوادگی باید حداقل 2 کاراکتر باشد",
+        "lastNameMaxLength": "نام خانوادگی باید حداکثر 50 کاراکتر باشد",
+        "phoneInvalid": "فرمت شماره تلفن نامعتبر است",
+        "phoneMaxLength": "شماره تلفن باید حداکثر 20 کاراکتر باشد",
+        "companyMaxLength": "نام شرکت باید حداکثر 100 کاراکتر باشد",
+        "positionMaxLength": "سمت باید حداکثر 100 کاراکتر باشد"
+      }
     },
     "orders": {
       "title": "تاریخچه سفارشات",
@@ -145,6 +157,13 @@
       "loadingOrders": "در حال بارگذاری سفارشات...",
       "errorLoadingOrders": "خطا در بارگذاری سفارشات",
       "retry": "تلاش مجدد",
+      "payNow": "پرداخت",
+      "cancelOrder": "لغو سفارش",
+      "cancelOrderConfirm": "آیا از لغو این سفارش اطمینان دارید؟",
+      "cancelOrderSuccess": "سفارش با موفقیت لغو شد",
+      "cancelOrderError": "خطا در لغو سفارش",
+      "paymentRequestFailed": "خطا در درخواست پرداخت",
+      "paymentError": "خطا در پرداخت",
       "filters": {
         "title": "فیلترها",
         "status": "وضعیت سفارش",
@@ -295,6 +314,13 @@
       "deliveredAt": "تحویل شده در",
       "phone": "تلفن",
       "backToOrdersButton": "بازگشت به لیست سفارشات",
+      "payNowButton": "پرداخت سفارش",
+      "cancelOrderButton": "لغو سفارش",
+      "cancelOrderConfirm": "آیا از لغو سفارش {orderNumber} اطمینان دارید؟",
+      "cancelOrderSuccess": "سفارش با موفقیت لغو شد",
+      "cancelOrderError": "خطا در لغو سفارش",
+      "paymentRequestFailed": "خطا در درخواست پرداخت",
+      "paymentError": "خطا در پرداخت",
       "breadcrumb": {
         "account": "حساب کاربری",
         "orders": "سفارشات",
@@ -732,6 +758,13 @@
     "orderProcessing": "در حال پردازش سفارش...",
     "orderSuccess": "سفارش با موفقیت ثبت شد",
     "orderError": "خطا در ثبت سفارش",
+    "userAccountNotFound": "حساب کاربری شما یافت نشد. لطفاً از حساب کاربری خارج شده و دوباره وارد شوید. آیا می‌خواهید اکنون خارج شوید؟",
+    "paymentRequestFailed": "خطا در ایجاد درخواست پرداخت",
+    "paymentCancelled": "پرداخت لغو شد",
+    "paymentFailed": "پرداخت ناموفق بود",
+    "paymentError": "خطا در پرداخت",
+    "paymentErrorTitle": "خطا در پرداخت",
+    "orderNotFound": "سفارش یافت نشد",
     "successTitle": "سفارش شما با موفقیت ثبت شد!",
     "successMessage": "از خرید شما متشکریم. سفارش شما در حال پردازش است و به زودی از طریق ایمیل یا پیامک، اطلاعات تکمیلی ارسال خواهد شد.",
     "orderDetails": "جزئیات سفارش",
@@ -1091,6 +1124,45 @@
     "categoriesForm": {
       "nameRequired": "نام دسته‌بندی الزامی است",
       "slugRequired": "نامک الزامی است",
+      "nameMaxLength": "نام دسته‌بندی باید حداکثر 100 کاراکتر باشد",
+      "slugMaxLength": "نامک باید حداکثر 100 کاراکتر باشد",
+      "descriptionMaxLength": "توضیحات باید حداکثر 500 کاراکتر باشد"
+    },
+    "contentCategoryForm": {
+      "nameRequired": "نام دسته‌بندی الزامی است",
+      "slugRequired": "نامک الزامی است",
+      "nameMaxLength": "نام دسته‌بندی باید حداکثر 100 کاراکتر باشد",
+      "slugMaxLength": "نامک باید حداکثر 100 کاراکتر باشد",
+      "descriptionMaxLength": "توضیحات باید حداکثر 500 کاراکتر باشد"
+    },
+    "articleForm": {
+      "titleRequired": "عنوان مقاله الزامی است",
+      "slugRequired": "نامک الزامی است",
+      "contentRequired": "محتوای مقاله الزامی است",
+      "titleMaxLength": "عنوان مقاله باید حداکثر 200 کاراکتر باشد",
+      "slugMaxLength": "نامک باید حداکثر 100 کاراکتر باشد",
+      "excerptMaxLength": "خلاصه باید حداکثر 500 کاراکتر باشد",
+      "contentMinLength": "محتوای مقاله باید حداقل 50 کاراکتر باشد"
+    },
+    "educationForm": {
+      "titleRequired": "عنوان درس الزامی است",
+      "slugRequired": "نامک الزامی است",
+      "contentRequired": "برای دروس متنی، محتوا الزامی است",
+      "videoRequired": "برای دروس ویدیویی، باید ویدیو آپلود کنید یا آدرس ویدیو را وارد کنید",
+      "contentOrVideoRequired": "برای دروس ترکیبی، حداقل یکی از محتوا یا ویدیو الزامی است",
+      "titleMaxLength": "عنوان درس باید حداکثر 200 کاراکتر باشد",
+      "slugMaxLength": "نامک باید حداکثر 100 کاراکتر باشد",
+      "descriptionMaxLength": "توضیحات باید حداکثر 500 کاراکتر باشد",
+      "videoUrlInvalid": "آدرس ویدیو باید یک URL معتبر باشد"
+    },
+    "educationCategoryForm": {
+      "nameRequired": "نام دسته‌بندی الزامی است",
+      "slugRequired": "نامک الزامی است",
+      "parentIdInvalid": "دسته‌بندی نمی‌تواند والد خودش باشد",
+      "nameMaxLength": "نام دسته‌بندی باید حداکثر 100 کاراکتر باشد",
+      "slugMaxLength": "نامک باید حداکثر 100 کاراکتر باشد",
+      "descriptionMaxLength": "توضیحات باید حداکثر 500 کاراکتر باشد"
+    },
       "basicInfo": "اطلاعات اصلی (فارسی)",
       "categoryName": "نام دسته‌بندی",
       "slug": "نامک",
@@ -1352,7 +1424,24 @@
         "interactionType": "نوع تعامل",
         "interactionSubject": "موضوع",
         "interactionContent": "محتوای تعامل",
-        "averageOrder": "میانگین سفارش"
+        "averageOrder": "میانگین سفارش",
+        "interactions": {
+          "title": "تعاملات مشتری",
+          "addInteraction": "افزودن تعامل",
+          "type": "نوع تعامل",
+          "subject": "موضوع",
+          "content": "محتوای تعامل",
+          "outcome": "نتیجه",
+          "nextAction": "اقدام بعدی",
+          "validation": {
+            "typeRequired": "نوع تعامل الزامی است",
+            "subjectRequired": "موضوع الزامی است",
+            "contentRequired": "محتوای تعامل الزامی است",
+            "contentMinLength": "محتوای تعامل باید حداقل 10 کاراکتر باشد",
+            "subjectMinLength": "موضوع باید حداقل 3 کاراکتر باشد",
+            "subjectMaxLength": "موضوع باید حداکثر 200 کاراکتر باشد"
+          }
+        }
       },
       "leads": {
         "title": "مدیریت لیدها",
@@ -1409,6 +1498,13 @@
         "emailRequired": "ایمیل الزامی است",
         "emailInvalid": "فرمت ایمیل صحیح نیست",
         "phoneInvalid": "فرمت شماره تلفن صحیح نیست",
+        "validation": {
+          "firstNameRequired": "نام الزامی است",
+          "lastNameRequired": "نام خانوادگی الزامی است",
+          "emailRequired": "ایمیل الزامی است",
+          "emailInvalid": "فرمت ایمیل صحیح نیست",
+          "phoneInvalid": "فرمت شماره تلفن صحیح نیست"
+        },
         "cancel": "انصراف",
         "save": "ذخیره",
         "saving": "در حال ذخیره...",
@@ -1496,6 +1592,14 @@
         "deleteError": "خطا در حذف پیشنهاد",
         "searchQuotes": "جستجو در پیشنهادات...",
         "allStatuses": "همه وضعیت‌ها",
+        "validation": {
+          "customerRequired": "انتخاب مشتری الزامی است",
+          "itemsRequired": "حداقل یک محصول باید به پیشنهاد اضافه شود",
+          "validUntilRequired": "تاریخ اعتبار الزامی است",
+          "validUntilInvalid": "تاریخ اعتبار باید در آینده باشد",
+          "itemQuantityInvalid": "تعداد محصول باید بیشتر از صفر باشد",
+          "itemPriceInvalid": "قیمت محصول باید بیشتر از صفر باشد"
+        },
         "allCustomers": "همه مشتریان",
         "resetFilters": "پاک کردن فیلترها",
         "viewDetails": "مشاهده جزئیات",
@@ -1532,7 +1636,7 @@
         "superAdmin": "Super Admin",
         "admin": "Admin"
       }
-    }
+    
   },
   "settingsPage": {
     "title": "تنظیمات سیستم",
@@ -1580,6 +1684,14 @@
         "Asia/Tehran": "تهران (UTC+3:30)",
         "UTC": "UTC",
         "Europe/London": "لندن (UTC+0)"
+      },
+      "validation": {
+        "siteNameRequired": "نام سایت الزامی است",
+        "siteNameMaxLength": "نام سایت باید حداکثر 100 کاراکتر باشد",
+        "siteUrlRequired": "آدرس سایت الزامی است",
+        "siteUrlInvalid": "آدرس سایت باید یک URL معتبر باشد",
+        "contactEmailRequired": "ایمیل تماس الزامی است",
+        "contactEmailInvalid": "فرمت ایمیل تماس نامعتبر است"
       }
     },
     "emailSettings": {
@@ -1597,7 +1709,17 @@
       "commonSmtpSettings": "تنظیمات رایج SMTP",
       "gmail": "Gmail",
       "outlook": "Outlook",
-      "yahoo": "Yahoo"
+      "yahoo": "Yahoo",
+      "validation": {
+        "smtpHostRequired": "سرور SMTP الزامی است",
+        "smtpHostMaxLength": "سرور SMTP باید حداکثر 255 کاراکتر باشد",
+        "smtpPortRequired": "پورت SMTP الزامی است",
+        "smtpPortInvalid": "پورت SMTP باید بین 1 تا 65535 باشد",
+        "fromEmailRequired": "ایمیل فرستنده الزامی است",
+        "fromEmailInvalid": "فرمت ایمیل فرستنده نامعتبر است",
+        "fromNameRequired": "نام فرستنده الزامی است",
+        "fromNameMaxLength": "نام فرستنده باید حداکثر 100 کاراکتر باشد"
+      }
     },
     "paymentSettings": {
       "title": "تنظیمات پرداخت",
@@ -1619,7 +1741,13 @@
         "در حالت تست، پرداخت‌ها واقعی نیستند",
         "محدودیت‌های مبلغ سفارش برای کنترل ریسک است",
         "روش‌های پرداخت اضافی را بر اساس نیاز فعال کنید"
-      ]
+      ],
+      "validation": {
+        "minimumOrderAmountInvalid": "حداقل مبلغ سفارش باید بیشتر یا مساوی صفر باشد",
+        "maximumOrderAmountInvalid": "حداکثر مبلغ سفارش باید بیشتر از حداقل مبلغ باشد",
+        "merchantIdMaxLength": "شناسه فروشنده باید حداکثر 100 کاراکتر باشد",
+        "apiKeyMaxLength": "کلید API باید حداکثر 200 کاراکتر باشد"
+      }
     }
   },
   "homepage": {
