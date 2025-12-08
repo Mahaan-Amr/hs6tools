@@ -335,14 +335,103 @@ build_application() {
     fi
 }
 
+# Update PM2 ecosystem config to load from .env file
+update_pm2_config() {
+    if [ ! -f ".env" ]; then
+        warning ".env file not found, skipping PM2 config update"
+        return 0
+    fi
+    
+    info "Updating PM2 ecosystem.config.js to load from .env file..."
+    
+    # Check if dotenv package is available, install if needed
+    if ! npm list dotenv &>/dev/null && [ ! -f "node_modules/dotenv/package.json" ]; then
+        info "Installing dotenv package for PM2 environment loading..."
+        npm install dotenv --save --no-audit --no-fund 2>/dev/null || {
+            warning "Failed to install dotenv. Will use alternative method."
+        }
+    fi
+    
+    # Create/update ecosystem.config.js to load from .env
+    # This ensures PM2 loads all variables from .env file
+    cat > ecosystem.config.js << 'EOF'
+// Load environment variables from .env file
+try {
+  require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+} catch (e) {
+  console.warn('dotenv not available, using system environment variables');
+}
+
+// Read and parse .env file manually as fallback
+const fs = require('fs');
+const path = require('path');
+const envPath = path.join(__dirname, '.env');
+
+let envVars = {};
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    line = line.trim();
+    if (line && !line.startsWith('#') && line.includes('=')) {
+      const [key, ...valueParts] = line.split('=');
+      const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+      if (key && value !== undefined) {
+        envVars[key.trim()] = value.trim();
+      }
+    }
+  });
+}
+
+// Merge with process.env (dotenv may have already loaded some)
+const finalEnv = { ...envVars, ...process.env };
+
+module.exports = {
+  apps: [{
+    name: 'hs6tools',
+    script: 'npm',
+    args: 'start',
+    cwd: __dirname,
+    instances: 1,
+    exec_mode: 'fork',
+    env: finalEnv,
+    env_production: finalEnv,
+    error_file: '/var/log/pm2/hs6tools-error.log',
+    out_file: '/var/log/pm2/hs6tools-out.log',
+    log_file: '/var/log/pm2/hs6tools-combined.log',
+    time: true,
+    max_memory_restart: '1G',
+    node_args: '--max-old-space-size=1024',
+    min_uptime: '10s',
+    max_restarts: 10,
+    restart_delay: 4000
+  }]
+};
+EOF
+    
+    log "PM2 ecosystem.config.js updated to load from .env file"
+}
+
 # Restart PM2 application
 restart_pm2() {
     section "🔄 Restarting Application with PM2"
     
     if check_pm2; then
-        info "Restarting PM2 application '${PM2_APP_NAME}'..."
-        if pm2 restart ${PM2_APP_NAME}; then
-            log "Application restart command executed"
+        # Update PM2 config to load from .env
+        update_pm2_config
+        
+        info "Deleting and restarting PM2 application to load new environment variables..."
+        info "This ensures PM2 picks up all variables from .env file via ecosystem.config.js"
+        
+        # Delete the existing process to force a fresh start with new config
+        pm2 delete ${PM2_APP_NAME} 2>/dev/null || true
+        sleep 2
+        
+        # Start with the updated ecosystem config
+        if pm2 start ecosystem.config.js --env production; then
+            log "Application started with updated environment variables from .env"
+            
+            # Save PM2 configuration
+            pm2 save
             
             # Wait longer for the app to fully start
             info "Waiting for application to start (10 seconds)..."
@@ -355,6 +444,22 @@ restart_pm2() {
             # Verify app is actually online
             if pm2 describe ${PM2_APP_NAME} | grep -q "online"; then
                 log "Application is online in PM2"
+                
+                # Verify environment variables are loaded
+                info "Verifying critical environment variables in PM2..."
+                PM2_ENV=$(pm2 env ${PM2_APP_NAME} 2>/dev/null || echo "")
+                if echo "$PM2_ENV" | grep -q "KAVENEGAR_API_KEY"; then
+                    log "✅ KAVENEGAR_API_KEY is loaded in PM2"
+                else
+                    warning "⚠️  KAVENEGAR_API_KEY not found in PM2 environment"
+                    warning "You may need to delete and restart PM2: pm2 delete hs6tools && pm2 start ecosystem.config.js --env production"
+                fi
+                if echo "$PM2_ENV" | grep -q "ZARINPAL_MERCHANT_ID"; then
+                    log "✅ ZARINPAL_MERCHANT_ID is loaded in PM2"
+                else
+                    warning "⚠️  ZARINPAL_MERCHANT_ID not found in PM2 environment"
+                    warning "You may need to delete and restart PM2: pm2 delete hs6tools && pm2 start ecosystem.config.js --env production"
+                fi
             else
                 warning "Application status is not 'online'. Checking logs..."
                 pm2 logs ${PM2_APP_NAME} --lines 10 --nostream
