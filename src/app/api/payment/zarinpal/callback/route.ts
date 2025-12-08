@@ -37,8 +37,9 @@ export async function GET(request: NextRequest) {
     // Validate required parameters
     if (!authority) {
       console.error('❌ [Payment Callback] Missing Authority parameter');
+      const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
       return NextResponse.redirect(
-        new URL("/fa/checkout?error=missing_authority", request.url)
+        new URL("/fa/checkout?error=missing_authority", origin)
       );
     }
 
@@ -61,8 +62,9 @@ export async function GET(request: NextRequest) {
 
     if (!order) {
       console.error('❌ [Payment Callback] Order not found for authority:', authority);
+      const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
       return NextResponse.redirect(
-        new URL("/fa/checkout?error=order_not_found", request.url)
+        new URL("/fa/checkout?error=order_not_found", origin)
       );
     }
 
@@ -109,8 +111,9 @@ export async function GET(request: NextRequest) {
         paymentSettings.zarinpalMerchantId = envMerchantId;
       } else {
         console.error('❌ [Payment Callback] Zarinpal Merchant ID is not configured');
+        const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
         return NextResponse.redirect(
-          new URL("/fa/checkout?error=payment_config_error", request.url)
+          new URL("/fa/checkout?error=payment_config_error", origin)
         );
       }
     }
@@ -154,8 +157,9 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
       return NextResponse.redirect(
-        new URL(`/fa/checkout?error=payment_cancelled&orderNumber=${order.orderNumber}`, request.url)
+        new URL(`/fa/checkout?error=payment_cancelled&orderNumber=${order.orderNumber}`, origin)
       );
     }
 
@@ -215,8 +219,9 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
       return NextResponse.redirect(
-        new URL(`/fa/checkout?error=payment_failed&orderNumber=${order.orderNumber}&message=${encodeURIComponent(verifyResult.error || "پرداخت ناموفق بود")}`, request.url)
+        new URL(`/fa/checkout?error=payment_failed&orderNumber=${order.orderNumber}&message=${encodeURIComponent(verifyResult.error || "پرداخت ناموفق بود")}`, origin)
       );
     }
 
@@ -329,8 +334,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("❌ [Payment Callback] Error:", error);
+    const origin = process.env.NEXT_PUBLIC_APP_URL || "https://hs6tools.com";
     return NextResponse.redirect(
-      new URL("/fa/checkout?error=internal_error", request.url)
+      new URL("/fa/checkout?error=internal_error", origin)
     );
   }
 }
