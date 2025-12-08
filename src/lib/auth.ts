@@ -101,6 +101,13 @@ export const authOptions: NextAuthOptions = {
       
       if (token) {
         console.log("📱 Session Callback - Setting token data in session");
+        // Set NextAuth default fields (required by NextAuth)
+        session.user.name = token.firstName && token.lastName 
+          ? `${token.firstName} ${token.lastName}`.trim()
+          : (token.email as string) || undefined;
+        session.user.image = (token.avatar as string | null | undefined) || undefined;
+        
+        // Set custom fields
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
         session.user.firstName = token.firstName as string;

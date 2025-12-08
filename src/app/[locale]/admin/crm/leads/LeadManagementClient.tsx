@@ -78,8 +78,13 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
 
   useEffect(() => {
     const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
+      try {
+        const msgs = await getMessages(locale);
+        setMessages(msgs);
+      } catch (error) {
+        console.error('Error loading messages in LeadManagementClient:', error);
+        // Don't block rendering - components will use fallbacks
+      }
     };
     loadMessages();
   }, [locale]);
@@ -96,6 +101,12 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
   const fetchLeads = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: "10",
@@ -105,26 +116,58 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
         ...(assignedTo && { assignedTo })
       });
 
-      const response = await fetch(`/api/crm/leads?${params}`);
+      const response = await fetch(`/api/crm/leads?${params}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
 
       if (result.success) {
-        setLeads(result.data.leads);
-        setMetrics(result.data.metrics);
-        setTotalPages(result.data.pagination.totalPages);
-        setTotalCount(result.data.pagination.totalCount);
+        setLeads(result.data.leads || []);
+        setMetrics(result.data.metrics || {
+          total: 0,
+          new: 0,
+          contacted: 0,
+          qualified: 0,
+          converted: 0,
+          lost: 0
+        });
+        setTotalPages(result.data.pagination?.totalPages || 1);
+        setTotalCount(result.data.pagination?.totalCount || 0);
       } else {
         const t = messages?.admin?.crm?.leads;
         setError(result.error || (t?.error ? String(t.error) : "Error loading leads"));
       }
     } catch (error) {
-      console.error("Error fetching leads:", error);
-      const t = messages?.admin?.crm?.leads;
-      setError(t?.error ? String(t.error) : "Error loading leads");
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error("Leads fetch timeout");
+        setError("Request timeout. Please try again.");
+      } else {
+        console.error("Error fetching leads:", error);
+        const t = messages?.admin?.crm?.leads;
+        setError(t?.error ? String(t.error) : "Error loading leads");
+      }
+      // Don't block rendering - show empty state
+      setLeads([]);
+      setMetrics({
+        total: 0,
+        new: 0,
+        contacted: 0,
+        qualified: 0,
+        converted: 0,
+        lost: 0
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, search, status, source, assignedTo, messages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, search, status, source, assignedTo]);
 
   useEffect(() => {
     fetchLeads();
@@ -200,11 +243,48 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
     setEditingLead(undefined);
   };
 
-  if (!messages || !messages.admin?.crm?.leads) {
-    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
-  }
-
-  const t = messages.admin.crm.leads;
+  // Don't block rendering - use fallbacks if messages aren't loaded
+  const t = messages?.admin?.crm?.leads || {
+    title: locale === "fa" ? "مدیریت لیدها" : locale === "ar" ? "إدارة الفرص" : "Lead Management",
+    leadManagement: locale === "fa" ? "مدیریت و پیگیری لیدها" : locale === "ar" ? "إدارة وتتبع الفرص" : "Manage and track leads",
+    createLead: locale === "fa" ? "ایجاد لید جدید" : locale === "ar" ? "إنشاء فرصة جديدة" : "Create New Lead",
+    editLead: locale === "fa" ? "ویرایش لید" : locale === "ar" ? "تعديل الفرصة" : "Edit Lead",
+    leadDetails: locale === "fa" ? "جزئیات لید" : locale === "ar" ? "تفاصيل الفرصة" : "Lead Details",
+    loading: locale === "fa" ? "در حال بارگذاری..." : locale === "ar" ? "جاري التحميل..." : "Loading...",
+    status: locale === "fa" ? "وضعیت" : locale === "ar" ? "الحالة" : "Status",
+    source: locale === "fa" ? "منبع" : locale === "ar" ? "المصدر" : "Source",
+    assignedTo: locale === "fa" ? "اختصاص یافته به" : locale === "ar" ? "مخصص ل" : "Assigned To",
+    assignedToPlaceholder: locale === "fa" ? "نام نماینده فروش" : locale === "ar" ? "اسم مندوب المبيعات" : "Sales rep name",
+    metrics: {
+      total: locale === "fa" ? "کل" : locale === "ar" ? "المجموع" : "Total",
+      new: locale === "fa" ? "جدید" : locale === "ar" ? "جديد" : "New",
+      contacted: locale === "fa" ? "تماس گرفته شده" : locale === "ar" ? "تم الاتصال" : "Contacted",
+      qualified: locale === "fa" ? "واجد شرایط" : locale === "ar" ? "مؤهل" : "Qualified",
+      converted: locale === "fa" ? "تبدیل شده" : locale === "ar" ? "محول" : "Converted",
+      lost: locale === "fa" ? "از دست رفته" : locale === "ar" ? "مفقود" : "Lost"
+    },
+    statusOptions: {
+      new: locale === "fa" ? "جدید" : locale === "ar" ? "جديد" : "New",
+      contacted: locale === "fa" ? "تماس گرفته شده" : locale === "ar" ? "تم الاتصال" : "Contacted",
+      qualified: locale === "fa" ? "واجد شرایط" : locale === "ar" ? "مؤهل" : "Qualified",
+      converted: locale === "fa" ? "تبدیل شده" : locale === "ar" ? "محول" : "Converted",
+      lost: locale === "fa" ? "از دست رفته" : locale === "ar" ? "مفقود" : "Lost"
+    },
+    sourceOptions: {
+      website: locale === "fa" ? "وب‌سایت" : locale === "ar" ? "الموقع" : "Website",
+      referral: locale === "fa" ? "معرفی" : locale === "ar" ? "إحالة" : "Referral",
+      socialMedia: locale === "fa" ? "شبکه‌های اجتماعی" : locale === "ar" ? "وسائل التواصل" : "Social Media",
+      email: locale === "fa" ? "ایمیل" : locale === "ar" ? "البريد" : "Email",
+      tradeShow: locale === "fa" ? "نمایشگاه" : locale === "ar" ? "معرض" : "Trade Show",
+      phone: locale === "fa" ? "تلفن" : locale === "ar" ? "الهاتف" : "Phone",
+      partner: locale === "fa" ? "شریک" : locale === "ar" ? "شريك" : "Partner",
+      advertising: locale === "fa" ? "تبلیغات" : locale === "ar" ? "إعلان" : "Advertising",
+      other: locale === "fa" ? "سایر" : locale === "ar" ? "أخرى" : "Other"
+    },
+    error: locale === "fa" ? "خطا در بارگذاری لیدها" : locale === "ar" ? "خطأ في تحميل الفرص" : "Error loading leads",
+    createError: locale === "fa" ? "خطا در ایجاد لید" : locale === "ar" ? "خطأ في إنشاء الفرصة" : "Error creating lead",
+    updateError: locale === "fa" ? "خطا در به‌روزرسانی لید" : locale === "ar" ? "خطأ في تحديث الفرصة" : "Error updating lead"
+  };
 
   if (showForm) {
     return (
@@ -222,7 +302,7 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
             onClick={handleCancelForm}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
-            {String(messages.common.back)}
+            {String(messages?.common?.back || (locale === "fa" ? "بازگشت" : locale === "ar" ? "رجوع" : "Back"))}
           </button>
         </div>
 
@@ -283,18 +363,20 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
 
       {/* Filters */}
       <div className="glass rounded-3xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">{String(messages.common.filter)}</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {String(messages?.common?.filter || (locale === "fa" ? "فیلتر" : locale === "ar" ? "تصفية" : "Filter"))}
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              {String(messages.common.search)}
+              {String(messages?.common?.search || (locale === "fa" ? "جستجو" : locale === "ar" ? "بحث" : "Search"))}
             </label>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
-              placeholder={String(messages.common.search)}
+              placeholder={String(messages?.common?.search || (locale === "fa" ? "جستجو" : locale === "ar" ? "بحث" : "Search"))}
             />
           </div>
 
@@ -307,7 +389,9 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">{String(messages.common.filter)}</option>
+              <option value="">
+                {String(messages?.common?.filter || (locale === "fa" ? "فیلتر" : locale === "ar" ? "تصفية" : "Filter"))}
+              </option>
               <option value="NEW">{String(t.statusOptions?.new || '')}</option>
               <option value="CONTACTED">{String(t.statusOptions?.contacted || '')}</option>
               <option value="QUALIFIED">{String(t.statusOptions?.qualified || '')}</option>
@@ -325,7 +409,9 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
               onChange={(e) => setSource(e.target.value)}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">{String(messages.common.filter)}</option>
+              <option value="">
+                {String(messages?.common?.filter || (locale === "fa" ? "فیلتر" : locale === "ar" ? "تصفية" : "Filter"))}
+              </option>
               <option value="WEBSITE">{String(t.sourceOptions?.website || '')}</option>
               <option value="REFERRAL">{String(t.sourceOptions?.referral || '')}</option>
               <option value="SOCIAL_MEDIA">{String(t.sourceOptions?.socialMedia || '')}</option>
@@ -362,7 +448,7 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
               }}
               className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              {String(messages.common.reset)}
+              {String(messages?.common?.reset || (locale === "fa" ? "بازنشانی" : locale === "ar" ? "إعادة تعيين" : "Reset"))}
             </button>
           </div>
         </div>

@@ -52,17 +52,52 @@ export default function LeadList({
 
   useEffect(() => {
     const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
+      try {
+        const msgs = await getMessages(locale);
+        setMessages(msgs);
+      } catch (error) {
+        console.error('Error loading messages in LeadList:', error);
+        // Don't block rendering - components will use fallbacks
+      }
     };
     loadMessages();
   }, [locale]);
 
-  if (!messages || !messages.admin?.crm?.leads) {
-    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
-  }
-
-  const t = messages.admin.crm.leads;
+  // Don't block rendering - use fallbacks if messages aren't loaded
+  const t = messages?.admin?.crm?.leads || {
+    showLeads: locale === "fa" ? "نمایش {count} از {total} لید" : locale === "ar" ? "عرض {count} من {total} فرصة" : "Showing {count} of {total} leads",
+    selectedCount: locale === "fa" ? "{count} مورد انتخاب شده" : locale === "ar" ? "{count} محددة" : "{count} selected",
+    deleteSelected: locale === "fa" ? "حذف انتخاب شده‌ها" : locale === "ar" ? "حذف المحدد" : "Delete Selected",
+    lead: locale === "fa" ? "لید" : locale === "ar" ? "الفرصة" : "Lead",
+    company: locale === "fa" ? "شرکت" : locale === "ar" ? "الشركة" : "Company",
+    source: locale === "fa" ? "منبع" : locale === "ar" ? "المصدر" : "Source",
+    status: locale === "fa" ? "وضعیت" : locale === "ar" ? "الحالة" : "Status",
+    createdAt: locale === "fa" ? "تاریخ ایجاد" : locale === "ar" ? "تاريخ الإنشاء" : "Created At",
+    actions: locale === "fa" ? "عملیات" : locale === "ar" ? "الإجراءات" : "Actions",
+    viewDetails: locale === "fa" ? "مشاهده جزئیات" : locale === "ar" ? "عرض التفاصيل" : "View Details",
+    convertToCustomer: locale === "fa" ? "تبدیل به مشتری" : locale === "ar" ? "تحويل إلى عميل" : "Convert to Customer",
+    previous: locale === "fa" ? "قبلی" : locale === "ar" ? "السابق" : "Previous",
+    next: locale === "fa" ? "بعدی" : locale === "ar" ? "التالي" : "Next",
+    page: locale === "fa" ? "صفحه {current} از {total}" : locale === "ar" ? "صفحة {current} من {total}" : "Page {current} of {total}",
+    statusOptions: {
+      new: locale === "fa" ? "جدید" : locale === "ar" ? "جديد" : "New",
+      contacted: locale === "fa" ? "تماس گرفته شده" : locale === "ar" ? "تم الاتصال" : "Contacted",
+      qualified: locale === "fa" ? "واجد شرایط" : locale === "ar" ? "مؤهل" : "Qualified",
+      converted: locale === "fa" ? "تبدیل شده" : locale === "ar" ? "محول" : "Converted",
+      lost: locale === "fa" ? "از دست رفته" : locale === "ar" ? "مفقود" : "Lost"
+    },
+    sourceOptions: {
+      website: locale === "fa" ? "وب‌سایت" : locale === "ar" ? "الموقع" : "Website",
+      referral: locale === "fa" ? "معرفی" : locale === "ar" ? "إحالة" : "Referral",
+      socialMedia: locale === "fa" ? "شبکه‌های اجتماعی" : locale === "ar" ? "وسائل التواصل" : "Social Media",
+      email: locale === "fa" ? "ایمیل" : locale === "ar" ? "البريد" : "Email",
+      tradeShow: locale === "fa" ? "نمایشگاه" : locale === "ar" ? "معرض" : "Trade Show",
+      phone: locale === "fa" ? "تلفن" : locale === "ar" ? "الهاتف" : "Phone",
+      partner: locale === "fa" ? "شریک" : locale === "ar" ? "شريك" : "Partner",
+      advertising: locale === "fa" ? "تبلیغات" : locale === "ar" ? "إعلان" : "Advertising",
+      other: locale === "fa" ? "سایر" : locale === "ar" ? "أخرى" : "Other"
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -189,7 +224,7 @@ export default function LeadList({
                   <td className="p-4">
                     <div className="flex items-center space-x-3 space-x-reverse">
                       <div className="w-10 h-10 bg-primary-orange rounded-full flex items-center justify-center text-white text-sm font-bold">
-                        {lead.firstName.charAt(0)}{lead.lastName.charAt(0)}
+                        {(lead.firstName || '').charAt(0)}{(lead.lastName || '').charAt(0)}
                       </div>
                       <div>
                         <div className="text-white font-medium">

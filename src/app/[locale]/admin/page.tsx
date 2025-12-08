@@ -10,13 +10,40 @@ interface AdminDashboardPageProps {
 
 export default async function AdminDashboardPage({ params }: AdminDashboardPageProps) {
   const { locale } = await params;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.dashboardPage) {
-    return <AdminLayoutWrapper locale={locale}><div className="text-white p-4">Loading...</div></AdminLayoutWrapper>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in dashboard page:', error);
+    // Continue with null messages - components will use fallbacks
+    messages = null;
   }
   
-  const t = messages.admin.dashboardPage;
+  // Use fallback if messages or dashboardPage is missing
+  const t = messages?.admin?.dashboardPage || {
+    title: "پنل مدیریت",
+    subtitle: "مدیریت کامل سیستم و محصولات",
+    systemStatus: "وضعیت سیستم",
+    server: "سرور",
+    online: "آنلاین",
+    database: "پایگاه داده",
+    authentication: "احراز هویت",
+    platform: "پلتفرم",
+    performanceMetrics: "معیارهای عملکرد",
+    pageLoadSpeed: "سرعت بارگذاری صفحه",
+    recentActivity: "فعالیت‌های اخیر",
+    systemStarted: "سیستم راه‌اندازی شد",
+    platformReady: "پلتفرم آماده است",
+    databaseConnected: "پایگاه داده متصل است",
+    postgresqlWithPrisma: "PostgreSQL با Prisma",
+    authenticationActive: "احراز هویت فعال است",
+    nextAuthWithJWT: "NextAuth.js با JWT",
+    platformReadyText: "پلتفرم آماده است",
+    nextjsWithRouter: "Next.js با App Router",
+    always: "همیشه"
+  };
 
   return (
     <AdminLayoutWrapper locale={locale}>

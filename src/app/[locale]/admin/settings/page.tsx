@@ -8,13 +8,21 @@ interface AdminSettingsPageProps {
 
 export default async function AdminSettingsPage({ params }: AdminSettingsPageProps) {
   const { locale } = await params;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.settingsPageHeader) {
-    return <AdminLayoutWrapper locale={locale}><div className="text-white p-4">Loading...</div></AdminLayoutWrapper>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in settings page:', error);
+    messages = null;
   }
   
-  const t = messages.admin.settingsPageHeader;
+  // Use fallback if messages or settingsPageHeader is missing
+  const t = messages?.admin?.settingsPageHeader || {
+    title: "تنظیمات سیستم",
+    subtitle: "پیکربندی و تنظیمات کامل سیستم"
+  };
 
   return (
     <AdminLayoutWrapper locale={locale}>

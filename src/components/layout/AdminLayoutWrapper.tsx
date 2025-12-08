@@ -18,15 +18,21 @@ export default function AdminLayoutWrapper({ children, locale }: AdminLayoutWrap
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (status === "loading") return;
-
     console.log("AdminLayoutWrapper - Status:", status);
     console.log("AdminLayoutWrapper - Session:", session);
     console.log("AdminLayoutWrapper - User role:", session?.user?.role);
     console.log("AdminLayoutWrapper - User email:", session?.user?.email);
 
+    // Wait for session to load
+    if (status === "loading") {
+      console.log("AdminLayoutWrapper - Session still loading...");
+      return;
+    }
+
     if (status === "unauthenticated") {
       console.log("AdminLayoutWrapper - User not authenticated, redirecting to login");
+      setIsLoading(false);
+      setIsAuthorized(false);
       router.push(`/${locale}/auth/login`);
       return;
     }
@@ -35,13 +41,30 @@ export default function AdminLayoutWrapper({ children, locale }: AdminLayoutWrap
     if (session?.user && isAdmin(session.user.role)) {
       console.log("AdminLayoutWrapper - User is admin, setting authorized");
       setIsAuthorized(true);
-    } else {
+      setIsLoading(false);
+    } else if (session?.user) {
+      // User is authenticated but not admin
       console.log("AdminLayoutWrapper - User is not admin, redirecting to home");
       console.log("AdminLayoutWrapper - isAdmin result:", isAdmin(session?.user?.role));
+      setIsLoading(false);
+      setIsAuthorized(false);
       router.push(`/${locale}`);
+    } else if (status === "authenticated" && !session?.user) {
+      // Session status is authenticated but user is null - wait a bit more
+      console.log("AdminLayoutWrapper - Status authenticated but user is null, waiting...");
+      // Set a timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
+        console.log("AdminLayoutWrapper - Timeout: user still null after authentication");
+        setIsLoading(false);
+        setIsAuthorized(false);
+      }, 3000);
+      
+      return () => clearTimeout(timeout);
+    } else {
+      // Fallback - shouldn't reach here
+      console.log("AdminLayoutWrapper - Unexpected state, setting loading to false");
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }, [session, status, router, locale]);
 
   // Show loading state

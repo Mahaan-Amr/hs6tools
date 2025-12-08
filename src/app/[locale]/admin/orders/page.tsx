@@ -8,13 +8,21 @@ interface AdminOrdersPageProps {
 
 export default async function AdminOrdersPage({ params }: AdminOrdersPageProps) {
   const { locale } = await params;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.ordersPage) {
-    return <AdminLayoutWrapper locale={locale}><div className="text-white p-4">Loading...</div></AdminLayoutWrapper>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in orders page:', error);
+    messages = null;
   }
   
-  const t = messages.admin.ordersPage;
+  // Use fallback if messages or ordersPage is missing
+  const t = messages?.admin?.ordersPage || {
+    title: "مدیریت سفارشات",
+    subtitle: "مشاهده و مدیریت تمام سفارشات سیستم"
+  };
 
   return (
     <AdminLayoutWrapper locale={locale}>

@@ -1,21 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getMessages, Messages } from "@/lib/i18n";
 
 interface Customer {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string; // Fallback if firstName/lastName not available
   email: string;
   lifecycleStage?: string;
   customerTier?: string;
   healthScore?: number;
-  metrics: {
+  metrics?: {
     totalOrders: number;
     totalSpent: number;
     daysSinceLastOrder?: number;
     daysSinceLastLogin?: number;
   };
+  // Fields from analytics API
+  totalOrders?: number;
+  totalSpent?: number;
+  paidOrders?: number;
+  averageOrderValue?: number;
+  daysSinceLastOrder?: number;
+  daysSinceLastLogin?: number;
+  customerType?: string;
 }
 
 interface CustomerLifecycleManagerProps {
@@ -28,21 +38,43 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
   const [error, setError] = useState<string | null>(null);
   const [selectedStage, setSelectedStage] = useState<string>("");
   const [selectedTier, setSelectedTier] = useState<string>("");
+  const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const msgs = await getMessages(locale);
+        setMessages(msgs);
+      } catch (error) {
+        console.error('Error loading messages in CustomerLifecycleManager:', error);
+      }
+    };
+    loadMessages();
+  }, [locale]);
+
+  // Get translations with fallbacks
+  const t = messages?.admin?.crm?.customer360 || {
+    lifecycleStage: "مرحله",
+    customerTier: "سطح",
+    healthScore: "امتیاز سلامت",
+    totalSpent: "مجموع خرید",
+    totalOrders: "کل سفارشات"
+  };
 
   const lifecycleStages = [
-    { value: "LEAD", label: "Lead", color: "bg-blue-500/20 text-blue-400" },
-    { value: "PROSPECT", label: "Prospect", color: "bg-cyan-500/20 text-cyan-400" },
-    { value: "CUSTOMER", label: "Customer", color: "bg-green-500/20 text-green-400" },
-    { value: "LOYAL_CUSTOMER", label: "Loyal Customer", color: "bg-purple-500/20 text-purple-400" },
-    { value: "AT_RISK", label: "At Risk", color: "bg-orange-500/20 text-orange-400" },
-    { value: "CHURNED", label: "Churned", color: "bg-red-500/20 text-red-400" }
+    { value: "LEAD", label: locale === "fa" ? "لید" : locale === "ar" ? "فرصة" : "Lead", color: "bg-blue-500/20 text-blue-400" },
+    { value: "PROSPECT", label: locale === "fa" ? "پیشنهاد" : locale === "ar" ? "عميل محتمل" : "Prospect", color: "bg-cyan-500/20 text-cyan-400" },
+    { value: "CUSTOMER", label: locale === "fa" ? "مشتری" : locale === "ar" ? "عميل" : "Customer", color: "bg-green-500/20 text-green-400" },
+    { value: "LOYAL_CUSTOMER", label: locale === "fa" ? "مشتری وفادار" : locale === "ar" ? "عميل مخلص" : "Loyal Customer", color: "bg-purple-500/20 text-purple-400" },
+    { value: "AT_RISK", label: locale === "fa" ? "در معرض خطر" : locale === "ar" ? "معرض للخطر" : "At Risk", color: "bg-orange-500/20 text-orange-400" },
+    { value: "CHURNED", label: locale === "fa" ? "از دست رفته" : locale === "ar" ? "مفقود" : "Churned", color: "bg-red-500/20 text-red-400" }
   ];
 
   const customerTiers = [
-    { value: "PLATINUM", label: "Platinum", color: "bg-purple-500/20 text-purple-400" },
-    { value: "GOLD", label: "Gold", color: "bg-yellow-500/20 text-yellow-400" },
-    { value: "SILVER", label: "Silver", color: "bg-gray-500/20 text-gray-400" },
-    { value: "BRONZE", label: "Bronze", color: "bg-orange-500/20 text-orange-400" }
+    { value: "PLATINUM", label: locale === "fa" ? "پلاتین" : locale === "ar" ? "بلاتينيوم" : "Platinum", color: "bg-purple-500/20 text-purple-400" },
+    { value: "GOLD", label: locale === "fa" ? "طلایی" : locale === "ar" ? "ذهبي" : "Gold", color: "bg-yellow-500/20 text-yellow-400" },
+    { value: "SILVER", label: locale === "fa" ? "نقره‌ای" : locale === "ar" ? "فضي" : "Silver", color: "bg-gray-500/20 text-gray-400" },
+    { value: "BRONZE", label: locale === "fa" ? "برنزی" : locale === "ar" ? "برونزي" : "Bronze", color: "bg-orange-500/20 text-orange-400" }
   ];
 
   useEffect(() => {
@@ -63,7 +95,23 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
           ...result.data.customerSegments.frequent,
           ...result.data.customerSegments.dormant,
           ...result.data.customerSegments.regular
-        ];
+        ].map(customer => ({
+          ...customer,
+          // Ensure firstName and lastName exist, fallback to parsing name if needed
+          firstName: customer.firstName || (customer.name ? customer.name.split(' ')[0] : ''),
+          lastName: customer.lastName || (customer.name ? customer.name.split(' ').slice(1).join(' ') : ''),
+          // Map analytics fields to metrics if needed
+          metrics: customer.metrics || {
+            totalOrders: customer.totalOrders || 0,
+            totalSpent: customer.totalSpent || 0,
+            daysSinceLastOrder: customer.daysSinceLastOrder,
+            daysSinceLastLogin: customer.daysSinceLastLogin
+          },
+          // Ensure lifecycleStage and customerTier are set (from analytics API response)
+          lifecycleStage: customer.lifecycleStage || "CUSTOMER",
+          customerTier: customer.customerTier || "BRONZE",
+          healthScore: customer.healthScore || 0
+        }));
         setCustomers(allCustomers);
       } else {
         setError(result.error || "Failed to fetch customers");
@@ -157,10 +205,12 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fa-IR', {
+    const localeCode = locale === "fa" ? "fa-IR" : locale === "ar" ? "ar-SA" : "en-US";
+    return new Intl.NumberFormat(localeCode, {
       style: 'currency',
-      currency: 'IRR',
-      minimumFractionDigits: 0
+      currency: locale === "fa" ? "IRR" : "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
   };
 
@@ -193,7 +243,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
           onClick={fetchCustomers}
           className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-primary-orange-dark transition-colors"
         >
-          Try Again
+          {locale === "fa" ? "تلاش مجدد" : locale === "ar" ? "إعادة المحاولة" : "Try Again"}
         </button>
       </div>
     );
@@ -204,16 +254,22 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Customer Lifecycle Management</h1>
+          <h1 className="text-3xl font-bold text-white">
+            {messages?.admin?.crm?.customerLifecycle || "Customer Lifecycle Management"}
+          </h1>
           <p className="text-gray-300 mt-2">
-            Manage customer lifecycle stages and tiers
+            {locale === "fa" ? "مدیریت مراحل و سطوح چرخه زندگی مشتری" : 
+             locale === "ar" ? "إدارة مراحل ومستويات دورة حياة العميل" :
+             "Manage customer lifecycle stages and tiers"}
           </p>
         </div>
         <button
           onClick={recalculateHealthScores}
           className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-primary-orange-dark transition-colors"
         >
-          Recalculate Health Scores
+          {locale === "fa" ? "محاسبه مجدد امتیاز سلامت" :
+           locale === "ar" ? "إعادة حساب نقاط الصحة" :
+           "Recalculate Health Scores"}
         </button>
       </div>
 
@@ -222,14 +278,18 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Filter by Lifecycle Stage
+              {locale === "fa" ? "فیلتر بر اساس مرحله" :
+               locale === "ar" ? "تصفية حسب المرحلة" :
+               "Filter by Lifecycle Stage"}
             </label>
             <select
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value)}
               className="w-full pl-3 pr-10 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">All Stages</option>
+              <option value="">
+                {locale === "fa" ? "همه مراحل" : locale === "ar" ? "جميع المراحل" : "All Stages"}
+              </option>
               {lifecycleStages.map((stage) => (
                 <option key={stage.value} value={stage.value}>
                   {stage.label}
@@ -240,14 +300,18 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Filter by Customer Tier
+              {locale === "fa" ? "فیلتر بر اساس سطح" :
+               locale === "ar" ? "تصفية حسب المستوى" :
+               "Filter by Customer Tier"}
             </label>
             <select
               value={selectedTier}
               onChange={(e) => setSelectedTier(e.target.value)}
               className="w-full pl-3 pr-10 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">All Tiers</option>
+              <option value="">
+                {locale === "fa" ? "همه سطوح" : locale === "ar" ? "جميع المستويات" : "All Tiers"}
+              </option>
               {customerTiers.map((tier) => (
                 <option key={tier.value} value={tier.value}>
                   {tier.label}
@@ -277,7 +341,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                       {customer.firstName} {customer.lastName}
                     </div>
                     <div className="text-sm text-gray-300">
-                      {formatCurrency(customer.metrics.totalSpent)}
+                      {formatCurrency(customer.metrics?.totalSpent || customer.totalSpent || 0)}
                     </div>
                   </div>
                   <div className="text-right">
@@ -285,7 +349,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                       {customer.healthScore || 0}
                     </div>
                     <div className="text-xs text-gray-400">
-                      {customer.metrics.totalOrders} orders
+                      {customer.metrics?.totalOrders || customer.totalOrders || 0} {locale === "fa" ? "سفارش" : locale === "ar" ? "طلب" : "orders"}
                     </div>
                   </div>
                 </div>
@@ -293,7 +357,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
               
               {stage.customers.length > 5 && (
                 <div className="text-center text-gray-400 text-sm">
-                  +{stage.customers.length - 5} more customers
+                  +{stage.customers.length - 5} {locale === "fa" ? "مشتری بیشتر" : locale === "ar" ? "عملاء آخرين" : "more customers"}
                 </div>
               )}
             </div>
@@ -304,7 +368,11 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
       {/* Customer List */}
       <div className="glass rounded-xl overflow-hidden">
         <div className="p-6 border-b border-white/10">
-          <h2 className="text-xl font-bold text-white">All Customers ({filteredCustomers.length})</h2>
+          <h2 className="text-xl font-bold text-white">
+            {locale === "fa" ? `همه مشتریان (${filteredCustomers.length})` :
+             locale === "ar" ? `جميع العملاء (${filteredCustomers.length})` :
+             `All Customers (${filteredCustomers.length})`}
+          </h2>
         </div>
         
         <div className="overflow-x-auto">
@@ -312,22 +380,22 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
             <thead className="bg-white/5">
               <tr>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Customer
+                  {locale === "fa" ? "مشتری" : locale === "ar" ? "العميل" : "Customer"}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Lifecycle Stage
+                  {String(t.lifecycleStage)}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Customer Tier
+                  {String(t.customerTier)}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Health Score
+                  {String(t.healthScore)}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Total Spent
+                  {String(t.totalSpent)}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Actions
+                  {locale === "fa" ? "عملیات" : locale === "ar" ? "الإجراءات" : "Actions"}
                 </th>
               </tr>
             </thead>
@@ -337,13 +405,13 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-r from-primary-orange to-primary-orange-dark rounded-2xl flex items-center justify-center text-white text-base font-bold shadow-lg shadow-primary-orange/20">
-                        {customer.firstName.charAt(0)}{customer.lastName.charAt(0)}
+                        {(customer.firstName || '').charAt(0)}{(customer.lastName || '').charAt(0)}
                       </div>
                       <div className="space-y-1">
                         <div className="text-sm font-medium text-white leading-tight">
-                          {customer.firstName} {customer.lastName}
+                          {customer.firstName || ''} {customer.lastName || ''}
                         </div>
-                        <div className="text-xs text-gray-300">{customer.email}</div>
+                        <div className="text-xs text-gray-300">{customer.email || ''}</div>
                       </div>
                     </div>
                   </td>
@@ -383,7 +451,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                    {formatCurrency(customer.metrics.totalSpent)}
+                    {formatCurrency(customer.metrics?.totalSpent || customer.totalSpent || 0)}
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -391,7 +459,7 @@ export default function CustomerLifecycleManager({ locale }: CustomerLifecycleMa
                       href={`/${locale}/admin/crm/customers/${customer.id}`}
                       className="text-primary-orange hover:text-primary-orange-dark transition-colors"
                     >
-                      View Details
+                      {locale === "fa" ? "مشاهده جزئیات" : locale === "ar" ? "عرض التفاصيل" : "View Details"}
                     </a>
                   </td>
                 </tr>

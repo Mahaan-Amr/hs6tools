@@ -1,5 +1,326 @@
 # رفع مشکلات سبد خرید و تسویه حساب
 
+## ✅ رفع مشکل بارگذاری پنل مدیریت
+
+### مشکل: پنل مدیریت در حالت بارگذاری گیر می‌کرد
+
+**علت:**
+- کامپوننت Footer در تمام صفحات (شامل صفحات ادمین) رندر می‌شد
+- تصویر خارجی e-namad در Footer با خطای timeout مواجه می‌شد
+- این خطا باعث می‌شد صفحه در حالت بارگذاری بماند
+
+**راه‌حل:**
+1. ایجاد کامپوننت `ConditionalFooter` که Footer را فقط در صفحات غیر-ادمین رندر می‌کند
+2. بهبود بارگذاری تصویر e-namad با `loading="lazy"` و `decoding="async"`
+3. افزودن handler برای خطا (`onerror`) تا در صورت عدم بارگذاری تصویر، عنصر مخفی شود
+4. بهبود منطق `AdminLayoutWrapper` برای جلوگیری از بارگذاری بی‌نهایت
+5. افزودن فیلدهای `name` و `image` به interface Session در NextAuth
+
+**فایل‌های تغییر یافته:**
+- `src/components/layout/ConditionalFooter.tsx` (جدید)
+- `src/app/[locale]/layout.tsx` - استفاده از ConditionalFooter به جای Footer مستقیم
+- `src/components/layout/Footer.tsx` - بهبود بارگذاری تصویر
+- `src/lib/auth.ts` - افزودن فیلدهای name و image به session callback
+- `src/types/next-auth.d.ts` - افزودن name و image به interface Session
+- `src/components/layout/AdminLayoutWrapper.tsx` - بهبود منطق بارگذاری
+
+**نتیجه:**
+- پنل مدیریت بدون مشکل بارگذاری می‌شود
+- Footer فقط در صفحات غیر-ادمین نمایش داده می‌شود
+- تصویر e-namad به صورت غیر-مسدودکننده بارگذاری می‌شود
+
+### مشکل: برخی صفحات ادمین در حالت بارگذاری گیر می‌کردند
+
+**علت:**
+- کامپوننت‌های `DashboardStats` و `RecentOrders` منتظر بارگذاری messages بودند و در صورت عدم بارگذاری، صفحه را مسدود می‌کردند
+- فراخوانی‌های API در این کامپوننت‌ها timeout نداشتند و در صورت مشکل در API، بی‌نهایت منتظر می‌ماندند
+- `AdminLayout` در صورت خطا در بارگذاری messages، خطا را لاگ می‌کرد اما rendering را مسدود نمی‌کرد
+- برخی صفحات (dashboard, users, analytics) به این کامپوننت‌ها وابسته بودند و در صورت مشکل، کل صفحه مسدود می‌شد
+
+**راه‌حل:**
+1. افزودن error handling به `AdminLayout` برای `getMessages` - در صورت خطا، rendering مسدود نمی‌شود
+2. افزودن timeout (10 ثانیه) به فراخوانی‌های API در `DashboardStats` و `RecentOrders`
+3. استفاده از `AbortController` برای cancel کردن درخواست‌های timeout شده
+4. تغییر loading state در `DashboardStats` و `RecentOrders` از blocking "Loading..." به skeleton loaders
+5. بهبود منطق `AdminLayoutWrapper` برای handle کردن حالت‌های edge case
+6. افزودن fallback values برای جلوگیری از مسدود شدن rendering
+
+**فایل‌های تغییر یافته:**
+- `src/components/layout/AdminLayout.tsx` - افزودن error handling برای `getMessages`
+- `src/components/admin/DashboardStats.tsx` - افزودن timeout و skeleton loader
+- `src/components/admin/RecentOrders.tsx` - افزودن timeout و skeleton loader
+- `src/components/admin/QuickActions.tsx` - تغییر loading state به skeleton
+- `src/components/layout/AdminLayoutWrapper.tsx` - بهبود handle کردن edge cases
+
+**نتیجه:**
+- صفحات ادمین حتی در صورت مشکل در API یا messages، rendering می‌شوند
+- فراخوانی‌های API timeout دارند و صفحه را مسدود نمی‌کنند
+- کاربران skeleton loaders را می‌بینند به جای صفحه خالی
+- صفحات dashboard، users، analytics و سایر صفحات بدون مشکل بارگذاری می‌شوند
+
+### مشکل: `getMessages` در صفحات server component مسدودکننده بود
+
+**علت:**
+- صفحات server component (dashboard, users, analytics, settings, content) در سطح بالا `await getMessages(locale)` را فراخوانی می‌کردند
+- در صورت مشکل در بارگذاری JSON یا کندی dynamic import، کل صفحه مسدود می‌شد
+- `getMessages` timeout نداشت و در صورت مشکل، بی‌نهایت منتظر می‌ماند
+- صفحاتی که `getMessages` را بدون error handling فراخوانی می‌کردند، در صورت خطا کاملاً مسدود می‌شدند
+
+**راه‌حل:**
+1. افزودن timeout (5 ثانیه) به `getMessages` با استفاده از `Promise.race`
+2. افزودن error handling به تمام صفحات admin که از `getMessages` استفاده می‌کنند
+3. استفاده از fallback values در صورت عدم بارگذاری messages
+4. بهبود error handling در `getMessages` برای fallback به default locale و در نهایت minimal messages object
+
+**فایل‌های تغییر یافته:**
+- `src/lib/i18n.ts` - افزودن timeout و error handling بهتر
+- `src/app/[locale]/admin/page.tsx` - افزودن error handling و fallback
+- `src/app/[locale]/admin/users/page.tsx` - افزودن error handling و fallback
+- `src/app/[locale]/admin/analytics/page.tsx` - افزودن error handling و fallback
+- `src/app/[locale]/admin/orders/page.tsx` - افزودن error handling و fallback
+- `src/app/[locale]/admin/settings/page.tsx` - افزودن error handling و fallback
+- `src/app/[locale]/admin/content/page.tsx` - افزودن error handling و fallback
+
+**نتیجه:**
+- صفحات admin حتی در صورت مشکل در بارگذاری messages، rendering می‌شوند
+- `getMessages` timeout دارد و صفحه را مسدود نمی‌کند
+- در صورت خطا، fallback values استفاده می‌شوند
+- تمام صفحات admin (dashboard, users, analytics, orders, settings, content) بدون مشکل بارگذاری می‌شوند
+
+### مشکل: کامپوننت‌های dashboard و صفحه customers همچنان مسدودکننده بودند
+
+**علت:**
+- کامپوننت‌های `DashboardStats` و `RecentOrders` در `useEffect` خود `getMessages` را بدون error handling فراخوانی می‌کردند
+- صفحه `customers` (server component) `getMessages` و query های Prisma را بدون timeout و error handling فراخوانی می‌کرد
+- صفحه `customers/[id]` نیز `getMessages` را بدون error handling داشت
+- `QuickActions` نیز `getMessages` را بدون error handling داشت
+- در صورت مشکل در بارگذاری messages یا کندی database، این صفحات مسدود می‌شدند
+
+**راه‌حل:**
+1. افزودن error handling به `getMessages` در تمام کامپوننت‌های client (`DashboardStats`, `RecentOrders`, `QuickActions`)
+2. افزودن error handling و timeout به `getMessages` در صفحات server (`customers`, `customers/[id]`)
+3. افزودن timeout (10 ثانیه) به query های Prisma در صفحه `customers` با استفاده از `Promise.race`
+4. استفاده از fallback values در صورت عدم بارگذاری messages
+5. ادامه rendering حتی در صورت خطا در database queries
+
+**فایل‌های تغییر یافته:**
+- `src/components/admin/DashboardStats.tsx` - افزودن error handling به `getMessages`
+- `src/components/admin/RecentOrders.tsx` - افزودن error handling به `getMessages`
+- `src/components/admin/QuickActions.tsx` - افزودن error handling به `getMessages`
+- `src/app/[locale]/admin/crm/customers/page.tsx` - افزودن error handling به `getMessages` و timeout به Prisma queries
+- `src/app/[locale]/admin/crm/customers/[id]/page.tsx` - افزودن error handling به `getMessages`
+
+**نتیجه:**
+- تمام کامپوننت‌های dashboard حتی در صورت مشکل در بارگذاری messages، rendering می‌شوند
+- صفحه customers حتی در صورت مشکل در database یا messages، rendering می‌شود
+- Query های Prisma timeout دارند و صفحه را مسدود نمی‌کنند
+- تمام کامپوننت‌های dashboard (DashboardStats, RecentOrders, QuickActions) بدون مشکل کار می‌کنند
+
+### مشکل: خطای serialization برای Decimal objects در dashboard
+
+**علت:**
+- کامپوننت‌های `DashboardStats` و `RecentOrders` از API های `/api/analytics` و `/api/orders` استفاده می‌کردند
+- API `/api/orders` تمام `orderItems` با nested `product` و `variant` objects را برمی‌گرداند
+- این nested objects ممکن است شامل Decimal values باشند که Next.js نمی‌تواند serialize کند
+- خطای "Server Only plain objects can be passed to client Components from Server Components. Decimal objects are not supported" در console نمایش داده می‌شد
+- این باعث می‌شد کامپوننت‌ها نتوانند داده‌ها را دریافت کنند و در skeleton loader state بمانند
+
+**راه‌حل:**
+1. بهبود `/api/analytics` route - تبدیل explicit fields در `recentOrders` بدون استفاده از spread operator
+2. بهبود `/api/orders` route - برای limit های کوچک (≤10)، response ساده‌تر بدون nested heavy data
+3. تبدیل تمام Decimal values به Number قبل از return
+4. اضافه کردن `customer` field به جای `user` در response برای سازگاری با component expectations
+5. حذف nested `product` و `variant` objects کامل در simplified response
+
+**فایل‌های تغییر یافته:**
+- `src/app/api/analytics/route.ts` - بهبود mapping برای `recentOrders` با explicit fields
+- `src/app/api/orders/route.ts` - اضافه کردن simplified response برای limit های کوچک
+- `src/components/admin/RecentOrders.tsx` - بهبود type safety و number conversion
+
+**نتیجه:**
+- خطای Decimal serialization برطرف شد
+- کامپوننت‌های dashboard (`DashboardStats`, `RecentOrders`) می‌توانند داده‌ها را دریافت کنند
+- Response های API برای dashboard کوچکتر و سریع‌تر هستند
+- تمام Decimal values به Number تبدیل می‌شوند قبل از serialization
+
+### مشکل: کامپوننت‌های DashboardStats و RecentOrders محتوای خالی نمایش می‌دادند
+
+**علت:**
+- کامپوننت `RecentOrders` منتظر بارگذاری messages بود قبل از fetch کردن داده‌ها
+- این باعث می‌شد اگر messages با تاخیر بارگذاری شوند، fetch هرگز اجرا نشود
+- کامپوننت‌ها skeleton loader را نمایش می‌دادند اما بعد از بارگذاری messages، اگر fetch انجام نشده بود، محتوای خالی نمایش می‌دادند
+- Race condition بین بارگذاری messages و fetch کردن داده‌ها وجود داشت
+
+**راه‌حل:**
+1. جدا کردن fetch کردن داده‌ها از بارگذاری messages در `RecentOrders`
+2. استفاده از fallback values برای messages در formatRelativeTime
+3. بهبود loading state در `RecentOrders` - نمایش skeleton با title و link حتی در حالت loading
+4. اطمینان از اینکه کامپوننت‌ها همیشه محتوا نمایش می‌دهند (skeleton یا داده)
+
+**فایل‌های تغییر یافته:**
+- `src/components/admin/RecentOrders.tsx` - جدا کردن fetch از messages dependency
+- `src/components/admin/DashboardStats.tsx` - بهبود comments و اطمینان از rendering
+
+**نتیجه:**
+- کامپوننت‌های dashboard همیشه محتوا نمایش می‌دهند (skeleton یا داده)
+- Fetch کردن داده‌ها مستقل از بارگذاری messages انجام می‌شود
+- Race condition بین messages و data fetch برطرف شد
+- کامپوننت‌ها حتی در صورت تاخیر در بارگذاری messages، داده‌ها را fetch می‌کنند
+
+### مشکل: کامپوننت‌های DashboardStats و RecentOrders محتوای خالی نمایش می‌دادند (مشکل اصلی)
+
+**علت:**
+- کامپوننت‌ها قبل از render کردن محتوا، چک می‌کردند که آیا messages بارگذاری شده‌اند یا نه
+- اگر messages بارگذاری نشده بودند، skeleton loader نمایش می‌دادند
+- اما اگر messages با تاخیر بارگذاری می‌شدند، حتی بعد از fetch شدن داده‌ها، کامپوننت در skeleton state می‌ماند
+- این باعث می‌شد که داده‌ها fetch شوند (API موفق می‌شد) اما نمایش داده نشوند
+- در `RecentOrders` دو `if (isLoading)` check وجود داشت که باعث confusion می‌شد
+
+**راه‌حل:**
+1. تغییر logic skeleton loader - فقط زمانی skeleton نمایش داده شود که **هم** messages بارگذاری نشده **و** داده‌ها در حال loading هستند
+2. اگر داده‌ها load شدند (`isLoading = false`)، حتی اگر messages بارگذاری نشده باشند، محتوا نمایش داده شود (با fallback values)
+3. حذف duplicate `isLoading` check در `RecentOrders`
+4. بهبود console logging برای debugging
+5. اطمینان از اینکه کامپوننت‌ها همیشه چیزی قابل مشاهده render می‌کنند
+
+**فایل‌های تغییر یافته:**
+- `src/components/admin/DashboardStats.tsx` - تغییر skeleton check به `(!messages || !messages.admin?.dashboardStats) && isLoading`
+- `src/components/admin/RecentOrders.tsx` - تغییر skeleton check و حذف duplicate loading check
+
+**نتیجه:**
+- کامپوننت‌ها حتی اگر messages با تاخیر بارگذاری شوند، داده‌ها را نمایش می‌دهند
+- Skeleton loader فقط زمانی نمایش داده می‌شود که واقعاً نیاز باشد
+- داده‌های fetch شده همیشه نمایش داده می‌شوند (با fallback values برای messages)
+- Console logging برای debugging اضافه شد
+
+### مشکل: خطای Decimal serialization در `/api/orders` (مشکل اصلی)
+
+**علت:**
+- Prisma `Decimal` objects نمی‌توانند مستقیماً به JSON serialize شوند
+- استفاده از `Number()` برای تبدیل `Decimal` به `number` ممکن است در برخی موارد کار نکند
+- `_count` field در simplified response ممکن است باعث مشکل شود
+- خطای "Only plain objects can be passed to Client Components from Server Components. Decimal objects are not supported" در console نمایش داده می‌شد
+
+**راه‌حل:**
+1. ایجاد helper function `toNumber()` که به درستی Prisma `Decimal` objects را تبدیل می‌کند
+2. استفاده از `.toNumber()` method برای `Decimal` objects به جای `Number()`
+3. حذف `_count` از simplified response (limit ≤ 10) برای جلوگیری از serialization issues
+4. تبدیل explicit تمام `Decimal` fields در `orderItems` نیز
+5. اضافه کردن null checks برای optional fields
+
+**فایل‌های تغییر یافته:**
+- `src/app/api/orders/route.ts` - بهبود Decimal conversion با helper function و حذف `_count` از simplified response
+- `src/components/admin/RecentOrders.tsx` - اضافه کردن ESLint disable comment برای dependency array
+
+**نتیجه:**
+- خطای Decimal serialization برطرف شد
+- تمام `Decimal` values به درستی به `number` تبدیل می‌شوند
+- Simplified response برای dashboard کوچکتر و سریع‌تر است
+- هیچ `Decimal` object در API responses باقی نمانده است
+
+### مشکل: خطای Decimal serialization در customers page (مشکل اصلی)
+
+**علت:**
+- در صفحه `/admin/crm/customers`، query کردن customers شامل `orders` array می‌شد
+- `orders` array شامل `totalAmount` field بود که Prisma `Decimal` type است
+- در `customersWithMetrics` mapping، از `...customer` spread استفاده می‌شد که شامل `orders` array با Decimal objects بود
+- این `orders` array به client component (`CustomerList`) پاس داده می‌شد و باعث خطای serialization می‌شد
+- حتی اگر `totalAmount` را برای محاسبه `totalSpent` تبدیل می‌کردیم، خود `orders` array هنوز شامل Decimal objects بود
+
+**راه‌حل:**
+1. حذف `orders` array از object که به client component پاس داده می‌شود
+2. استفاده از explicit field assignment به جای `...customer` spread
+3. `orders` array فقط برای محاسبه metrics استفاده می‌شود و به client component پاس داده نمی‌شود
+
+**فایل‌های تغییر یافته:**
+- `src/app/[locale]/admin/crm/customers/page.tsx` - حذف `orders` array از returned object و استفاده از explicit field assignment
+
+**نتیجه:**
+- خطای Decimal serialization در customers page برطرف شد
+- `orders` array فقط برای محاسبه metrics استفاده می‌شود
+- هیچ `Decimal` object به client component پاس داده نمی‌شود
+- تمام customer data به درستی serialize می‌شود
+
+### مشکل: TypeError در CustomerLifecycleManager - Cannot read properties of undefined (reading 'charAt')
+
+**علت:**
+- کامپوننت `CustomerLifecycleManager` از `/api/analytics?type=customers` استفاده می‌کند
+- API فقط `name` field را برمی‌گرداند (ترکیب `firstName` و `lastName`)
+- اما کامپوننت انتظار دارد `firstName` و `lastName` به صورت جداگانه وجود داشته باشند
+- وقتی کامپوننت سعی می‌کند `customer.firstName.charAt(0)` را اجرا کند، `firstName` undefined است و خطا می‌دهد
+
+**راه‌حل:**
+1. تغییر API `/api/analytics` برای برگرداندن `firstName` و `lastName` به صورت جداگانه
+2. اضافه کردن fallback values برای `firstName` و `lastName` در API response
+3. بهبود interface در `CustomerLifecycleManager` برای پشتیبانی از هر دو حالت (`name` یا `firstName`/`lastName`)
+4. اضافه کردن null checks در component برای جلوگیری از خطا
+5. تبدیل analytics data در component برای اطمینان از وجود `firstName` و `lastName`
+
+**فایل‌های تغییر یافته:**
+- `src/app/api/analytics/route.ts` - اضافه کردن `firstName` و `lastName` به response
+- `src/components/admin/crm/CustomerLifecycleManager.tsx` - بهبود interface و اضافه کردن null checks و data transformation
+
+**نتیجه:**
+- خطای `charAt` برطرف شد
+- API هم `name` و هم `firstName`/`lastName` را برمی‌گرداند
+- Component با هر دو ساختار data کار می‌کند
+- Null checks از خطاهای مشابه جلوگیری می‌کند
+
+### بررسی و اصلاح ناسازگاری‌های CRM Lifecycle Management
+
+**مشکلات شناسایی شده:**
+1. **ناسازگاری Lifecycle Stages**: در `customers/page.tsx` از stages غیرموجود در schema استفاده می‌شد (CHAMPION, ADVOCATE, INACTIVE, LOST)
+2. **عدم بازگشت lifecycleStage/customerTier از Analytics API**: API `/api/analytics?type=customers` این فیلدها را برنمی‌گرداند
+3. **عدم پشتیبانی از i18n**: کامپوننت `CustomerLifecycleManager` متن‌های hardcoded انگلیسی داشت
+4. **عدم consistency در استفاده از lifecycle stages**: برخی کامپوننت‌ها از stages صحیح استفاده می‌کردند، برخی نه
+
+**راه‌حل:**
+1. اصلاح lifecycle stages در `customers/page.tsx` به stages صحیح از schema: LEAD, PROSPECT, CUSTOMER, LOYAL_CUSTOMER, AT_RISK, CHURNED
+2. اضافه کردن `lifecycleStage`, `customerTier`, و `healthScore` به select query در analytics API
+3. اضافه کردن این فیلدها به response analytics API
+4. اضافه کردن i18n support به `CustomerLifecycleManager` با fallback values
+5. ترجمه تمام متن‌های hardcoded به fa, en, ar
+6. اطمینان از اینکه تمام customers از analytics API دارای lifecycleStage و customerTier هستند
+
+**فایل‌های تغییر یافته:**
+- `src/app/[locale]/admin/crm/customers/page.tsx` - اصلاح lifecycle stages به schema-compliant values
+- `src/app/api/analytics/route.ts` - اضافه کردن lifecycleStage, customerTier, healthScore به select و response
+- `src/components/admin/crm/CustomerLifecycleManager.tsx` - اضافه کردن i18n support و ترجمه تمام متن‌ها
+
+**نتیجه:**
+- تمام lifecycle stages با schema هماهنگ هستند
+- Analytics API تمام CRM fields را برمی‌گرداند
+- کامپوننت lifecycle manager از i18n پشتیبانی می‌کند
+- تمام متن‌ها به سه زبان ترجمه شده‌اند
+- Consistency در تمام CRM components برقرار شده است
+
+### مشکل: صفحه leads در حالت loading می‌ماند (مشکل اصلی)
+
+**علت:**
+- کامپوننت `LeadManagementClient` قبل از render کردن محتوا، چک می‌کرد که آیا messages بارگذاری شده‌اند یا نه
+- اگر messages بارگذاری نشده بودند، فقط "Loading..." نمایش می‌داد و هرگز محتوا را render نمی‌کرد
+- `fetchLeads` function در dependency array شامل `messages` بود که باعث race condition می‌شد
+- هیچ timeout برای API call وجود نداشت
+- Error handling برای `getMessages` وجود نداشت
+
+**راه‌حل:**
+1. حذف blocking check برای messages - استفاده از fallback values
+2. اضافه کردن error handling به `getMessages` call
+3. اضافه کردن timeout به `fetchLeads` API call با `AbortController`
+4. بهبود error handling در `fetchLeads` با fallback values
+5. اضافه کردن fallback values کامل برای تمام translation keys
+
+**فایل‌های تغییر یافته:**
+- `src/app/[locale]/admin/crm/leads/LeadManagementClient.tsx` - حذف blocking check، اضافه کردن timeout و error handling
+
+**نتیجه:**
+- صفحه leads حتی اگر messages با تاخیر بارگذاری شوند، محتوا را نمایش می‌دهد
+- API calls timeout دارند و صفحه را مسدود نمی‌کنند
+- Fallback values برای تمام متن‌ها وجود دارد
+- صفحه همیشه چیزی قابل مشاهده render می‌کند
+
+---
+
 ## ✅ بهبود جامع: اعتبارسنجی کامل فرم‌ها و مودال‌ها
 
 ### بررسی و پیاده‌سازی اعتبارسنجی

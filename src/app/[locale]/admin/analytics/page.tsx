@@ -8,13 +8,21 @@ interface AdminAnalyticsPageProps {
 
 export default async function AdminAnalyticsPage({ params }: AdminAnalyticsPageProps) {
   const { locale } = await params;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.analyticsPageHeader) {
-    return <AdminLayoutWrapper locale={locale}><div className="text-white p-4">Loading...</div></AdminLayoutWrapper>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in analytics page:', error);
+    messages = null;
   }
   
-  const t = messages.admin.analyticsPageHeader;
+  // Use fallback if messages or analyticsPageHeader is missing
+  const t = messages?.admin?.analyticsPageHeader || {
+    title: "گزارش‌ها و تحلیل‌ها",
+    subtitle: "مشاهده آمار و گزارش‌های جامع سیستم"
+  };
 
   return (
     <AdminLayoutWrapper locale={locale}>

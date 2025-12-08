@@ -28,44 +28,73 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
 
   useEffect(() => {
     const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
+      try {
+        const msgs = await getMessages(locale);
+        setMessages(msgs);
+      } catch (error) {
+        console.error('Error loading messages in DashboardStats:', error);
+        // Don't block rendering - components will use fallbacks
+      }
     };
     loadMessages();
   }, [locale]);
 
   useEffect(() => {
-    // Fetch real stats from API
+    // Fetch real stats from API with timeout
+    // Don't wait for messages - fetch data independently
     const fetchStats = async () => {
       setIsLoading(true);
       
       try {
-        const response = await fetch('/api/analytics?type=overview&period=30');
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch('/api/analytics?type=overview&period=30', {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
-        if (result.success && result.data) {
+        if (result.success && result.data && result.data.overview) {
           const data = result.data.overview;
-          setStats({
+          console.log('DashboardStats - Received data:', data);
+          console.log('DashboardStats - Setting stats with values:', {
+            orders: Number(data.totalOrders) || 0,
+            products: Number(data.totalProducts) || 0,
+            users: Number(data.totalUsers) || 0,
+            revenue: Number(data.totalRevenue) || 0
+          });
+          const newStats = {
             orders: { 
-              value: data.totalOrders || 0, 
-              change: data.ordersChange || 0 
+              value: Number(data.totalOrders) || 0, 
+              change: Number(data.ordersChange) || 0 
             },
             products: { 
-              value: data.totalProducts || 0, 
-              change: data.productsChange || 0 
+              value: Number(data.totalProducts) || 0, 
+              change: Number(data.productsChange) || 0 
             },
             users: { 
-              value: data.totalUsers || 0, 
-              change: data.usersChange || 0 
+              value: Number(data.totalUsers) || 0, 
+              change: Number(data.usersChange) || 0 
             },
             revenue: { 
-              value: data.totalRevenue || 0, 
-              change: data.revenueChange || 0 
+              value: Number(data.totalRevenue) || 0, 
+              change: Number(data.revenueChange) || 0 
             }
-          });
+          };
+          console.log('DashboardStats - Setting stats:', newStats);
+          setStats(newStats);
         } else {
-          console.error('Error fetching dashboard stats:', result.error);
-          // Fallback to zero values
+          console.error('Error fetching dashboard stats:', result.error || 'Unknown error', result);
+          console.log('DashboardStats - Using fallback zero values');
+          // Fallback to zero values - still render the cards
           setStats({
             orders: { value: 0, change: 0 },
             products: { value: 0, change: 0 },
@@ -74,8 +103,12 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
           });
         }
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        // Fallback to zero values
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error('Dashboard stats fetch timeout');
+        } else {
+          console.error('Error fetching dashboard stats:', error);
+        }
+        // Fallback to zero values - don't block rendering
         setStats({
           orders: { value: 0, change: 0 },
           products: { value: 0, change: 0 },
@@ -110,11 +143,33 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
     }).format(num);
   };
 
-  if (!messages || !messages.admin?.dashboardStats) {
-    return <div className="text-white p-4">Loading...</div>;
+  // Don't block rendering - use fallbacks if messages aren't loaded
+  const t = messages?.admin?.dashboardStats || {
+    todayOrders: "سفارشات امروز",
+    activeProducts: "محصولات فعال",
+    registeredUsers: "کاربران ثبت‌نام شده",
+    monthlyRevenue: "درآمد ماهانه",
+    fromLastMonth: "از ماه گذشته"
+  };
+
+  // Show skeleton ONLY while loading messages AND data hasn't loaded yet
+  // Once data is loaded (isLoading is false), always render content even if messages aren't loaded
+  if ((!messages || !messages.admin?.dashboardStats) && isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="glass rounded-3xl p-4 sm:p-6 animate-pulse">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl mb-4"></div>
+            <div className="w-20 h-8 bg-white/10 rounded mb-2"></div>
+            <div className="w-32 h-4 bg-white/10 rounded"></div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
-  const t = messages.admin.dashboardStats;
+  // Always render content - even if data is loading or zero
+  // The StatCard component handles isLoading state internally
 
   const StatCard = ({ title, value, change, icon, color }: StatCardProps) => (
     <div className="glass rounded-3xl p-4 sm:p-6 hover:scale-105 transition-transform duration-300">

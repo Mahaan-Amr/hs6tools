@@ -1338,12 +1338,49 @@ export interface Messages {
 
 export async function getMessages(locale: string): Promise<Messages> {
   try {
-    const messages = await import(`../../messages/${locale}.json`);
-    return messages.default;
-  } catch {
-    console.warn(`Failed to load messages for locale: ${locale}, falling back to default`);
-    const defaultMessages = await import(`../../messages/${defaultLocale}.json`);
-    return defaultMessages.default;
+    // Use Promise.race with timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('getMessages timeout')), 5000);
+    });
+    
+    const importPromise = import(`../../messages/${locale}.json`).then(m => m.default);
+    
+    const messages = await Promise.race([importPromise, timeoutPromise]);
+    return messages;
+  } catch (error) {
+    console.warn(`Failed to load messages for locale: ${locale}, falling back to default:`, error);
+    try {
+      const defaultMessages = await import(`../../messages/${defaultLocale}.json`);
+      return defaultMessages.default;
+    } catch (fallbackError) {
+      console.error('Failed to load default messages:', fallbackError);
+      // Return a minimal messages object to prevent complete failure
+      // Using 'unknown' first to bypass strict type checking for this emergency fallback
+      return {
+        common: { loading: "در حال بارگذاری...", error: "خطا" },
+        navigation: {},
+        auth: {},
+        categories: {},
+        products: {},
+        cart: {},
+        footer: {},
+        faq: {},
+        admin: {},
+        homepage: {
+          hero: { tagline: "", description: "", viewProducts: "", aboutUs: "" },
+          features: { title: "", subtitle: "", quality: { title: "", description: "" }, technology: { title: "", description: "" }, support: { title: "", description: "" } },
+          categories: { title: "", subtitle: "", diamondDiscs: { title: "", description: "" }, cylindricalCutters: { title: "", description: "" }, holdingClamps: { title: "", description: "" }, viewAllProducts: "" }
+        },
+        search: {},
+        reviews: {},
+        wishlist: {},
+        blog: {},
+        contact: {},
+        about: {},
+        customer: {},
+        education: {}
+      } as unknown as Messages;
+    }
   }
 }
 

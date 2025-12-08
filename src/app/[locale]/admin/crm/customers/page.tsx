@@ -27,13 +27,23 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
 
   const { locale } = await params;
   const { search, tier, stage, page } = await searchParams;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.customersPage) {
-    return <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black"><div className="text-white p-4">Loading...</div></div>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in customers page:', error);
+    messages = null;
   }
   
-  const t = messages.admin.customersPage;
+  // Use fallback if messages or customersPage is missing
+  const t = messages?.admin?.customersPage || {
+    title: "مدیریت مشتریان",
+    subtitle: "مشاهده و مدیریت تمام مشتریان سیستم",
+    totalCustomers: "کل مشتریان",
+    showing: "نمایش"
+  };
   
   const currentPage = parseInt(page || "1");
   const limit = 20;
@@ -60,12 +70,38 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
   }
 
   if (stage) {
-    where.lifecycleStage = { equals: stage as "LEAD" | "PROSPECT" | "CUSTOMER" | "CHAMPION" | "ADVOCATE" | "INACTIVE" | "LOST" } as Prisma.EnumLifecycleStageNullableFilter<"User">;
+    where.lifecycleStage = { equals: stage as "LEAD" | "PROSPECT" | "CUSTOMER" | "LOYAL_CUSTOMER" | "AT_RISK" | "CHURNED" } as Prisma.EnumLifecycleStageNullableFilter<"User">;
   }
 
-  // Get customers with pagination
-  const [customers, totalCount] = await Promise.all([
-    prisma.user.findMany({
+  // Get customers with pagination - with error handling
+  let customers: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    company: string | null;
+    position: string | null;
+    lastLoginAt: Date | null;
+    createdAt: Date;
+    customerType: string | null;
+    industry: string | null;
+    companySize: string | null;
+    customerTier: string | null;
+    healthScore: number | null;
+    tags: string[];
+    lifecycleStage: string | null;
+    orders: Array<{
+      totalAmount: { toString(): string; toNumber(): number } | number;
+      paymentStatus: string;
+      createdAt: Date;
+    }>;
+  }> = [];
+  let totalCount = 0;
+  
+  try {
+    // Add timeout to prevent hanging
+    const customersPromise = prisma.user.findMany({
       where,
       select: {
         id: true,
@@ -95,18 +131,45 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
       orderBy: { createdAt: "desc" },
       skip,
       take: limit
-    }),
-    prisma.user.count({ where })
-  ]);
+    });
+    
+    const countPromise = prisma.user.count({ where });
+    
+    // Race with timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 10000);
+    });
+    
+    const result = await Promise.race([
+      Promise.all([customersPromise, countPromise]),
+      timeoutPromise
+    ]);
+    
+    if (Array.isArray(result) && result.length === 2) {
+      // Type assertion needed because Prisma returns Decimal for totalAmount
+      customers = result[0] as typeof customers;
+      totalCount = result[1] as number;
+    }
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    // Continue with empty arrays - don't block rendering
+    customers = [];
+    totalCount = 0;
+  }
 
   // Calculate customer metrics
   const customersWithMetrics = customers.map(customer => {
     const orders = customer.orders || [];
     const totalOrders = orders.length;
-    const totalSpent = orders.reduce((sum: number, order) => 
-      sum + Number(order.totalAmount), 0);
+    const totalSpent = orders.reduce((sum: number, order) => {
+      // Handle Prisma Decimal type
+      const amount = typeof order.totalAmount === 'object' && 'toNumber' in order.totalAmount 
+        ? order.totalAmount.toNumber() 
+        : Number(order.totalAmount);
+      return sum + amount;
+    }, 0);
     const paidOrders = orders.filter((order) => 
-      order.paymentStatus === "PAID").length;
+      String(order.paymentStatus) === "PAID").length;
     const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
     
     // Calculate days since last order
@@ -122,8 +185,13 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
       ? Math.floor((Date.now() - customer.lastLoginAt.getTime()) / (1000 * 60 * 60 * 24))
       : null;
 
+    // Convert customer data, excluding orders array (which contains Decimal objects)
+    // We only use orders for calculations, not for passing to client component
     return {
-      ...customer,
+      id: customer.id,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
       phone: customer.phone || undefined,
       company: customer.company || undefined,
       position: customer.position || undefined,
@@ -145,6 +213,7 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
         daysSinceLastOrder: daysSinceLastOrder || undefined,
         daysSinceLastLogin: daysSinceLastLogin || undefined
       }
+      // Explicitly exclude orders array - it contains Decimal objects that can't be serialized
     };
   });
 
@@ -175,7 +244,32 @@ export default async function CustomersPage({ params, searchParams }: CustomersP
       </div>
 
       <CustomerList
-        customers={customersWithMetrics}
+        customers={customersWithMetrics as Array<{
+          id: string;
+          firstName: string;
+          lastName: string;
+          email: string;
+          phone?: string;
+          company?: string;
+          position?: string;
+          customerType?: string;
+          industry?: string;
+          companySize?: string;
+          customerTier?: string;
+          healthScore?: number;
+          tags: string[];
+          lifecycleStage?: string;
+          lastLoginAt?: string;
+          createdAt: string;
+          metrics: {
+            totalOrders: number;
+            totalSpent: number;
+            paidOrders: number;
+            averageOrderValue: number;
+            daysSinceLastOrder?: number;
+            daysSinceLastLogin?: number;
+          };
+        }>}
         currentPage={currentPage}
         totalPages={totalPages}
         totalCount={totalCount}

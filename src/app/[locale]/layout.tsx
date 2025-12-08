@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { isValidLocale, getMessages } from "@/lib/i18n";
 import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import ScrollEffects from "@/components/layout/ScrollEffects";
+import ConditionalFooter from "@/components/layout/ConditionalFooter";
 
 export default async function LocaleLayout({
   children,
@@ -29,7 +29,8 @@ export default async function LocaleLayout({
       <main className="min-h-screen">
         {children}
       </main>
-      <Footer locale={locale} messages={messages} />
+      {/* Use ConditionalFooter to avoid rendering Footer on admin pages */}
+      <ConditionalFooter locale={locale} messages={messages} />
     </>
   );
 }

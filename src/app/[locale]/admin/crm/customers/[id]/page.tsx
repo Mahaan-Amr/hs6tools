@@ -20,13 +20,23 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
   }
 
   const { locale, id } = await params;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.customer360Page) {
-    return <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black"><div className="text-white p-4">Loading...</div></div>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in customer detail page:', error);
+    messages = null;
   }
   
-  const t = messages.admin.customer360Page;
+  // Use fallback if messages or customer360Page is missing
+  const t = messages?.admin?.customer360Page || {
+    title: "نمای 360 درجه مشتری",
+    subtitle: "اطلاعات کامل و جامع مشتری",
+    editCustomer: "ویرایش مشتری",
+    backToCustomers: "بازگشت به لیست مشتریان"
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black">

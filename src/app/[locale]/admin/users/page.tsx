@@ -8,13 +8,21 @@ interface AdminUsersPageProps {
 
 export default async function AdminUsersPage({ params }: AdminUsersPageProps) {
   const { locale } = await params;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.usersPage) {
-    return <AdminLayoutWrapper locale={locale}><div className="text-white p-4">Loading...</div></AdminLayoutWrapper>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in users page:', error);
+    messages = null;
   }
   
-  const t = messages.admin.usersPage;
+  // Use fallback if messages or usersPage is missing
+  const t = messages?.admin?.usersPage || {
+    title: "مدیریت کاربران",
+    subtitle: "مدیریت حساب‌های کاربری و دسترسی‌ها"
+  };
 
   return (
     <AdminLayoutWrapper locale={locale}>

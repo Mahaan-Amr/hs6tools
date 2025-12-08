@@ -83,12 +83,12 @@ export default function Footer({ locale, messages }: FooterProps) {
               {messages.footer.copyright}
             </div>
             
-            {/* E-Namad Trust Seal - Exact code as provided by e-namad without modifications */}
+            {/* E-Namad Trust Seal - Non-blocking load with error handling */}
             {/* Note: e-namad logo may not load on localhost - it requires production domain */}
             <div 
               className="flex items-center justify-center min-h-[60px]"
               dangerouslySetInnerHTML={{
-                __html: `<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf' alt='' style='cursor:pointer' code='uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf'></a>`
+                __html: `<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf' alt='' style='cursor:pointer' code='uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf' loading='lazy' decoding='async' onerror='this.style.display=\"none\"; this.parentElement.style.display=\"none\";' onload='this.style.opacity=\"1\";'></img></a>`
               }}
             />
             

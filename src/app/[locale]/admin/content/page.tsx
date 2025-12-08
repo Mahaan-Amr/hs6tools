@@ -8,13 +8,21 @@ interface AdminContentPageProps {
 
 export default async function AdminContentPage({ params }: AdminContentPageProps) {
   const { locale } = await params;
-  const messages = await getMessages(locale);
   
-  if (!messages.admin.contentPage) {
-    return <AdminLayoutWrapper locale={locale}><div className="text-white p-4">Loading...</div></AdminLayoutWrapper>;
+  // Load messages with error handling - don't block rendering
+  let messages;
+  try {
+    messages = await getMessages(locale);
+  } catch (error) {
+    console.error('Error loading messages in content page:', error);
+    messages = null;
   }
   
-  const t = messages.admin.contentPage;
+  // Use fallback if messages or contentPage is missing
+  const t = messages?.admin?.contentPage || {
+    title: "مدیریت محتوا",
+    subtitle: "مدیریت مقالات، دسته‌بندی‌ها و محتوای آموزشی"
+  };
 
   return (
     <AdminLayoutWrapper locale={locale}>

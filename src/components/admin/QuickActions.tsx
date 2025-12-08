@@ -13,14 +13,33 @@ export default function QuickActions({ locale }: QuickActionsProps) {
 
   useEffect(() => {
     const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
+      try {
+        const msgs = await getMessages(locale);
+        setMessages(msgs);
+      } catch (error) {
+        console.error('Error loading messages in QuickActions:', error);
+        // Don't block rendering - components will use fallbacks
+      }
     };
     loadMessages();
   }, [locale]);
 
+  // Don't block rendering if messages aren't loaded - use fallbacks
   if (!messages) {
-    return <div className="text-white p-4">Loading...</div>;
+    return (
+      <div className="glass rounded-3xl p-4 sm:p-6 lg:p-8">
+        <div className="w-48 h-8 bg-white/10 rounded animate-pulse mb-6"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="p-6 rounded-xl border border-white/10 animate-pulse">
+              <div className="w-12 h-12 bg-white/10 rounded-xl mb-4"></div>
+              <div className="w-32 h-6 bg-white/10 rounded mb-2"></div>
+              <div className="w-48 h-4 bg-white/10 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const actions = [

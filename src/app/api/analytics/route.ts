@@ -231,8 +231,11 @@ export async function GET(request: NextRequest) {
             lowStockProducts
           },
           recentOrders: recentOrders.map(order => ({
-            ...order,
+            id: order.id,
+            orderNumber: order.orderNumber,
+            status: order.status,
             totalAmount: Number(order.totalAmount),
+            createdAt: order.createdAt.toISOString(),
             customerName: `${order.user.firstName} ${order.user.lastName}`
           })),
           topProducts: topProductsWithNames.filter(Boolean),
@@ -258,6 +261,9 @@ export async function GET(request: NextRequest) {
           phone: true,
           createdAt: true,
           lastLoginAt: true,
+          lifecycleStage: true,
+          customerTier: true,
+          healthScore: true,
           orders: {
             where: { createdAt: { gte: startDate } },
             select: {
@@ -294,16 +300,22 @@ export async function GET(request: NextRequest) {
 
         return {
           id: user.id,
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-          phone: user.phone,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          email: user.email || '',
+          phone: user.phone || null,
           totalOrders,
           totalSpent,
           paidOrders,
           averageOrderValue: totalOrders > 0 ? totalSpent / totalOrders : 0,
           daysSinceLastOrder,
           daysSinceLastLogin,
-          customerType: getCustomerType(totalSpent, totalOrders, daysSinceLastOrder)
+          customerType: getCustomerType(totalSpent, totalOrders, daysSinceLastOrder),
+          // Include CRM fields from user
+          lifecycleStage: user.lifecycleStage || null,
+          customerTier: user.customerTier || null,
+          healthScore: user.healthScore || null
         };
       });
 
