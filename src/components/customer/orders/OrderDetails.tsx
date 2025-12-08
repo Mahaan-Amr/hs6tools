@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useCustomer } from '@/contexts/CustomerContext';
 import { useRouter } from 'next/navigation';
 import { getMessages, Messages } from '@/lib/i18n';
+import { formatPrice as formatPriceUtil } from '@/utils/format';
 
 interface OrderDetailsProps {
   orderId: string;
