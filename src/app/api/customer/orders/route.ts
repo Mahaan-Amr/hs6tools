@@ -372,23 +372,46 @@ export async function POST(request: NextRequest) {
 
     // Create order in transaction
     const order = await prisma.$transaction(async (tx) => {
-      // Create shipping address
-      const shippingAddr = await tx.address.create({
-        data: {
-          userId: session.user.id,
-          type: "SHIPPING",
-          title: "آدرس ارسال",
-          firstName: shippingAddress.firstName,
-          lastName: shippingAddress.lastName,
-          addressLine1: shippingAddress.address,
-          city: shippingAddress.city,
-          state: shippingAddress.province,
-          postalCode: shippingAddress.postalCode,
-          country: "Iran",
-          phone: shippingAddress.phone,
-          isDefault: false
+      // Handle shipping address - use existing or create new
+      let shippingAddr;
+      
+      if (shippingAddress.addressId) {
+        // Use existing address (prevents duplication)
+        console.log('🏠 API: Using existing address:', shippingAddress.addressId);
+        shippingAddr = await tx.address.findFirst({
+          where: { 
+            id: shippingAddress.addressId,
+            userId: session.user.id // Verify ownership
+          }
+        });
+        
+        if (!shippingAddr) {
+          throw new Error("Selected address not found or does not belong to user");
         }
-      });
+        
+        console.log('✅ API: Existing address verified and will be used');
+      } else {
+        // Create new shipping address
+        console.log('🏠 API: Creating new shipping address');
+        shippingAddr = await tx.address.create({
+          data: {
+            userId: session.user.id,
+            type: "SHIPPING",
+            title: "آدرس ارسال",
+            firstName: shippingAddress.firstName,
+            lastName: shippingAddress.lastName,
+            addressLine1: shippingAddress.address,
+            city: shippingAddress.city,
+            state: shippingAddress.province,
+            postalCode: shippingAddress.postalCode,
+            country: "Iran",
+            phone: shippingAddress.phone,
+            isDefault: false
+          }
+        });
+        
+        console.log('✅ API: New shipping address created:', shippingAddr.id);
+      }
 
       // Validate and convert Decimal values
       const subtotalDecimal = new Decimal(subtotal || 0);

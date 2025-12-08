@@ -311,8 +311,9 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
       let shippingAddressData;
       
       if (useSavedAddresses && selectedShippingAddress) {
-        // Use saved address
+        // Use saved address - include addressId to prevent duplication
         shippingAddressData = {
+          addressId: selectedShippingAddress.id, // Use existing address
           firstName: selectedShippingAddress.firstName,
           lastName: selectedShippingAddress.lastName,
           phone: selectedShippingAddress.phone,
@@ -322,7 +323,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
           postalCode: selectedShippingAddress.postalCode
         };
       } else {
-        // Use manual form data
+        // Use manual form data - no addressId means create new
         shippingAddressData = {
           firstName: address.firstName,
           lastName: address.lastName,
