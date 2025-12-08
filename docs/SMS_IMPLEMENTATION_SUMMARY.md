@@ -39,6 +39,8 @@ Add to `.env.local`:
 ```env
 KAVENEGAR_API_KEY=your_api_key_here
 KAVENEGAR_SENDER=10004346  # Optional
+# The service also accepts NEXT_PUBLIC_KAVENEGAR_API_KEY or KAVENEGAR_API_TOKEN
+# (useful when the hosting provider prefixes env vars)
 ```
 
 **How to get API key:**

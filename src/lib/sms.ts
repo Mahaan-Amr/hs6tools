@@ -25,10 +25,15 @@ interface MessageEntry {
 
 // Initialize Kavehnegar API client
 const getKavenegarClient = (): kavenegar.KavenegarInstance => {
-  const apiKey = process.env.KAVENEGAR_API_KEY;
-  
+  const apiKey =
+    process.env.KAVENEGAR_API_KEY ||
+    process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ||
+    process.env.KAVENEGAR_API_TOKEN;
+
   if (!apiKey) {
-    throw new Error('KAVENEGAR_API_KEY is not set in environment variables');
+    throw new Error(
+      'KAVENEGAR_API_KEY (or NEXT_PUBLIC_KAVENEGAR_API_KEY / KAVENEGAR_API_TOKEN) is not set in environment variables'
+    );
   }
 
   return Kavenegar.KavenegarApi({ apikey: apiKey });

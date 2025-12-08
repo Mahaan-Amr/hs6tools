@@ -9,9 +9,14 @@ import { VerificationType } from "@prisma/client";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check if SMS service is configured
-    if (!process.env.KAVENEGAR_API_KEY) {
-      console.error('❌ KAVENEGAR_API_KEY is not set in environment variables');
+    // Check if SMS service is configured (accept multiple env names to avoid misconfig)
+    const smsApiKey =
+      process.env.KAVENEGAR_API_KEY ||
+      process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ||
+      process.env.KAVENEGAR_API_TOKEN;
+
+    if (!smsApiKey) {
+      console.error('❌ SMS API key is not set (KAVENEGAR_API_KEY / NEXT_PUBLIC_KAVENEGAR_API_KEY / KAVENEGAR_API_TOKEN)');
       return NextResponse.json(
         { 
           success: false, 
