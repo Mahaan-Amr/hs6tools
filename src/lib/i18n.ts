@@ -1350,8 +1350,8 @@ export async function getMessages(locale: string): Promise<Messages> {
   } catch (error) {
     console.warn(`Failed to load messages for locale: ${locale}, falling back to default:`, error);
     try {
-      const defaultMessages = await import(`../../messages/${defaultLocale}.json`);
-      return defaultMessages.default;
+    const defaultMessages = await import(`../../messages/${defaultLocale}.json`);
+    return defaultMessages.default;
     } catch (fallbackError) {
       console.error('Failed to load default messages:', fallbackError);
       // Return a minimal messages object to prevent complete failure

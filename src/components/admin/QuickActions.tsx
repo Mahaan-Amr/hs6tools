@@ -14,8 +14,8 @@ export default function QuickActions({ locale }: QuickActionsProps) {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const msgs = await getMessages(locale);
-        setMessages(msgs);
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
       } catch (error) {
         console.error('Error loading messages in QuickActions:', error);
         // Don't block rendering - components will use fallbacks

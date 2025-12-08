@@ -79,8 +79,8 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const msgs = await getMessages(locale);
-        setMessages(msgs);
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
       } catch (error) {
         console.error('Error loading messages in LeadManagementClient:', error);
         // Don't block rendering - components will use fallbacks
@@ -149,9 +149,9 @@ export default function LeadManagementClient({ locale }: LeadManagementClientPro
         console.error("Leads fetch timeout");
         setError("Request timeout. Please try again.");
       } else {
-        console.error("Error fetching leads:", error);
-        const t = messages?.admin?.crm?.leads;
-        setError(t?.error ? String(t.error) : "Error loading leads");
+      console.error("Error fetching leads:", error);
+      const t = messages?.admin?.crm?.leads;
+      setError(t?.error ? String(t.error) : "Error loading leads");
       }
       // Don't block rendering - show empty state
       setLeads([]);

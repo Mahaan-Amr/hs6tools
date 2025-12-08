@@ -63,7 +63,7 @@ export default function AdminLayoutWrapper({ children, locale }: AdminLayoutWrap
     } else {
       // Fallback - shouldn't reach here
       console.log("AdminLayoutWrapper - Unexpected state, setting loading to false");
-      setIsLoading(false);
+    setIsLoading(false);
     }
   }, [session, status, router, locale]);
 

@@ -51,11 +51,61 @@ export default function QuoteList({
 
   useEffect(() => {
     const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
+      try {
+        const msgs = await getMessages(locale);
+        setMessages(msgs);
+      } catch (error) {
+        console.error("Error loading messages in QuoteList:", error);
+        // Don't block rendering - components will use fallbacks
+      }
     };
     loadMessages();
   }, [locale]);
+
+  const common = messages?.common || {
+    loading: locale === "fa" ? "در حال بارگذاری..." : locale === "ar" ? "جاري التحميل..." : "Loading...",
+    items: locale === "fa" ? "آیتم" : locale === "ar" ? "عنصر" : "items",
+    createdAt: locale === "fa" ? "ایجاد شده" : locale === "ar" ? "تم الإنشاء" : "Created at",
+    previous: locale === "fa" ? "قبلی" : locale === "ar" ? "السابق" : "Previous",
+    next: locale === "fa" ? "بعدی" : locale === "ar" ? "التالي" : "Next",
+    edit: locale === "fa" ? "ویرایش" : locale === "ar" ? "تعديل" : "Edit"
+  };
+
+  const t = messages?.admin?.crm?.quotes || {
+    showQuotes:
+      locale === "fa"
+        ? "نمایش {count} از {total} پیشنهاد"
+        : locale === "ar"
+          ? "عرض {count} من {total} عرض"
+          : "Showing {count} of {total} quotes",
+    selectedCount:
+      locale === "fa"
+        ? "{count} مورد انتخاب شده"
+        : locale === "ar"
+          ? "{count} محددة"
+          : "{count} selected",
+    deleteSelected: locale === "fa" ? "حذف انتخاب شده" : locale === "ar" ? "حذف المحدد" : "Delete selected",
+    quoteNumber: locale === "fa" ? "شماره پیش‌فاکتور" : locale === "ar" ? "رقم العرض" : "Quote #",
+    customer: locale === "fa" ? "مشتری" : locale === "ar" ? "العميل" : "Customer",
+    status: locale === "fa" ? "وضعیت" : locale === "ar" ? "الحالة" : "Status",
+    totalAmount: locale === "fa" ? "مبلغ کل" : locale === "ar" ? "المبلغ الإجمالي" : "Total amount",
+    validUntil: locale === "fa" ? "معتبر تا" : locale === "ar" ? "صالح حتى" : "Valid until",
+    actions: locale === "fa" ? "عملیات" : locale === "ar" ? "الإجراءات" : "Actions",
+    viewDetails: locale === "fa" ? "مشاهده جزئیات" : locale === "ar" ? "عرض التفاصيل" : "View details",
+    convertQuote: locale === "fa" ? "تبدیل به سفارش" : locale === "ar" ? "تحويل إلى طلب" : "Convert to order",
+    sendQuote: locale === "fa" ? "ارسال پیش‌فاکتور" : locale === "ar" ? "إرسال العرض" : "Send quote",
+    page: locale === "fa" ? "صفحه" : locale === "ar" ? "صفحة" : "Page",
+    of: locale === "fa" ? "از" : locale === "ar" ? "من" : "of",
+    statusOptions: {
+      draft: locale === "fa" ? "پیش‌نویس" : locale === "ar" ? "مسودة" : "Draft",
+      sent: locale === "fa" ? "ارسال شده" : locale === "ar" ? "مُرسلة" : "Sent",
+      viewed: locale === "fa" ? "مشاهده شده" : locale === "ar" ? "مُشاهدة" : "Viewed",
+      accepted: locale === "fa" ? "پذیرفته شده" : locale === "ar" ? "مقبولة" : "Accepted",
+      rejected: locale === "fa" ? "رد شده" : locale === "ar" ? "مرفوضة" : "Rejected",
+      expired: locale === "fa" ? "منقضی" : locale === "ar" ? "منتهية" : "Expired"
+    },
+    tax: locale === "fa" ? "مالیات" : locale === "ar" ? "الضريبة" : "Tax"
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -69,20 +119,14 @@ export default function QuoteList({
     }
   };
 
-  if (!messages || !messages.admin?.crm?.quotes) {
-    return <div className="text-white p-4">{messages?.common?.loading || "Loading..."}</div>;
-  }
-
-  const t = messages.admin.crm.quotes;
-
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "DRAFT": return String(t.statusOptions.draft);
-      case "SENT": return String(t.statusOptions.sent);
-      case "VIEWED": return String(t.statusOptions.viewed);
-      case "ACCEPTED": return String(t.statusOptions.accepted);
-      case "REJECTED": return String(t.statusOptions.rejected);
-      case "EXPIRED": return String(t.statusOptions.expired);
+      case "DRAFT": return String(t.statusOptions?.draft || "");
+      case "SENT": return String(t.statusOptions?.sent || "");
+      case "VIEWED": return String(t.statusOptions?.viewed || "");
+      case "ACCEPTED": return String(t.statusOptions?.accepted || "");
+      case "REJECTED": return String(t.statusOptions?.rejected || "");
+      case "EXPIRED": return String(t.statusOptions?.expired || "");
       default: return status;
     }
   };
@@ -126,7 +170,7 @@ export default function QuoteList({
       {/* Results Summary */}
       <div className="flex items-center justify-between text-gray-300">
         <div className="text-sm">
-          {t.showQuotes ? t.showQuotes.replace('{count}', quotes.length.toString()).replace('{total}', totalCount.toString()) : `نمایش ${quotes.length} از ${totalCount} پیشنهاد`}
+          {t.showQuotes ? t.showQuotes.replace('{count}', quotes.length.toString()).replace('{total}', totalCount.toString()) : `Showing ${quotes.length} of ${totalCount} quotes`}
         </div>
         {selectedQuotes.length > 0 && (
           <div className="flex items-center space-x-4 space-x-reverse">
@@ -175,17 +219,17 @@ export default function QuoteList({
                     <div>
                       <div className="text-white font-medium">{quote.quoteNumber}</div>
                       <div className="text-gray-400 text-sm mt-1">
-                        {quote.items.length} {String(messages.common?.items || 'آیتم')}
+                        {quote.items.length} {String(common.items)}
                       </div>
                       <div className="text-gray-500 text-xs mt-1">
-                        {String(messages.common?.createdAt || 'ایجاد شده')}: {formatDate(quote.createdAt)}
+                        {String(common.createdAt)}: {formatDate(quote.createdAt)}
                       </div>
                     </div>
                   </td>
                   <td className="p-4">
                     <div className="flex items-center space-x-3 space-x-reverse">
                       <div className="w-10 h-10 bg-primary-orange rounded-full flex items-center justify-center text-white text-sm font-bold">
-                        {quote.customer.firstName.charAt(0)}{quote.customer.lastName.charAt(0)}
+                        {(quote.customer.firstName || "").charAt(0)}{(quote.customer.lastName || "").charAt(0)}
                       </div>
                       <div>
                         <div className="text-white font-medium">
@@ -235,7 +279,7 @@ export default function QuoteList({
                       </Link>
                       <button
                         className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-lg transition-colors"
-                        title={String(messages.common?.edit || 'ویرایش')}
+                        title={String(common.edit)}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -277,7 +321,7 @@ export default function QuoteList({
                 disabled={currentPage === 1}
                 className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {String(messages.common?.previous || 'قبلی')}
+                {String(common.previous)}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -300,12 +344,12 @@ export default function QuoteList({
                 disabled={currentPage === totalPages}
                 className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {String(messages.common?.next || 'بعدی')}
+                {String(common.next)}
               </button>
             </div>
             
             <div className="text-gray-300 text-sm">
-              {t.page ? `${String(t.page)} ${currentPage} ${String(t.of || 'از')} ${totalPages}` : `صفحه ${currentPage} از ${totalPages}`}
+              {t.page ? `${String(t.page)} ${currentPage} ${String(t.of || "of")} ${totalPages}` : `Page ${currentPage} of ${totalPages}`}
             </div>
           </div>
         )}

@@ -25,8 +25,8 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const msgs = await getMessages(locale);
-        setMessages(msgs);
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
       } catch (error) {
         console.error('Error loading messages in RecentOrders:', error);
         // Don't block rendering - components will use fallbacks
@@ -68,26 +68,26 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
             minutesAgo: "دقیقه پیش",
             justNow: "همین الان"
           };
-          
-          const formatRelativeTime = (dateString: string) => {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffInMs = now.getTime() - date.getTime();
-            const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-            const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-            const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
 
-            if (diffInDays > 0) {
-              return `${diffInDays} ${String(t.daysAgo)}`;
-            } else if (diffInHours > 0) {
-              return `${diffInHours} ${String(t.hoursAgo)}`;
-            } else if (diffInMinutes > 0) {
-              return `${diffInMinutes} ${String(t.minutesAgo)}`;
-            } else {
-              return String(t.justNow);
-            }
-          };
-          
+    const formatRelativeTime = (dateString: string) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+      if (diffInDays > 0) {
+        return `${diffInDays} ${String(t.daysAgo)}`;
+      } else if (diffInHours > 0) {
+        return `${diffInHours} ${String(t.hoursAgo)}`;
+      } else if (diffInMinutes > 0) {
+        return `${diffInMinutes} ${String(t.minutesAgo)}`;
+      } else {
+        return String(t.justNow);
+      }
+    };
+
           const ordersData = result.data.data.map((order: {
             id: string;
             orderNumber: string;
@@ -114,7 +114,7 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
         if (error instanceof Error && error.name === 'AbortError') {
           console.error('Recent orders fetch timeout');
         } else {
-          console.error('Error fetching recent orders:', error);
+        console.error('Error fetching recent orders:', error);
         }
         // Don't block rendering - show empty state
         setOrders([]);

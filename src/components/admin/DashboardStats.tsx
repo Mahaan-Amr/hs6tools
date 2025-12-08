@@ -29,8 +29,8 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const msgs = await getMessages(locale);
-        setMessages(msgs);
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
       } catch (error) {
         console.error('Error loading messages in DashboardStats:', error);
         // Don't block rendering - components will use fallbacks
@@ -106,7 +106,7 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
         if (error instanceof Error && error.name === 'AbortError') {
           console.error('Dashboard stats fetch timeout');
         } else {
-          console.error('Error fetching dashboard stats:', error);
+        console.error('Error fetching dashboard stats:', error);
         }
         // Fallback to zero values - don't block rendering
         setStats({

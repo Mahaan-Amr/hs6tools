@@ -53,8 +53,8 @@ export default function LeadList({
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const msgs = await getMessages(locale);
-        setMessages(msgs);
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
       } catch (error) {
         console.error('Error loading messages in LeadList:', error);
         // Don't block rendering - components will use fallbacks

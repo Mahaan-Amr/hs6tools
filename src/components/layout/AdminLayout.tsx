@@ -20,8 +20,8 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const msgs = await getMessages(locale);
-        setMessages(msgs);
+      const msgs = await getMessages(locale);
+      setMessages(msgs);
       } catch (error) {
         console.error('Error loading messages in AdminLayout:', error);
         // Don't block rendering if messages fail to load
