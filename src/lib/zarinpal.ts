@@ -74,7 +74,7 @@ export interface ZarinpalRefundResponse {
 // Payment Request Options
 export interface PaymentRequestOptions {
   merchantId: string;
-  amount: number; // Amount in Toman (IRR / 10)
+  amount: number; // Amount in Rials (IRR) - ZarinPal v4 REST API expects Rials
   description: string;
   callbackUrl: string;
   mobile?: string;
@@ -86,7 +86,7 @@ export interface PaymentRequestOptions {
 export interface PaymentVerifyOptions {
   merchantId: string;
   authority: string;
-  amount: number; // Amount in Toman (IRR / 10)
+  amount: number; // Amount in Rials (IRR) - ZarinPal v4 REST API expects Rials
   sandbox?: boolean;
 }
 
@@ -133,12 +133,12 @@ export async function requestPayment(
     // Ensure amount is an integer (Zarinpal requires integer)
     const amountInteger = Math.floor(options.amount);
     
-    // Validate amount is at least 1000 Toman
-    if (amountInteger < 1000) {
+    // Validate amount is at least 10,000 Rials
+    if (amountInteger < 10000) {
       console.error('❌ [Zarinpal] Amount too low:', amountInteger);
       return {
         success: false,
-        error: `مبلغ باید حداقل ۱۰,۰۰۰ ریال (۱,۰۰۰ تومان) باشد. مبلغ فعلی: ${amountInteger} تومان`,
+        error: `مبلغ باید حداقل ۱۰,۰۰۰ ریال باشد. مبلغ فعلی: ${amountInteger.toLocaleString('fa-IR')} ریال`,
       };
     }
 
@@ -447,8 +447,9 @@ export async function refundPayment(
 }
 
 /**
- * Convert Rials to Tomans (for Zarinpal API)
- * Zarinpal API expects amount in Tomans (IRR / 10)
+ * Convert Rials to Tomans (for display purposes)
+ * Note: ZarinPal v4 REST API expects amounts in Rials, not Tomans
+ * This function is for display formatting only
  */
 export function rialsToTomans(rials: number): number {
   return Math.round(rials / 10);
@@ -456,6 +457,8 @@ export function rialsToTomans(rials: number): number {
 
 /**
  * Convert Tomans to Rials
+ * Note: ZarinPal v4 REST API expects amounts in Rials, not Tomans
+ * This function is for calculation purposes only
  */
 export function tomansToRials(tomans: number): number {
   return tomans * 10;

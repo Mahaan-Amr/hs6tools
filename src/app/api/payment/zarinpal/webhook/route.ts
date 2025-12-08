@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyPayment, rialsToTomans } from "@/lib/zarinpal";
+import { verifyPayment } from "@/lib/zarinpal";
 import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 import crypto from "crypto";
 
@@ -237,20 +237,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const amountInTomans = rialsToTomans(Number(order.totalAmount));
+    // ZarinPal v4 REST API expects amount in Rials (not Tomans)
+    const amountInRials = Number(order.totalAmount);
 
     console.log('💳 [Webhook] Verifying payment with ZarinPal:', {
       orderId: order.id,
       orderNumber: order.orderNumber,
       authority,
-      amount: amountInTomans,
+      amount: amountInRials,
       sandbox: paymentSettings.zarinpalSandbox,
     });
 
     const verifyResult = await verifyPayment({
       merchantId: paymentSettings.zarinpalMerchantId,
       authority,
-      amount: amountInTomans,
+      amount: amountInRials,
       sandbox: paymentSettings.zarinpalSandbox,
     });
 

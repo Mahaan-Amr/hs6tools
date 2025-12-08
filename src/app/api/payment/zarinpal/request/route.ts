@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { requestPayment, rialsToTomans } from "@/lib/zarinpal";
+import { requestPayment } from "@/lib/zarinpal";
 
 /**
  * POST /api/payment/zarinpal/request
@@ -129,26 +129,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare payment request
-    const amountInTomans = rialsToTomans(Number(order.totalAmount));
+    // ZarinPal v4 REST API expects amount in Rials (not Tomans)
+    const amountInRials = Number(order.totalAmount);
     
-    // Validate amount (Zarinpal minimum is 1000 Toman = 10,000 Rial)
-    if (amountInTomans < 1000) {
+    // Validate amount (Zarinpal minimum is 10,000 Rials)
+    if (amountInRials < 10000) {
       console.error('❌ [Payment Request] Amount too low:', {
-        amountInTomans,
-        amountInRials: Number(order.totalAmount),
-        minimum: 1000
+        amountInRials,
+        minimum: 10000
       });
       return NextResponse.json(
         { 
           success: false, 
-          error: `مبلغ سفارش باید حداقل ۱۰,۰۰۰ ریال باشد. مبلغ فعلی: ${Number(order.totalAmount).toLocaleString('fa-IR')} ریال` 
+          error: `مبلغ سفارش باید حداقل ۱۰,۰۰۰ ریال باشد. مبلغ فعلی: ${amountInRials.toLocaleString('fa-IR')} ریال` 
         },
         { status: 400 }
       );
     }
     
     // Ensure amount is an integer (Zarinpal requires integer)
-    const amountInteger = Math.floor(amountInTomans);
+    const amountInteger = Math.floor(amountInRials);
     
     const description = `پرداخت سفارش ${order.orderNumber}`;
     
