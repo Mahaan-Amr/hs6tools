@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useCustomer } from '@/contexts/CustomerContext';
 import { useRouter } from 'next/navigation';
 import { getMessages, Messages } from '@/lib/i18n';
+import { formatPrice as formatPriceUtil } from '@/utils/format';
 
 interface RecentOrdersProps {
   locale: string;
@@ -79,8 +80,8 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
   };
 
   const formatPrice = (price: number) => {
-    const currency = messages?.customer?.orders?.currency || 'تومان';
-    return new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : 'en-US').format(price) + ` ${currency}`;
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, locale);
   };
 
   const getStatusColor = (status: string) => {

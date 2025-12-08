@@ -274,8 +274,10 @@ export const SMSTemplates = {
       message += `\nمحصولات: ${productsList}`;
     }
     if (totalAmount) {
-      const formattedAmount = new Intl.NumberFormat('fa-IR').format(totalAmount);
-      message += `\nمبلغ پرداخت شده: ${formattedAmount} ریال`;
+      // Convert Rials to Tomans for display
+      const amountInTomans = Math.round(totalAmount / 10);
+      const formattedAmount = new Intl.NumberFormat('fa-IR').format(amountInTomans);
+      message += `\nمبلغ پرداخت شده: ${formattedAmount} تومان`;
     }
     if (refId) {
       message += `\nکد پیگیری پرداخت: ${refId}`;
@@ -323,8 +325,10 @@ export const SMSTemplates = {
   },
 
   ORDER_REFUNDED: (orderNumber: string, customerName: string, amount: number, refId?: string) => {
-    const formattedAmount = new Intl.NumberFormat('fa-IR').format(amount);
-    let message = `سلام ${customerName}، سفارش ${orderNumber} مرجوع شد.\nمبلغ ${formattedAmount} ریال طی 3-5 روز کاری به حساب شما بازگردانده می‌شود.`;
+    // Convert Rials to Tomans for display
+    const amountInTomans = Math.round(amount / 10);
+    const formattedAmount = new Intl.NumberFormat('fa-IR').format(amountInTomans);
+    let message = `سلام ${customerName}، سفارش ${orderNumber} مرجوع شد.\nمبلغ ${formattedAmount} تومان طی 3-5 روز کاری به حساب شما بازگردانده می‌شود.`;
     if (refId) {
       message += `\nکد پیگیری: ${refId}`;
     }

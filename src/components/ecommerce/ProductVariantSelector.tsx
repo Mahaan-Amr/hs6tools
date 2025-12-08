@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getMessages, Messages } from "@/lib/i18n";
+import { formatPrice as formatPriceUtil } from "@/utils/format";
 
 interface ProductVariant {
   id: string;
@@ -91,12 +92,8 @@ export default function ProductVariantSelector({
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, locale);
   };
 
   if (variants.length === 0) {

@@ -119,7 +119,8 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, 'fa');
   };
 
   const getStatusInfo = (status: string) => {

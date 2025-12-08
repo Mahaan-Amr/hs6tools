@@ -1,36 +1,61 @@
 /**
- * Format price to Iranian Rial with proper formatting
+ * Format price for display in UI
+ * 
+ * IMPORTANT: Database stores prices in Rials, but we display in Tomans
+ * - Input: Price in Rials (e.g., 976500 from database)
+ * - Output: Formatted price in Tomans (e.g., "۹۷,۶۵۰ تومان")
+ * 
+ * @param price - Price in Rials (from database)
+ * @param locale - Locale for formatting (default: 'fa')
+ * @returns Formatted price string in Tomans
  */
-export function formatPrice(price: number | string | null | undefined): string {
-  if (price === null || price === undefined) return '0 ریال';
+export function formatPrice(
+  price: number | string | null | undefined,
+  locale: string = 'fa'
+): string {
+  if (price === null || price === undefined) return locale === 'fa' ? '0 تومان' : '0';
   
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
   
-  if (isNaN(numPrice)) return '0 ریال';
+  if (isNaN(numPrice)) return locale === 'fa' ? '0 تومان' : '0';
   
-  // Convert to Rial (assuming input is in Toman)
-  const rialPrice = numPrice * 10;
+  // Convert Rials to Tomans (divide by 10)
+  const tomanPrice = Math.round(numPrice / 10);
   
-  // Format with Persian numbers and commas
-  const formatted = new Intl.NumberFormat('fa-IR').format(rialPrice);
-  
-  return `${formatted} ریال`;
+  // Format based on locale
+  if (locale === 'fa') {
+    const formatted = new Intl.NumberFormat('fa-IR').format(tomanPrice);
+    return `${formatted} تومان`;
+  } else if (locale === 'ar') {
+    const formatted = new Intl.NumberFormat('ar-SA').format(tomanPrice);
+    return `${formatted} تومان`;
+  } else {
+    // For English, show in USD equivalent (very rough conversion)
+    const formatted = new Intl.NumberFormat('en-US').format(tomanPrice);
+    return `${formatted} تومان`;
+  }
 }
 
 /**
- * Format price in Toman (original currency)
+ * Format price in Tomans (legacy function - use formatPrice instead)
+ * @deprecated Use formatPrice() instead
  */
 export function formatPriceToman(price: number | string | null | undefined): string {
-  if (price === null || price === undefined) return '0 تومان';
-  
-  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
-  
-  if (isNaN(numPrice)) return '0 تومان';
-  
-  // Format with Persian numbers and commas
-  const formatted = new Intl.NumberFormat('fa-IR').format(numPrice);
-  
-  return `${formatted} تومان`;
+  return formatPrice(price, 'fa');
+}
+
+/**
+ * Convert Rials to Tomans (for display purposes)
+ */
+export function rialsToTomans(rials: number): number {
+  return Math.round(rials / 10);
+}
+
+/**
+ * Convert Tomans to Rials (for database storage)
+ */
+export function tomansToRials(tomans: number): number {
+  return tomans * 10;
 }
 
 /**

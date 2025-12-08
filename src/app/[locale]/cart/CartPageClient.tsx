@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getMessages, Messages } from "@/lib/i18n";
+import { formatPrice as formatPriceUtil } from "@/utils/format";
 
 interface CartPageClientProps {
   locale: string;
@@ -26,12 +27,8 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
   }, [locale]);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, locale);
   };
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {

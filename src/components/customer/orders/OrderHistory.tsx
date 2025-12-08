@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useCustomer } from '@/contexts/CustomerContext';
 import { useRouter } from 'next/navigation';
 import { getMessages, Messages } from '@/lib/i18n';
+import { formatPrice as formatPriceUtil } from '@/utils/format';
 
 interface OrderHistoryProps {
   locale: string;
@@ -69,8 +70,8 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
   };
 
   const formatPrice = (price: number) => {
-    const currency = messages?.customer?.orders?.currency || 'USD';
-    return new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : 'en-US').format(price) + ` ${currency}`;
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, locale);
   };
 
   const getStatusInfo = (status: string) => {

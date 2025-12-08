@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getMessages, Messages } from "@/lib/i18n";
 import WishlistButton from "./WishlistButton";
+import { formatPrice as formatPriceUtil } from "@/utils/format";
 
 interface ProductImage {
   id: string;
@@ -80,12 +81,8 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
   }, [locale]);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, locale);
   };
 
   const handleAddToCart = async () => {

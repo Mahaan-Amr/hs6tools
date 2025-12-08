@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import CheckoutAddressSelector from "@/components/checkout/CheckoutAddressSelector";
 import { getMessages, Messages } from "@/lib/i18n";
+import { formatPrice as formatPriceUtil } from "@/utils/format";
 
 interface CheckoutPageClientProps {
   locale: string;
@@ -241,12 +242,8 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
   const [couponError, setCouponError] = useState<string | null>(null);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, locale);
   };
 
   // Use failed order data if retrying payment, otherwise use cart

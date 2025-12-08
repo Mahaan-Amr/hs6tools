@@ -2,6 +2,7 @@ import { getMessages } from "@/lib/i18n";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { formatPrice as formatPriceUtil } from "@/utils/format";
 
 interface ProductImage {
   id: string;
@@ -124,12 +125,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const relatedProducts = await getRelatedProducts(product.category.id, product.id);
   
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
+    // Use centralized utility that converts Rials to Tomans
+    return formatPriceUtil(price, locale);
   };
 
   const formatDate = (dateString: string) => {
