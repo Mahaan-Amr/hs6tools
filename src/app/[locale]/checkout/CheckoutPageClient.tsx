@@ -48,6 +48,36 @@ interface ShippingMethod {
   estimatedDays: string;
 }
 
+interface OrderItem {
+  id: string;
+  name: string;
+  image: string | null;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+}
+
+interface FailedOrder {
+  id: string;
+  orderNumber: string;
+  totalAmount: number;
+  subtotal: number;
+  taxAmount: number;
+  shippingAmount: number;
+  discountAmount: number;
+  shippingMethod: string;
+  items: OrderItem[];
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    state: string;
+    city: string;
+    addressLine1: string;
+    postalCode: string;
+  };
+}
+
 export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,6 +86,10 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
   const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   const [messages, setMessages] = useState<Messages | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  
+  // Retry payment state
+  const [failedOrder, setFailedOrder] = useState<FailedOrder | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -103,12 +137,13 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     }
   }, [searchParams, locale, router]);
 
-  // Check for payment errors in URL parameters
+  // Check for payment errors and load failed order for retry
   useEffect(() => {
     const error = searchParams.get("error");
     const errorMessage = searchParams.get("message");
+    const orderNumber = searchParams.get("orderNumber");
     
-    if (error) {
+    if (error && orderNumber) {
       let errorText = "";
       switch (error) {
         case "payment_cancelled":
@@ -130,12 +165,34 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
       }
       setPaymentError(errorText);
       
-      // Clear error from URL after displaying
+      // Fetch the failed order details for retry
+      const fetchFailedOrder = async () => {
+        setIsLoadingOrder(true);
+        try {
+          console.log('🔄 [Checkout] Fetching failed order:', orderNumber);
+          const response = await fetch(`/api/customer/orders/${orderNumber}`);
+          const result = await response.json();
+          
+          if (result.success && result.data) {
+            console.log('✅ [Checkout] Failed order loaded:', result.data);
+            setFailedOrder(result.data);
+          } else {
+            console.error('❌ [Checkout] Failed to load order:', result.error);
+          }
+        } catch (error) {
+          console.error('❌ [Checkout] Error loading order:', error);
+        } finally {
+          setIsLoadingOrder(false);
+        }
+      };
+      
+      fetchFailedOrder();
+      
+      // Clear error from URL after displaying (but keep orderNumber for retry)
       const newSearchParams = new URLSearchParams(searchParams.toString());
       newSearchParams.delete("error");
       newSearchParams.delete("message");
-      newSearchParams.delete("orderNumber");
-      router.replace(`/${locale}/checkout?${newSearchParams.toString()}`);
+      router.replace(`/${locale}/checkout?${newSearchParams.toString()}`, { scroll: false });
     }
   }, [searchParams, messages, locale, router]);
 
@@ -192,11 +249,27 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     }).format(price);
   };
 
+  // Use failed order data if retrying payment, otherwise use cart
+  const isRetryMode = !!failedOrder;
+  const displayItems = isRetryMode 
+    ? failedOrder.items.map(item => ({
+        id: item.id,
+        productId: item.id,
+        variantId: null,
+        sku: '',
+        name: item.name,
+        category: '',
+        image: item.image || '',
+        price: item.unitPrice,
+        quantity: item.quantity
+      }))
+    : items;
+  
   const selectedShippingMethod = SHIPPING_METHODS.find(m => m.id === selectedShipping);
-  const shippingCost = selectedShippingMethod?.price || 0;
-  const taxAmount = Math.round(totalPrice * 0.09); // 9% VAT for Iran
-  const discountAmount = appliedCoupon?.discountAmount || 0;
-  const totalWithShipping = totalPrice + shippingCost + taxAmount - discountAmount;
+  const shippingCost = isRetryMode ? failedOrder.shippingAmount : (selectedShippingMethod?.price || 0);
+  const taxAmount = isRetryMode ? failedOrder.taxAmount : Math.round(totalPrice * 0.09);
+  const discountAmount = isRetryMode ? failedOrder.discountAmount : (appliedCoupon?.discountAmount || 0);
+  const totalWithShipping = isRetryMode ? failedOrder.totalAmount : (totalPrice + shippingCost + taxAmount - discountAmount);
 
   const handleAddressChange = (field: keyof Address, value: string) => {
     setAddress(prev => ({ ...prev, [field]: value }));
@@ -301,6 +374,45 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     setAppliedCoupon(null);
     setCouponCode("");
     setCouponError(null);
+  };
+
+  const handleRetryPayment = async () => {
+    if (!failedOrder) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      console.log('🔄 [Checkout] Retrying payment for order:', failedOrder.id);
+      
+      // Request payment for existing order
+      const paymentResponse = await fetch('/api/payment/zarinpal/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: failedOrder.id
+        })
+      });
+
+      const paymentResult = await paymentResponse.json();
+
+      if (!paymentResponse.ok || !paymentResult.success || !paymentResult.paymentUrl) {
+        console.error('❌ Payment request failed:', paymentResult.error);
+        throw new Error(paymentResult.error || String(t.paymentRequestFailed || 'Failed to create payment request'));
+      }
+
+      console.log('✅ Payment URL received, redirecting to Zarinpal');
+      
+      // Redirect to Zarinpal payment page
+      window.location.href = paymentResult.paymentUrl;
+      return;
+    } catch (error) {
+      console.error("Error retrying payment:", error);
+      alert(`${String(t.orderError)}: ${error instanceof Error ? error.message : String(t.tryAgain)}`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handlePlaceOrder = async () => {
@@ -431,7 +543,22 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     }
   };
 
-  if (items.length === 0) {
+  // Show loading state while fetching failed order
+  if (isLoadingOrder) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center text-gray-900 dark:text-white">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-orange mx-auto"></div>
+            <p className="mt-4 text-xl">در حال بارگذاری سفارش...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show empty cart if not in retry mode
+  if (items.length === 0 && !isRetryMode) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
@@ -460,6 +587,28 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
             {String(t.checkoutSubtitle)}
           </p>
         </div>
+
+        {/* Retry Payment Banner */}
+        {isRetryMode && failedOrder && (
+          <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-200 dark:border-blue-500/30 rounded-xl">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 mt-0.5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="text-blue-800 dark:text-blue-300 font-semibold mb-2">
+                  تلاش مجدد برای پرداخت
+                </h3>
+                <p className="text-blue-700 dark:text-blue-400 text-sm mb-2">
+                  شماره سفارش: <span className="font-semibold">{failedOrder.orderNumber}</span>
+                </p>
+                <p className="text-blue-600 dark:text-blue-500 text-sm">
+                  می‌توانید مجدداً برای این سفارش پرداخت کنید یا آن را لغو کنید.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Payment Error Alert */}
         {paymentError && (
@@ -521,33 +670,57 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
               <div className="glass rounded-3xl p-8">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.shippingInfo)}</h2>
                 
-                {/* Address Selection Toggle */}
-                <div className="mb-6">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => setUseSavedAddresses(false)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                        !useSavedAddresses
-                          ? "bg-primary-orange text-white"
-                          : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                      }`}
-                    >
-                      {String(t.enterNewAddress)}
-                    </button>
-                    <button
-                      onClick={() => setUseSavedAddresses(true)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                        useSavedAddresses
-                          ? "bg-primary-orange text-white"
-                          : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                      }`}
-                    >
-                      {String(t.selectSavedAddress)}
-                    </button>
+                {/* Show read-only address in retry mode */}
+                {isRetryMode && failedOrder ? (
+                  <div className="p-6 bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-200 dark:border-blue-500/30 rounded-xl">
+                    <div className="flex items-start mb-4">
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-blue-700 dark:text-blue-400 text-sm">
+                        آدرس ارسال از سفارش قبلی شما استفاده می‌شود. برای تغییر آدرس، لطفاً سفارش را لغو کرده و مجدداً ثبت کنید.
+                      </p>
+                    </div>
+                    <div className="text-gray-900 dark:text-white">
+                      <p className="font-semibold mb-2">آدرس ارسال:</p>
+                      <p>{failedOrder.shippingAddress.firstName} {failedOrder.shippingAddress.lastName}</p>
+                      <p>{failedOrder.shippingAddress.phone}</p>
+                      <p>{failedOrder.shippingAddress.state}، {failedOrder.shippingAddress.city}</p>
+                      <p>{failedOrder.shippingAddress.addressLine1}</p>
+                      <p>کد پستی: {failedOrder.shippingAddress.postalCode}</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Address Selection Toggle */}
+                    <div className="mb-6">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => setUseSavedAddresses(false)}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                            !useSavedAddresses
+                              ? "bg-primary-orange text-white"
+                              : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                          }`}
+                        >
+                          {String(t.enterNewAddress)}
+                        </button>
+                        <button
+                          onClick={() => setUseSavedAddresses(true)}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                            useSavedAddresses
+                              ? "bg-primary-orange text-white"
+                              : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                          }`}
+                        >
+                          {String(t.selectSavedAddress)}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                {useSavedAddresses ? (
+                {!isRetryMode && (useSavedAddresses ? (
                   <CheckoutAddressSelector
                     locale={locale}
                     onAddressSelect={handleAddressSelect}
@@ -632,7 +805,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                     />
                   </div>
                 </div>
-                )}
+                ))}
               </div>
             )}
 
@@ -727,7 +900,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.orderItems)}</h3>
                   <div className="space-y-3">
-                    {items.map((item) => (
+                    {displayItems.map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <span className="text-gray-600 dark:text-gray-300">{item.name}</span>
@@ -766,7 +939,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 </button>
               ) : (
                 <button
-                  onClick={handlePlaceOrder}
+                  onClick={isRetryMode ? handleRetryPayment : handlePlaceOrder}
                   disabled={isProcessing}
                   className="px-8 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-gray-900 dark:text-white rounded-xl font-semibold hover:shadow-glass-orange hover:scale-105 transition-all duration-200 disabled:opacity-50"
                 >
@@ -776,7 +949,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       <span>{String(t.processing)}</span>
                     </div>
                   ) : (
-                    String(t.placeOrder)
+                    isRetryMode ? "تلاش مجدد برای پرداخت" : String(t.placeOrder)
                   )}
                 </button>
               )}
