@@ -211,6 +211,7 @@ model Order {
   paymentStatus     PaymentStatus  @default(PENDING)
   paymentId         String?
   paymentDate       DateTime?
+  expiresAt         DateTime?      // Order expiry time for auto-cancellation of unpaid orders
   shippingMethod    ShippingMethod
   trackingNumber    String?
   shippedAt         DateTime?
@@ -222,6 +223,7 @@ model Order {
   user              User           @relation(fields: [userId], references: [id])
   coupon            Coupon?        @relation(fields: [couponId], references: [id])
 
+  @@index([expiresAt, paymentStatus]) // Index for efficient expiry queries
   @@map("orders")
 }
 

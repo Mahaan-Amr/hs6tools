@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPayment, rialsToTomans } from "@/lib/zarinpal";
 import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
+import { restoreStockAndUpdateOrder } from "@/lib/inventory";
 
 /**
  * GET /api/payment/zarinpal/callback
@@ -50,6 +51,9 @@ export async function GET(request: NextRequest) {
         user: {
           select: {
             id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
           },
         },
       },
@@ -60,6 +64,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL("/fa/checkout?error=order_not_found", request.url)
       );
+    }
+
+    // ✅ FIX #2: Check if order is already paid (duplicate payment protection)
+    if (order.paymentStatus === "PAID") {
+      console.log('⚠️ [Payment Callback] Order already paid, skipping verification:', {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        paymentStatus: order.paymentStatus
+      });
+      
+      // Redirect to success page with existing payment info
+      const locale = "fa"; // Default locale
+      const origin = request.nextUrl.origin;
+      const successUrl = `${origin}/${locale}/checkout/success?orderNumber=${order.orderNumber}&refId=${order.paymentId}`;
+      
+      console.log('✅ [Payment Callback] Redirecting to success (already paid)');
+      return NextResponse.redirect(successUrl);
     }
 
     // Get payment settings or create default if not exists (same logic as request route)
@@ -101,13 +122,37 @@ export async function GET(request: NextRequest) {
         orderNumber: order.orderNumber,
       });
 
-      // Update order status to indicate payment was cancelled
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          paymentStatus: "FAILED",
-        },
-      });
+      // ✅ FIX #1: Restore stock and update order status atomically
+      try {
+        await restoreStockAndUpdateOrder(
+          order.id,
+          "FAILED",
+          undefined, // Keep order status as is
+          "Payment cancelled by user"
+        );
+        console.log('✅ [Payment Callback] Stock restored for cancelled payment');
+      } catch (error) {
+        console.error('❌ [Payment Callback] Error restoring stock for cancelled payment:', error);
+        // Continue even if stock restoration fails - order is still marked as failed
+      }
+
+      // Send SMS notification to customer (non-blocking)
+      const customerPhone = order.user.phone || order.customerPhone;
+      if (customerPhone) {
+        const customerName = order.user.firstName && order.user.lastName
+          ? `${order.user.firstName} ${order.user.lastName}`
+          : 'کاربر گرامی';
+
+        sendSMSSafe(
+          {
+            receptor: customerPhone,
+            message: SMSTemplates.PAYMENT_FAILED(order.orderNumber, customerName, 'پرداخت توسط کاربر لغو شد')
+          },
+          `Payment cancelled: ${order.orderNumber}`
+        ).catch(err => {
+          console.error('❌ [Payment Callback] SMS error (non-blocking):', err);
+        });
+      }
 
       return NextResponse.redirect(
         new URL(`/fa/checkout?error=payment_cancelled&orderNumber=${order.orderNumber}`, request.url)
@@ -138,13 +183,37 @@ export async function GET(request: NextRequest) {
         error: verifyResult.error,
       });
 
-      // Update order status to failed
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          paymentStatus: "FAILED",
-        },
-      });
+      // ✅ FIX #1: Restore stock and update order status atomically
+      try {
+        await restoreStockAndUpdateOrder(
+          order.id,
+          "FAILED",
+          undefined, // Keep order status as is
+          `Payment verification failed: ${verifyResult.error}`
+        );
+        console.log('✅ [Payment Callback] Stock restored for failed verification');
+      } catch (error) {
+        console.error('❌ [Payment Callback] Error restoring stock for failed verification:', error);
+        // Continue even if stock restoration fails - order is still marked as failed
+      }
+
+      // Send SMS notification to customer (non-blocking)
+      const customerPhone = order.user.phone || order.customerPhone;
+      if (customerPhone) {
+        const customerName = order.user.firstName && order.user.lastName
+          ? `${order.user.firstName} ${order.user.lastName}`
+          : 'کاربر گرامی';
+
+        sendSMSSafe(
+          {
+            receptor: customerPhone,
+            message: SMSTemplates.PAYMENT_FAILED(order.orderNumber, customerName, verifyResult.error)
+          },
+          `Payment failed: ${order.orderNumber}`
+        ).catch(err => {
+          console.error('❌ [Payment Callback] SMS error (non-blocking):', err);
+        });
+      }
 
       return NextResponse.redirect(
         new URL(`/fa/checkout?error=payment_failed&orderNumber=${order.orderNumber}&message=${encodeURIComponent(verifyResult.error || "پرداخت ناموفق بود")}`, request.url)

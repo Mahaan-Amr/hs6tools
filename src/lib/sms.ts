@@ -305,6 +305,31 @@ export const SMSTemplates = {
   // Security alerts
   PASSWORD_CHANGED: (customerName: string) =>
     `سلام ${customerName}، رمز عبور حساب کاربری شما تغییر یافت. در صورت عدم اطلاع، لطفاً با پشتیبانی تماس بگیرید.`,
+
+  // Order cancellation and failures
+  ORDER_CANCELLED: (orderNumber: string, customerName: string) =>
+    `سلام ${customerName}، سفارش ${orderNumber} لغو شد. موجودی محصولات بازگردانده شد. در صورت کسر وجه، طی 3-5 روز کاری بازگردانده می‌شود.`,
+
+  ORDER_EXPIRED: (orderNumber: string, customerName: string) =>
+    `سلام ${customerName}، سفارش ${orderNumber} به دلیل عدم پرداخت به مدت 30 دقیقه، لغو شد. برای ثبت مجدد سفارش، از سبد خرید اقدام کنید.`,
+
+  PAYMENT_FAILED: (orderNumber: string, customerName: string, reason?: string) => {
+    let message = `سلام ${customerName}، پرداخت سفارش ${orderNumber} ناموفق بود.`;
+    if (reason) {
+      message += `\nدلیل: ${reason}`;
+    }
+    message += '\nلطفاً مجدداً تلاش کنید یا با پشتیبانی تماس بگیرید.';
+    return message;
+  },
+
+  ORDER_REFUNDED: (orderNumber: string, customerName: string, amount: number, refId?: string) => {
+    const formattedAmount = new Intl.NumberFormat('fa-IR').format(amount);
+    let message = `سلام ${customerName}، سفارش ${orderNumber} مرجوع شد.\nمبلغ ${formattedAmount} ریال طی 3-5 روز کاری به حساب شما بازگردانده می‌شود.`;
+    if (refId) {
+      message += `\nکد پیگیری: ${refId}`;
+    }
+    return message;
+  },
 } as const;
 
 /**

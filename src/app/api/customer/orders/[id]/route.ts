@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { restoreStockAndUpdateOrder } from "@/lib/inventory";
 
 // GET /api/customer/orders/[id] - Get specific order details
 export async function GET(
@@ -206,12 +207,24 @@ export async function PATCH(
     // For now, we'll allow cancellation of shipped orders (admin can handle refunds)
     // You can change this logic based on your business rules
 
-    // Update order status to CANCELLED
-    const updatedOrder = await prisma.order.update({
+    // ✅ FIX #1: Restore stock and update order status atomically
+    try {
+      await restoreStockAndUpdateOrder(
+        order.id,
+        order.paymentStatus, // Keep payment status as is
+        "CANCELLED",
+        "Cancelled by customer"
+      );
+      console.log(`✅ Order cancelled and stock restored: ${order.orderNumber}`);
+    } catch (error) {
+      console.error(`❌ Error restoring stock during cancellation for ${order.orderNumber}:`, error);
+      // If stock restoration fails, still allow cancellation but log the error
+      // Admin can manually adjust inventory if needed
+    }
+
+    // Fetch updated order with all relations for response
+    const updatedOrder = await prisma.order.findUnique({
       where: { id: order.id },
-      data: {
-        status: "CANCELLED",
-      },
       include: {
         orderItems: true,
         shippingAddress: true,
@@ -226,6 +239,32 @@ export async function PATCH(
         },
       },
     });
+
+    if (!updatedOrder) {
+      return NextResponse.json(
+        { success: false, error: "Order not found after cancellation" },
+        { status: 500 }
+      );
+    }
+
+    // Send SMS notification to customer (non-blocking)
+    const customerPhone = updatedOrder.user.phone || order.customerPhone;
+    if (customerPhone) {
+      const { sendSMSSafe, SMSTemplates } = await import("@/lib/sms");
+      const customerName = updatedOrder.user.firstName && updatedOrder.user.lastName
+        ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
+        : 'کاربر گرامی';
+
+      sendSMSSafe(
+        {
+          receptor: customerPhone,
+          message: SMSTemplates.ORDER_CANCELLED(order.orderNumber, customerName)
+        },
+        `Order cancelled: ${order.orderNumber}`
+      ).catch(err => {
+        console.error('❌ [Order Cancellation] SMS error (non-blocking):', err);
+      });
+    }
 
     // Transform order data (same as GET)
     const transformedOrder = {

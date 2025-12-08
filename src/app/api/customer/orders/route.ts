@@ -435,6 +435,11 @@ export async function POST(request: NextRequest) {
         customerPhone: shippingAddress.phone
       });
 
+      // Set order expiry time (30 minutes from now)
+      // This prevents stock from being locked indefinitely if payment is not completed
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
       // Create order (using normalized enum values)
       // Note: billingAddressId has been removed from schema, using type assertion
       const orderData = {
@@ -454,7 +459,8 @@ export async function POST(request: NextRequest) {
           customerNote: customerNote || null,
           shippingAddressId: shippingAddr.id,
           customerEmail: session.user.email,
-          customerPhone: shippingAddress.phone || null
+          customerPhone: shippingAddress.phone || null,
+          expiresAt: expiresAt
       };
 
       const newOrder = await tx.order.create({
