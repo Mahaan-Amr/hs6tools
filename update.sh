@@ -85,11 +85,16 @@ check_git() {
 ensure_env() {
     section "🔐 Checking Environment Files"
 
-    # If .env missing but .env.production exists, copy it
-    if [ ! -f ".env" ] && [ -f ".env.production" ]; then
-        info ".env not found. Copying from .env.production..."
+    # Always refresh .env from .env.production if available (keep a backup)
+    if [ -f ".env.production" ]; then
+        if [ -f ".env" ]; then
+            BACKUP_NAME=".env.backup-$(date +'%Y%m%d-%H%M%S')"
+            info ".env exists. Creating backup at ${BACKUP_NAME} before refresh..."
+            cp .env "${BACKUP_NAME}"
+        fi
+        info "Refreshing .env from .env.production..."
         cp .env.production .env
-        log ".env created from .env.production"
+        log ".env updated from .env.production"
     fi
 
     if [ -f ".env" ]; then
