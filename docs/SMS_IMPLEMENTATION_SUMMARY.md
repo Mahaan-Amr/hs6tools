@@ -43,6 +43,8 @@ KAVENEGAR_SENDER=10004346  # Optional
 # (useful when the hosting provider prefixes env vars)
 ```
 
+> Note: `update.sh` now copies `.env.production` to `.env` if missing and warns if key SMS/Payments/Auth variables (e.g., `KAVENEGAR_API_KEY`, `ZARINPAL_MERCHANT_ID`, `NEXTAUTH_SECRET`) are absent. Ensure these are set before running the update on the server.
+
 **How to get API key:**
 1. Register at https://panel.kavenegar.com
 2. Get your API key from dashboard

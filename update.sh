@@ -18,6 +18,16 @@ NC='\033[0m' # No Color
 APP_DIR="${PWD}"
 PM2_APP_NAME="hs6tools"
 BACKUP_BEFORE_UPDATE=true
+# Required env vars (add more if needed)
+REQUIRED_ENV_VARS=(
+  "DATABASE_URL"
+  "NEXTAUTH_URL"
+  "NEXTAUTH_SECRET"
+  "KAVENEGAR_API_KEY|NEXT_PUBLIC_KAVENEGAR_API_KEY|KAVENEGAR_API_TOKEN"
+  "KAVENEGAR_SENDER"
+  "ZARINPAL_MERCHANT_ID"
+  "ZARINPAL_SANDBOX"
+)
 
 # Logging functions
 log() {
@@ -69,6 +79,60 @@ check_git() {
     fi
     
     log "Git check passed"
+}
+
+# Ensure environment file exists and contains required variables
+ensure_env() {
+    section "🔐 Checking Environment Files"
+
+    # If .env missing but .env.production exists, copy it
+    if [ ! -f ".env" ] && [ -f ".env.production" ]; then
+        info ".env not found. Copying from .env.production..."
+        cp .env.production .env
+        log ".env created from .env.production"
+    fi
+
+    if [ -f ".env" ]; then
+        log ".env file found"
+    else
+        warning ".env file not found. Please create it or add required variables before continuing."
+    fi
+
+    # Check required variables (supports fallback names with |)
+    if [ -f ".env" ]; then
+        info "Checking required environment variables in .env..."
+        missing_vars=()
+        for var_group in "${REQUIRED_ENV_VARS[@]}"; do
+            IFS='|' read -r -a candidates <<< "$var_group"
+            found=false
+            for candidate in "${candidates[@]}"; do
+                if grep -q "^${candidate}=" .env 2>/dev/null; then
+                    found=true
+                    break
+                fi
+            done
+            if [ "$found" = false ]; then
+                missing_vars+=("$var_group")
+            fi
+        done
+
+        if [ ${#missing_vars[@]} -eq 0 ]; then
+            log "All required environment variables are present in .env"
+        else
+            warning "Missing environment variables detected:"
+            for mv in "${missing_vars[@]}"; do
+                echo "  - $mv"
+            done
+            echo ""
+            echo "Please edit .env (or .env.production) to include the missing variables."
+            echo "Examples:"
+            echo "  KAVENEGAR_API_KEY=your_kavenegar_key"
+            echo "  ZARINPAL_MERCHANT_ID=your_zarinpal_merchant_id"
+            echo "  NEXTAUTH_SECRET=your_nextauth_secret"
+            echo ""
+            warning "Update will continue, but SMS/Payments/Auth may fail until these are set."
+        fi
+    fi
 }
 
 # Check if Node.js and npm are available
@@ -422,6 +486,7 @@ main() {
     check_directory
     check_git
     check_node
+    ensure_env
     PM2_AVAILABLE=$(check_pm2 && echo "yes" || echo "no")
     
     # Create backup
