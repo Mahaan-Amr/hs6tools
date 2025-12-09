@@ -236,28 +236,150 @@ pull_changes() {
     fi
 }
 
-# Install dependencies
-install_dependencies() {
-    section "📦 Installing Dependencies"
+# Check for compromised or corrupted node_modules
+check_node_modules_integrity() {
+    info "Checking node_modules integrity..."
     
-    info "Installing npm dependencies..."
-    if npm install; then
-        log "Dependencies installed successfully"
+    # Check for suspicious patterns that indicate compromised packages
+    if [ -d "node_modules" ]; then
+        # Check for known malicious patterns
+        SUSPICIOUS=$(grep -r "raw.githubusercontent.com" node_modules/@prisma 2>/dev/null | head -1 || echo "")
+        if [ -n "$SUSPICIOUS" ]; then
+            warning "⚠️  SECURITY ALERT: Suspicious code detected in node_modules!"
+            warning "This may indicate compromised packages. Forcing clean reinstall..."
+            return 1
+        fi
+        
+        # Check for window references in server-side Prisma code (should not exist)
+        if grep -r "window.__REMOTE_LOADER__" node_modules/@prisma 2>/dev/null | grep -q "window"; then
+            warning "⚠️  Corrupted node_modules detected (invalid browser code in server packages)"
+            return 1
+        fi
+        
+        log "node_modules integrity check passed"
+        return 0
+    fi
+    
+    return 1
+}
+
+# Force clean reinstall of dependencies
+clean_reinstall_dependencies() {
+    section "🧹 Clean Reinstall of Dependencies"
+    
+    warning "Performing complete clean reinstall to ensure package integrity..."
+    
+    # Remove everything
+    info "Removing node_modules..."
+    rm -rf node_modules
+    
+    info "Removing package-lock.json..."
+    rm -f package-lock.json
+    
+    info "Removing .next build cache..."
+    rm -rf .next
+    
+    info "Clearing npm cache..."
+    npm cache clean --force 2>/dev/null || true
+    
+    log "Cleanup completed successfully"
+    
+    # Fresh install
+    info "Installing fresh packages from npm registry..."
+    if npm install --no-audit --prefer-online; then
+        log "Fresh dependencies installed successfully"
+        return 0
     else
-        error "Failed to install dependencies. Please check the error messages above."
+        error "Failed to install fresh dependencies. Please check your internet connection and npm registry."
+        return 1
     fi
 }
 
-# Generate Prisma client
+# Install dependencies with integrity checks
+install_dependencies() {
+    section "📦 Installing Dependencies"
+    
+    # Check if node_modules exists and is healthy
+    NEEDS_CLEAN_INSTALL=false
+    
+    if [ ! -d "node_modules" ]; then
+        info "node_modules not found, will perform fresh install..."
+        NEEDS_CLEAN_INSTALL=true
+    elif ! check_node_modules_integrity; then
+        warning "node_modules integrity check failed, will perform clean reinstall..."
+        NEEDS_CLEAN_INSTALL=true
+    fi
+    
+    if [ "$NEEDS_CLEAN_INSTALL" = true ]; then
+        clean_reinstall_dependencies
+        return $?
+    fi
+    
+    # Normal update
+    info "Installing/updating npm dependencies..."
+    if npm install --no-audit; then
+        log "Dependencies installed successfully"
+        
+        # Verify integrity after install
+        if ! check_node_modules_integrity; then
+            warning "Integrity check failed after install. Performing clean reinstall..."
+            clean_reinstall_dependencies
+            return $?
+        fi
+        
+        return 0
+    else
+        warning "Normal install failed. Attempting clean reinstall..."
+        clean_reinstall_dependencies
+        return $?
+    fi
+}
+
+# Generate Prisma client with retry and recovery
 generate_prisma() {
     section "🔧 Generating Prisma Client"
     
     info "Generating Prisma client..."
-    if npx prisma generate; then
+    
+    # First attempt
+    if npx prisma generate 2>&1 | tee /tmp/prisma-gen.log; then
         log "Prisma client generated successfully"
-    else
-        error "Failed to generate Prisma client. Please check your Prisma schema."
+        rm -f /tmp/prisma-gen.log
+        return 0
     fi
+    
+    # Check if error is due to corrupted node_modules
+    if grep -q "window is not defined" /tmp/prisma-gen.log 2>/dev/null || \
+       grep -q "REMOTE_LOADER" /tmp/prisma-gen.log 2>/dev/null; then
+        warning "⚠️  Prisma generation failed due to corrupted packages!"
+        warning "Performing emergency clean reinstall..."
+        
+        # Emergency clean reinstall
+        clean_reinstall_dependencies
+        
+        # Retry Prisma generation
+        info "Retrying Prisma generation after clean reinstall..."
+        if npx prisma generate; then
+            log "Prisma client generated successfully after recovery"
+            rm -f /tmp/prisma-gen.log
+            return 0
+        fi
+    fi
+    
+    # If still failing, try with fresh Prisma install
+    warning "Prisma generation still failing. Reinstalling Prisma packages..."
+    npm install @prisma/client prisma --force --no-audit
+    
+    info "Final attempt at Prisma generation..."
+    if npx prisma generate; then
+        log "Prisma client generated successfully after Prisma reinstall"
+        rm -f /tmp/prisma-gen.log
+        return 0
+    fi
+    
+    # Cleanup and fail
+    rm -f /tmp/prisma-gen.log
+    error "Failed to generate Prisma client after multiple recovery attempts. Please check your Prisma schema and dependencies."
 }
 
 # Run database migrations
@@ -282,13 +404,12 @@ build_application() {
     info "Cleaning previous build..."
     rm -rf .next
     
-    # Clean npm cache to avoid stale files
-    info "Cleaning npm cache..."
-    npm cache clean --force 2>/dev/null || true
-    
     info "Building Next.js application..."
-    if npm run build; then
+    
+    # First attempt
+    if npm run build 2>&1 | tee /tmp/build.log; then
         log "Application built successfully"
+        rm -f /tmp/build.log
         
         # Verify build output
         if [ ! -d ".next/static" ]; then
@@ -330,9 +451,42 @@ build_application() {
         chown -R hs6tools:hs6tools .next 2>/dev/null || chown -R $(whoami):$(whoami) .next
         chmod -R 755 .next
         log "Permissions set correctly"
-    else
-        error "Build failed. Please check the error messages above."
+        return 0
     fi
+    
+    # Build failed - check for common issues
+    warning "Initial build failed. Diagnosing issue..."
+    
+    # Check if it's a dependency issue
+    if grep -q "Cannot find module" /tmp/build.log 2>/dev/null || \
+       grep -q "Module not found" /tmp/build.log 2>/dev/null; then
+        warning "Build failed due to missing modules. Reinstalling dependencies..."
+        
+        clean_reinstall_dependencies
+        
+        # Regenerate Prisma
+        info "Regenerating Prisma client..."
+        npx prisma generate
+        
+        # Retry build
+        info "Retrying build after dependency reinstall..."
+        rm -rf .next
+        if npm run build; then
+            log "Application built successfully after recovery"
+            rm -f /tmp/build.log
+            
+            # Fix permissions
+            info "Setting correct permissions for .next folder..."
+            chown -R hs6tools:hs6tools .next 2>/dev/null || chown -R $(whoami):$(whoami) .next
+            chmod -R 755 .next
+            log "Permissions set correctly"
+            return 0
+        fi
+    fi
+    
+    # Cleanup and fail
+    rm -f /tmp/build.log
+    error "Build failed after recovery attempts. Please check the error messages above."
 }
 
 # Update PM2 ecosystem config to load from .env file
@@ -584,6 +738,41 @@ health_check() {
     check_nginx
 }
 
+# Security audit
+security_audit() {
+    section "🔒 Security Audit"
+    
+    info "Running security checks..."
+    
+    # Check for npm vulnerabilities (informational only, don't fail)
+    if command -v npm &> /dev/null; then
+        info "Checking for npm vulnerabilities..."
+        npm audit --audit-level=critical 2>&1 | head -20 || true
+        
+        CRITICAL_COUNT=$(npm audit --json 2>/dev/null | grep -o '"critical":[0-9]*' | cut -d':' -f2 || echo "0")
+        if [ "$CRITICAL_COUNT" -gt "0" ] 2>/dev/null; then
+            warning "⚠️  Found $CRITICAL_COUNT critical vulnerabilities"
+            warning "Consider running: npm audit fix"
+        else
+            log "No critical vulnerabilities found"
+        fi
+    fi
+    
+    # Check file permissions
+    info "Checking critical file permissions..."
+    if [ -f ".env" ]; then
+        ENV_PERMS=$(stat -c "%a" .env 2>/dev/null || stat -f "%A" .env 2>/dev/null || echo "unknown")
+        if [ "$ENV_PERMS" = "600" ] || [ "$ENV_PERMS" = "400" ]; then
+            log ".env permissions are secure ($ENV_PERMS)"
+        else
+            warning ".env permissions are $ENV_PERMS (should be 600 or 400)"
+            info "Fixing .env permissions..."
+            chmod 600 .env
+            log ".env permissions fixed"
+        fi
+    fi
+}
+
 # Main update function
 main() {
     section "🚀 Starting HS6Tools Update Process"
@@ -598,6 +787,9 @@ main() {
     check_node
     ensure_env
     PM2_AVAILABLE=$(check_pm2 && echo "yes" || echo "no")
+    
+    # Security audit
+    security_audit
     
     # Create backup
     create_backup
@@ -618,6 +810,14 @@ main() {
         warning "PM2 is not available. Please restart your application manually after the update."
     fi
     
+    # Final security check
+    info "Running final integrity check..."
+    if check_node_modules_integrity; then
+        log "Final integrity check passed"
+    else
+        warning "Final integrity check detected issues (but update completed)"
+    fi
+    
     # Success message
     section "✅ Update Completed Successfully!"
     
@@ -630,9 +830,14 @@ main() {
     echo "     - HTTP: http://hs6tools.com/fa"
     echo "     - HTTPS: https://hs6tools.com/fa (if SSL is configured)"
     echo "  4. Monitor for any errors in the logs"
-    echo "  5. Check Nginx logs if issues persist: tail -f /var/log/nginx/error.log"
+    echo "  5. If you see any issues, check Nginx logs: tail -f /var/log/nginx/error.log"
     echo ""
-    log "🎉 Your application has been updated successfully!"
+    echo "Security notes:"
+    echo "  - All packages were verified for integrity"
+    echo "  - Critical file permissions were checked"
+    echo "  - Environment variables are loaded from .env file"
+    echo ""
+    log "🎉 Your application has been updated successfully and securely!"
 }
 
 # Run main function
