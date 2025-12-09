@@ -16,6 +16,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null); // For neutral informational messages
   const [showVerification, setShowVerification] = useState(false);
   const [verificationPhone, setVerificationPhone] = useState<string>("");
   const [verificationCode, setVerificationCode] = useState<string>("");
@@ -76,10 +77,12 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
+    setInfo(null);
 
     try {
-      // NEW FLOW: Send verification code FIRST, then save data AFTER verification
-      // Store registration data for later
+      // CRITICAL: Send verification code FIRST
+      // NO data is stored in database until verification succeeds!
+      // Store registration data temporarily in state only
       setPendingRegistrationData(data);
       setVerificationPhone(data.phone);
       
@@ -97,7 +100,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       if (sendCodeResult.success) {
         // Show verification step
         setShowVerification(true);
-        setSuccess(messages?.auth?.verificationCodeSent || "Verification code sent! Please enter the code to complete registration.");
+        // Use INFO message, NOT success - registration is NOT complete yet!
+        setInfo((messages?.auth?.enterVerificationCode as string) || "Please enter the verification code sent to your phone to complete registration.");
         setCountdown(300); // 5 minutes
         // Start countdown timer
         const timer = setInterval(() => {
@@ -122,6 +126,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const handleSendVerificationCode = async (phone: string) => {
     setIsSendingCode(true);
     setError(null);
+    setInfo(null);
 
     try {
       const response = await fetch("/api/auth/verify-phone/send", {
@@ -135,6 +140,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       const result = await response.json();
 
       if (result.success) {
+        setInfo((messages?.auth?.codeResentSuccess as string) || "Verification code has been resent to your phone.");
         setCountdown(300); // 5 minutes in seconds
         // Start countdown timer
         const timer = setInterval(() => {
@@ -150,8 +156,6 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         // Show warning if SMS sending failed but code was generated
         if (result.warning) {
           console.warn('SMS warning:', result.warning);
-          // Optionally show a warning message to user
-          // setError(result.warning); // Uncomment if you want to show warning
         }
       } else {
         setError(result.error || messages?.common?.error || "Failed to send verification code");
@@ -176,6 +180,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
     setIsVerifying(true);
     setError(null);
+    setInfo(null);
 
     try {
       // Step 1: Verify the phone code
@@ -199,7 +204,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         return;
       }
 
-      // Step 2: Phone verified! Now create the user account
+      // Step 2: Phone verified! NOW create the user account
+      // THIS is when data is FIRST saved to database!
       const registerResponse = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -214,6 +220,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       const registerResult = await registerResponse.json();
 
       if (registerResponse.ok) {
+        // ONLY NOW show success message - registration is COMPLETE!
         setSuccess(messages?.auth?.registerSuccess || "Registration successful! Redirecting to login...");
         // Clear pending data
         setPendingRegistrationData(null);
@@ -300,6 +307,13 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                 {error && (
                   <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-xl">
                     <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
+                  </div>
+                )}
+
+                {/* Info Message (Neutral) */}
+                {info && (
+                  <div className="p-3 bg-blue-500/20 border border-blue-500/30 rounded-xl">
+                    <p className="text-blue-600 dark:text-blue-400 text-sm text-center">{info}</p>
                   </div>
                 )}
 
@@ -478,7 +492,14 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                 </div>
               )}
 
-              {/* Success Message */}
+              {/* Info Message (Neutral) */}
+              {info && (
+                <div className="p-3 bg-blue-500/20 border border-blue-500/30 rounded-xl">
+                  <p className="text-blue-600 dark:text-blue-400 text-sm text-center">{info}</p>
+                </div>
+              )}
+
+              {/* Success Message (Only shown when registration is COMPLETE) */}
               {success && (
                 <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-xl">
                   <p className="text-green-400 text-sm text-center">{success}</p>
