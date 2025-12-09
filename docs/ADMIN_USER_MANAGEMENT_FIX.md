@@ -188,6 +188,33 @@ When clicking the edit button, the screen would lock but no modal would appear. 
    - Message: "You cannot change your own role to a lower level"
    - Cause: `SUPER_ADMIN` trying to demote themselves
 
+## 🔧 Additional Fix: Deleted Users Still Appearing
+
+### Problem:
+After deleting a user, it would still appear in the user list. This was because:
+1. **Soft Delete**: The DELETE endpoint correctly sets `deletedAt` timestamp (soft delete)
+2. **Missing Filter**: The GET `/api/users` endpoint was not filtering out deleted users
+3. **Result**: Deleted users remained visible in the admin panel
+
+### Solution:
+Added `deletedAt: null` filter to the GET `/api/users` query to exclude soft-deleted users.
+
+**File Modified:**
+- `src/app/api/users/route.ts` - Added `deletedAt: null` to where clause
+
+### Code Change:
+```typescript
+const where: Prisma.UserWhereInput = {
+  // Exclude soft-deleted users
+  deletedAt: null
+};
+```
+
+This ensures that:
+- Deleted users are properly hidden from the list
+- Soft delete functionality works as intended
+- Users can be recovered if needed (by removing `deletedAt` in database)
+
 ## 🔄 Migration Notes
 
 ### Before Fix:

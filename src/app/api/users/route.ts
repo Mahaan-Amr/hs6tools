@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const where: Prisma.UserWhereInput = {};
+    const where: Prisma.UserWhereInput = {
+      // Exclude soft-deleted users
+      deletedAt: null
+    };
     
     if (search) {
       where.OR = [
