@@ -183,21 +183,25 @@ security_audit() {
     
     info "Running security checks..."
     
-    # Check for npm vulnerabilities
-    info "Checking for npm vulnerabilities..."
-    if npm audit --audit-level=critical 2>&1 | tee /tmp/npm-audit.log; then
-        log "No critical vulnerabilities found"
-    else
-        # Check if there are actual critical vulnerabilities or just warnings
-        if grep -q "found 0 vulnerabilities" /tmp/npm-audit.log 2>/dev/null; then
-            log "No vulnerabilities found"
-        elif grep -q "critical" /tmp/npm-audit.log 2>/dev/null; then
-            warning "Critical vulnerabilities found! Consider running: npm audit fix"
-        else
+    # Check for npm vulnerabilities (only if package-lock.json exists)
+    if [ -f "package-lock.json" ]; then
+        info "Checking for npm vulnerabilities..."
+        if npm audit --audit-level=critical 2>&1 | tee /tmp/npm-audit.log; then
             log "No critical vulnerabilities found"
+        else
+            # Check if there are actual critical vulnerabilities or just warnings
+            if grep -q "found 0 vulnerabilities" /tmp/npm-audit.log 2>/dev/null; then
+                log "No vulnerabilities found"
+            elif grep -q "critical" /tmp/npm-audit.log 2>/dev/null; then
+                warning "Critical vulnerabilities found! Consider running: npm audit fix"
+            else
+                log "No critical vulnerabilities found"
+            fi
         fi
+        rm -f /tmp/npm-audit.log
+    else
+        info "package-lock.json not found, skipping npm audit (will run after dependencies are installed)"
     fi
-    rm -f /tmp/npm-audit.log
     
     # Check for suspicious code patterns in node_modules
     if [ -d "node_modules" ]; then
@@ -333,10 +337,18 @@ clean_reinstall_dependencies() {
     info "Installing fresh packages from npm registry..."
     
     # Try normal install first
-    if npm install --no-audit --prefer-online 2>&1 | tee /tmp/npm-install.log; then
-        log "Fresh dependencies installed successfully"
-        rm -f /tmp/npm-install.log
-        return 0
+    npm install --no-audit --prefer-online 2>&1 | tee /tmp/npm-install.log
+    INSTALL_EXIT_CODE=${PIPESTATUS[0]}
+    
+    if [ $INSTALL_EXIT_CODE -eq 0 ]; then
+        # Verify critical packages are installed
+        if [ -d "node_modules/next" ] && [ -d "node_modules/@prisma/client" ]; then
+            log "Fresh dependencies installed successfully"
+            rm -f /tmp/npm-install.log
+            return 0
+        else
+            warning "Install completed but critical packages missing. Retrying..."
+        fi
     fi
     
     # Check if it's a peer dependency issue
@@ -345,19 +357,35 @@ clean_reinstall_dependencies() {
         warning "Peer dependency conflict detected. Retrying with --legacy-peer-deps..."
         
         # Retry with legacy peer deps
-        if npm install --no-audit --prefer-online --legacy-peer-deps; then
-            log "Fresh dependencies installed successfully with --legacy-peer-deps"
-            rm -f /tmp/npm-install.log
-            return 0
+        npm install --no-audit --prefer-online --legacy-peer-deps 2>&1 | tee /tmp/npm-install.log
+        INSTALL_EXIT_CODE=${PIPESTATUS[0]}
+        
+        if [ $INSTALL_EXIT_CODE -eq 0 ]; then
+            # Verify critical packages are installed
+            if [ -d "node_modules/next" ] && [ -d "node_modules/@prisma/client" ]; then
+                log "Fresh dependencies installed successfully with --legacy-peer-deps"
+                rm -f /tmp/npm-install.log
+                return 0
+            else
+                warning "Install completed but critical packages missing. Trying --force..."
+            fi
         fi
     fi
     
     # If still failing, try with force
     warning "Install still failing. Final attempt with --force..."
-    if npm install --force --no-audit 2>/dev/null; then
-        log "Dependencies installed with --force"
-        rm -f /tmp/npm-install.log
-        return 0
+    npm install --force --no-audit 2>&1 | tee /tmp/npm-install.log
+    INSTALL_EXIT_CODE=${PIPESTATUS[0]}
+    
+    if [ $INSTALL_EXIT_CODE -eq 0 ]; then
+        # Verify critical packages are installed
+        if [ -d "node_modules/next" ] && [ -d "node_modules/@prisma/client" ]; then
+            log "Dependencies installed with --force"
+            rm -f /tmp/npm-install.log
+            return 0
+        else
+            error "Dependencies installed but critical packages are missing. Please check the error messages above."
+        fi
     fi
     
     rm -f /tmp/npm-install.log
@@ -380,18 +408,26 @@ install_dependencies() {
     info "Installing/updating npm dependencies..."
     
     # Try normal install
-    if npm install --no-audit 2>&1 | tee /tmp/npm-update.log; then
-        log "Dependencies installed successfully"
-        rm -f /tmp/npm-update.log
-        
-        # Verify integrity after install
-        if ! check_node_modules_integrity; then
-            warning "Integrity check failed after install. Performing clean reinstall..."
-            clean_reinstall_dependencies
-            return $?
+    npm install --no-audit 2>&1 | tee /tmp/npm-update.log
+    INSTALL_EXIT_CODE=${PIPESTATUS[0]}
+    
+    if [ $INSTALL_EXIT_CODE -eq 0 ]; then
+        # Verify critical packages are installed
+        if [ -d "node_modules/next" ] && [ -d "node_modules/@prisma/client" ]; then
+            log "Dependencies installed successfully"
+            rm -f /tmp/npm-update.log
+            
+            # Verify integrity after install
+            if ! check_node_modules_integrity; then
+                warning "Integrity check failed after install. Performing clean reinstall..."
+                clean_reinstall_dependencies
+                return $?
+            fi
+            
+            return 0
+        else
+            warning "Install completed but critical packages missing. Checking for errors..."
         fi
-        
-        return 0
     fi
     
     # Check for peer dependency issues
@@ -399,16 +435,25 @@ install_dependencies() {
         warning "Peer dependency issue detected. Retrying with --legacy-peer-deps..."
         rm -f /tmp/npm-update.log
         
-        if npm install --no-audit --legacy-peer-deps; then
-            log "Dependencies installed successfully with --legacy-peer-deps"
-            
-            # Verify integrity
-            if ! check_node_modules_integrity; then
-                warning "Integrity check failed. Performing clean reinstall..."
-                clean_reinstall_dependencies
-                return $?
+        npm install --no-audit --legacy-peer-deps 2>&1 | tee /tmp/npm-update.log
+        INSTALL_EXIT_CODE=${PIPESTATUS[0]}
+        
+        if [ $INSTALL_EXIT_CODE -eq 0 ]; then
+            # Verify critical packages are installed
+            if [ -d "node_modules/next" ] && [ -d "node_modules/@prisma/client" ]; then
+                log "Dependencies installed successfully with --legacy-peer-deps"
+                
+                # Verify integrity
+                if ! check_node_modules_integrity; then
+                    warning "Integrity check failed. Performing clean reinstall..."
+                    clean_reinstall_dependencies
+                    return $?
+                fi
+                rm -f /tmp/npm-update.log
+                return 0
+            else
+                warning "Install completed but critical packages missing. Trying clean reinstall..."
             fi
-            return 0
         fi
     fi
     
@@ -422,13 +467,41 @@ install_dependencies() {
 generate_prisma() {
     section "🔧 Generating Prisma Client"
     
+    # Ensure we're using the correct Prisma version from package.json
+    info "Checking Prisma version..."
+    if [ -f "package.json" ]; then
+        PRISMA_VERSION=$(grep -o '"prisma": "[^"]*"' package.json | cut -d'"' -f4 || echo "")
+        if [ -n "$PRISMA_VERSION" ]; then
+            info "Using Prisma version: ${PRISMA_VERSION}"
+            # Ensure Prisma is installed at the correct version
+            if ! npm list prisma@${PRISMA_VERSION} &>/dev/null; then
+                info "Installing Prisma at version ${PRISMA_VERSION}..."
+                npm install prisma@${PRISMA_VERSION} --no-audit --legacy-peer-deps 2>/dev/null || true
+            fi
+        fi
+    fi
+    
     info "Generating Prisma client..."
     
     # First attempt
-    if npx prisma generate 2>&1 | tee /tmp/prisma-gen.log; then
-        log "Prisma client generated successfully"
-        rm -f /tmp/prisma-gen.log
-        return 0
+    npx prisma generate 2>&1 | tee /tmp/prisma-gen.log
+    PRISMA_EXIT_CODE=${PIPESTATUS[0]}
+    
+    if [ $PRISMA_EXIT_CODE -eq 0 ]; then
+        # Check for Prisma 7 errors about datasource url
+        if grep -q "The datasource property \`url\` is no longer supported" /tmp/prisma-gen.log 2>/dev/null; then
+            warning "Prisma 7 detected but schema uses Prisma 6 syntax. Downgrading Prisma..."
+            npm install prisma@^6.14.0 @prisma/client@^6.14.0 --no-audit --legacy-peer-deps --save-exact 2>/dev/null || true
+            info "Retrying with Prisma 6..."
+            npx prisma generate 2>&1 | tee /tmp/prisma-gen.log
+            PRISMA_EXIT_CODE=${PIPESTATUS[0]}
+        fi
+        
+        if [ $PRISMA_EXIT_CODE -eq 0 ]; then
+            log "Prisma client generated successfully"
+            rm -f /tmp/prisma-gen.log
+            return 0
+        fi
     fi
     
     # Check if error is due to corrupted node_modules
@@ -495,8 +568,18 @@ build_application() {
     
     info "Building Next.js application..."
     
+    # Verify Next.js is installed before building
+    if [ ! -f "node_modules/.bin/next" ]; then
+        error "Next.js is not installed. Cannot build application."
+        error "Please ensure dependencies were installed successfully."
+        return 1
+    fi
+    
     # First attempt
-    if npm run build 2>&1 | tee /tmp/build.log; then
+    npm run build 2>&1 | tee /tmp/build.log
+    BUILD_EXIT_CODE=${PIPESTATUS[0]}
+    
+    if [ $BUILD_EXIT_CODE -eq 0 ]; then
         log "Application built successfully"
         rm -f /tmp/build.log
         
@@ -546,12 +629,28 @@ build_application() {
     # Build failed - check for common issues
     warning "Initial build failed. Diagnosing issue..."
     
+    # Check if 'next' command is missing (dependencies not installed)
+    if grep -q "next: not found" /tmp/build.log 2>/dev/null || \
+       [ ! -f "node_modules/.bin/next" ]; then
+        error "Next.js is not installed. Dependencies installation must have failed."
+        error "Please check the dependency installation step above."
+        rm -f /tmp/build.log
+        return 1
+    fi
+    
     # Check if it's a dependency issue
     if grep -q "Cannot find module" /tmp/build.log 2>/dev/null || \
        grep -q "Module not found" /tmp/build.log 2>/dev/null; then
         warning "Build failed due to missing modules. Reinstalling dependencies..."
         
         clean_reinstall_dependencies
+        
+        # Verify dependencies are installed
+        if [ ! -f "node_modules/.bin/next" ]; then
+            error "Dependencies reinstall failed. Next.js is still missing."
+            rm -f /tmp/build.log
+            return 1
+        fi
         
         # Regenerate Prisma
         info "Regenerating Prisma client..."
@@ -560,7 +659,10 @@ build_application() {
         # Retry build
         info "Retrying build after dependency reinstall..."
         rm -rf .next
-        if npm run build; then
+        npm run build 2>&1 | tee /tmp/build.log
+        BUILD_EXIT_CODE=${PIPESTATUS[0]}
+        
+        if [ $BUILD_EXIT_CODE -eq 0 ] && [ -d ".next/static" ]; then
             log "Application built successfully after recovery"
             rm -f /tmp/build.log
             
