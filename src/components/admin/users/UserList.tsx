@@ -34,14 +34,26 @@ export default function UserList({
 
 
 
-  const handleDelete = async (userId: string) => {
-    if (confirm("آیا از حذف این کاربر اطمینان دارید؟")) {
-      setDeletingUser(userId);
-      try {
-        await onDeleteUser(userId);
-      } finally {
-        setDeletingUser(null);
+  const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>, userId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      const confirmed = window.confirm("آیا از حذف این کاربر اطمینان دارید؟");
+      if (confirmed) {
+        setDeletingUser(userId);
+        try {
+          await onDeleteUser(userId);
+        } catch (error) {
+          console.error("Error in delete handler:", error);
+          alert("خطا در حذف کاربر. لطفا دوباره تلاش کنید.");
+        } finally {
+          setDeletingUser(null);
+        }
       }
+    } catch (error) {
+      console.error("Error showing confirmation:", error);
+      setDeletingUser(null);
     }
   };
 
@@ -166,15 +178,21 @@ export default function UserList({
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2 space-x-reverse">
                         <button
-                          onClick={() => onEditUser(user)}
-                          className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onEditUser(user);
+                          }}
+                          className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm cursor-pointer"
                         >
                           ویرایش
                         </button>
                         <button
-                          onClick={() => handleDelete(user.id)}
+                          type="button"
+                          onClick={(e) => handleDelete(e, user.id)}
                           disabled={deletingUser === user.id}
-                          className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm disabled:opacity-50"
+                          className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                           {deletingUser === user.id ? "حذف..." : "حذف"}
                         </button>

@@ -137,6 +137,33 @@ Admin users were unable to edit or delete users even though the UI buttons were 
   - `ADMIN` cannot delete `SUPER_ADMIN` users
   - Users cannot delete themselves
 
+## 🔧 Additional Fixes (Modal Lock Issue)
+
+### Problem:
+When clicking the edit button, the screen would lock but no modal would appear. This was caused by:
+1. **Body Overflow Lock**: The `UserForm` component set `document.body.style.overflow = 'hidden'` immediately on mount
+2. **Early Return**: The component returned `null` while messages were loading asynchronously
+3. **Result**: Screen locked with no visible modal
+
+### Solution:
+1. **Conditional Body Lock**: Only set body overflow when modal is actually ready to render
+2. **Mount State**: Added `isMounted` state to ensure client-side rendering
+3. **Fallback Messages**: Added fallback Persian messages so modal can render even if i18n messages aren't loaded yet
+4. **Better Event Handling**: Improved button click handlers with proper event prevention
+
+### Changes Made:
+- `src/components/admin/users/UserForm.tsx`:
+  - Added `isMounted` state check
+  - Conditional body overflow lock (only when mounted and messages loaded)
+  - Fallback messages for immediate rendering
+  - Portal rendering only when mounted
+
+- `src/components/admin/users/UserList.tsx`:
+  - Improved delete button handler with proper event handling
+  - Added `e.preventDefault()` and `e.stopPropagation()` to prevent event bubbling
+  - Better error handling for delete operations
+  - Added `type="button"` to prevent form submission
+
 ## 🐛 Error Messages
 
 ### Common Errors:
@@ -200,4 +227,5 @@ Admin users were unable to edit or delete users even though the UI buttons were 
 
 **Last Updated**: December 9, 2025
 **Status**: ✅ Fixed and Tested
+
 

@@ -34,6 +34,11 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
     ...(isEditing ? {} : { email: "", phone: "", password: "" })
   } as CreateUserData | UpdateUserData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -48,13 +53,15 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
     }
   }, [user]);
 
-  // Prevent body scroll when modal is open
+  // Prevent body scroll when modal is open - only when mounted and messages loaded
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+    if (isMounted && messages) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isMounted, messages]);
 
   // Handle escape key to close modal
   useEffect(() => {
@@ -75,11 +82,48 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
     }
   };
 
-  if (!messages || !messages.admin?.usersForm) {
+  // Don't render until mounted (client-side only)
+  if (!isMounted) {
     return null;
   }
 
-  const t = messages.admin.usersForm;
+  // Use fallback messages if not loaded yet
+  const t = messages?.admin?.usersForm || {
+    editUser: "ویرایش کاربر",
+    createUser: "ایجاد کاربر",
+    basicInfo: "اطلاعات پایه",
+    firstName: "نام",
+    firstNamePlaceholder: "نام کاربر را وارد کنید",
+    lastName: "نام خانوادگی",
+    lastNamePlaceholder: "نام خانوادگی کاربر را وارد کنید",
+    email: "ایمیل",
+    emailPlaceholder: "ایمیل کاربر را وارد کنید",
+    emailRequired: "ایمیل الزامی است",
+    emailInvalid: "ایمیل معتبر نیست",
+    phone: "تلفن",
+    phonePlaceholder: "شماره تلفن کاربر را وارد کنید",
+    phoneInvalid: "شماره تلفن معتبر نیست",
+    accountSettings: "تنظیمات حساب",
+    role: "نقش",
+    roleCustomer: "مشتری",
+    roleAdmin: "مدیر",
+    roleSuperAdmin: "مدیر ارشد",
+    password: "رمز عبور",
+    passwordPlaceholder: "رمز عبور کاربر را وارد کنید",
+    passwordRequired: "رمز عبور الزامی است",
+    passwordMinLength: "رمز عبور باید حداقل 8 کاراکتر باشد",
+    companyInfo: "اطلاعات شرکت",
+    company: "شرکت",
+    companyPlaceholder: "نام شرکت",
+    position: "سمت",
+    positionPlaceholder: "سمت کاربر",
+    cancel: "لغو",
+    create: "ایجاد",
+    update: "بروزرسانی",
+    saving: "در حال ذخیره...",
+    firstNameRequired: "نام الزامی است",
+    lastNameRequired: "نام خانوادگی الزامی است"
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -347,8 +391,8 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
     </div>
   );
 
-  // Render modal using portal to document.body
-  if (typeof window !== 'undefined') {
+  // Render modal using portal to document.body - only when mounted
+  if (typeof window !== 'undefined' && isMounted) {
     return createPortal(modalContent, document.body);
   }
 
