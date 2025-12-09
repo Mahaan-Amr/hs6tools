@@ -72,33 +72,79 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
     const api = getKavenegarClient();
     const sender = options.sender || process.env.KAVENEGAR_SENDER || '10004346';
 
+    console.log('📱 [sendSMS] Attempting to send SMS:', {
+      receptor: options.receptor,
+      sender,
+      messageLength: options.message.length,
+    });
+
     return new Promise((resolve) => {
-      api.Send(
-        {
-          message: options.message,
-          sender: sender,
-          receptor: options.receptor,
-        },
-        (entries: MessageEntry[], status: number, message: string) => {
-          if (status === 200 && entries && entries.length > 0 && entries[0]?.messageid) {
-            resolve({
-              success: true,
-              message: 'SMS sent successfully',
-              messageId: entries[0].messageid.toString(),
-              status: entries[0].status,
+      // Add timeout to prevent hanging forever (30 seconds)
+      const timeout = setTimeout(() => {
+        console.error('📱 [sendSMS] Timeout: No response from Kavenegar API after 30 seconds');
+        resolve({
+          success: false,
+          error: 'SMS service timeout - please try again',
+          status: 408,
+        });
+      }, 30000);
+
+      try {
+        api.Send(
+          {
+            message: options.message,
+            sender: sender,
+            receptor: options.receptor,
+          },
+          (entries: MessageEntry[] | null, status: number, message: string) => {
+            clearTimeout(timeout);
+            
+            console.log('📱 [sendSMS] Kavenegar callback received:', {
+              status,
+              message,
+              entriesCount: entries?.length || 0,
+              hasMessageId: entries?.[0]?.messageid ? true : false,
             });
-          } else {
-            resolve({
-              success: false,
-              error: message || 'Failed to send SMS',
-              status: status,
-            });
+
+            if (status === 200 && entries && entries.length > 0 && entries[0]?.messageid) {
+              console.log('✅ [sendSMS] SMS sent successfully:', {
+                messageId: entries[0].messageid,
+                status: entries[0].status,
+                receptor: options.receptor,
+              });
+              resolve({
+                success: true,
+                message: 'SMS sent successfully',
+                messageId: entries[0].messageid.toString(),
+                status: entries[0].status,
+              });
+            } else {
+              console.error('❌ [sendSMS] SMS sending failed:', {
+                status,
+                message,
+                receptor: options.receptor,
+                entries: entries,
+              });
+              resolve({
+                success: false,
+                error: message || 'Failed to send SMS',
+                status: status,
+              });
+            }
           }
-        }
-      );
+        );
+      } catch (apiError) {
+        clearTimeout(timeout);
+        console.error('❌ [sendSMS] API call error:', apiError);
+        resolve({
+          success: false,
+          error: apiError instanceof Error ? apiError.message : 'Unknown API error',
+          status: 500,
+        });
+      }
     });
   } catch (error) {
-    console.error('SMS sending error:', error);
+    console.error('❌ [sendSMS] Error initializing SMS service:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -116,35 +162,82 @@ export async function sendVerificationCode(
   try {
     const api = getKavenegarClient();
 
+    console.log('📱 [sendVerificationCode] Attempting to send verification code:', {
+      receptor: options.receptor,
+      template: options.template,
+      token: options.token,
+    });
+
     return new Promise((resolve) => {
-      api.VerifyLookup(
-        {
-          receptor: options.receptor,
-          token: options.token,
-          token2: options.token2 || '',
-          token3: options.token3 || '',
-          template: options.template,
-        },
-        (entries: MessageEntry[], status: number, message: string) => {
-          if (status === 200 && entries && entries.length > 0 && entries[0]?.messageid) {
-            resolve({
-              success: true,
-              message: 'Verification code sent successfully',
-              messageId: entries[0].messageid.toString(),
-              status: entries[0].status,
+      // Add timeout to prevent hanging forever (30 seconds)
+      const timeout = setTimeout(() => {
+        console.error('📱 [sendVerificationCode] Timeout: No response from Kavenegar API after 30 seconds');
+        resolve({
+          success: false,
+          error: 'SMS service timeout - please try again',
+          status: 408,
+        });
+      }, 30000);
+
+      try {
+        api.VerifyLookup(
+          {
+            receptor: options.receptor,
+            token: options.token,
+            token2: options.token2 || '',
+            token3: options.token3 || '',
+            template: options.template,
+          },
+          (entries: MessageEntry[] | null, status: number, message: string) => {
+            clearTimeout(timeout);
+            
+            console.log('📱 [sendVerificationCode] Kavenegar callback received:', {
+              status,
+              message,
+              entriesCount: entries?.length || 0,
+              hasMessageId: entries?.[0]?.messageid ? true : false,
             });
-          } else {
-            resolve({
-              success: false,
-              error: message || 'Failed to send verification code',
-              status: status,
-            });
+
+            if (status === 200 && entries && entries.length > 0 && entries[0]?.messageid) {
+              console.log('✅ [sendVerificationCode] SMS sent successfully:', {
+                messageId: entries[0].messageid,
+                status: entries[0].status,
+                receptor: options.receptor,
+              });
+              resolve({
+                success: true,
+                message: 'Verification code sent successfully',
+                messageId: entries[0].messageid.toString(),
+                status: entries[0].status,
+              });
+            } else {
+              console.error('❌ [sendVerificationCode] SMS sending failed:', {
+                status,
+                message,
+                receptor: options.receptor,
+                template: options.template,
+                entries: entries,
+              });
+              resolve({
+                success: false,
+                error: message || 'Failed to send verification code',
+                status: status,
+              });
+            }
           }
-        }
-      );
+        );
+      } catch (apiError) {
+        clearTimeout(timeout);
+        console.error('❌ [sendVerificationCode] API call error:', apiError);
+        resolve({
+          success: false,
+          error: apiError instanceof Error ? apiError.message : 'Unknown API error',
+          status: 500,
+        });
+      }
     });
   } catch (error) {
-    console.error('Verification code sending error:', error);
+    console.error('❌ [sendVerificationCode] Error initializing SMS service:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',

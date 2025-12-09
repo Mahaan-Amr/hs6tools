@@ -97,11 +97,26 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
       const sendCodeResult = await sendCodeResponse.json();
 
+      console.log('📱 [Register] SMS send response:', {
+        success: sendCodeResult.success,
+        error: sendCodeResult.error,
+        warning: sendCodeResult.warning,
+        status: sendCodeResponse.status,
+      });
+
       if (sendCodeResult.success) {
         // Show verification step
         setShowVerification(true);
         // Use INFO message, NOT success - registration is NOT complete yet!
-        setInfo((messages?.auth?.enterVerificationCode as string) || "Please enter the verification code sent to your phone to complete registration.");
+        let infoMessage = (messages?.auth?.enterVerificationCode as string) || "Please enter the verification code sent to your phone to complete registration.";
+        
+        // Show warning if SMS might not have been sent
+        if (sendCodeResult.warning) {
+          console.warn('⚠️ [Register] SMS warning:', sendCodeResult.warning);
+          infoMessage += ` (${sendCodeResult.warning})`;
+        }
+        
+        setInfo(infoMessage);
         setCountdown(300); // 5 minutes
         // Start countdown timer
         const timer = setInterval(() => {
@@ -114,7 +129,9 @@ export default function RegisterPage({ params }: RegisterPageProps) {
           });
         }, 1000);
       } else {
-        setError(sendCodeResult.error || messages?.common?.error || "Failed to send verification code");
+        const errorMessage = sendCodeResult.error || messages?.common?.error || "Failed to send verification code";
+        console.error('❌ [Register] SMS send failed:', errorMessage);
+        setError(errorMessage);
       }
     } catch {
       setError(messages?.common?.error || "An unexpected error occurred");
@@ -139,8 +156,23 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
       const result = await response.json();
 
+      console.log('📱 [Register] Resend SMS response:', {
+        success: result.success,
+        error: result.error,
+        warning: result.warning,
+        status: response.status,
+      });
+
       if (result.success) {
-        setInfo((messages?.auth?.codeResentSuccess as string) || "Verification code has been resent to your phone.");
+        let infoMessage = (messages?.auth?.codeResentSuccess as string) || "Verification code has been resent to your phone.";
+        
+        // Show warning if SMS sending failed but code was generated
+        if (result.warning) {
+          console.warn('⚠️ [Register] SMS warning:', result.warning);
+          infoMessage += ` (${result.warning})`;
+        }
+        
+        setInfo(infoMessage);
         setCountdown(300); // 5 minutes in seconds
         // Start countdown timer
         const timer = setInterval(() => {
@@ -152,13 +184,10 @@ export default function RegisterPage({ params }: RegisterPageProps) {
             return prev - 1;
           });
         }, 1000);
-        
-        // Show warning if SMS sending failed but code was generated
-        if (result.warning) {
-          console.warn('SMS warning:', result.warning);
-        }
       } else {
-        setError(result.error || messages?.common?.error || "Failed to send verification code");
+        const errorMessage = result.error || messages?.common?.error || "Failed to send verification code";
+        console.error('❌ [Register] Resend SMS failed:', errorMessage);
+        setError(errorMessage);
       }
     } catch {
       setError(messages?.common?.error || "Failed to send verification code");

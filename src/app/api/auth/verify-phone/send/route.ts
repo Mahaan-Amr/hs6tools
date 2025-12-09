@@ -123,7 +123,9 @@ export async function POST(request: NextRequest) {
 
     // Send SMS with verification code
     // Try using template first, fallback to simple SMS
-    console.log(`📱 Attempting to send verification code to ${phone}`);
+    console.log(`📱 [verify-phone/send] Attempting to send verification code to ${phone}`);
+    console.log(`📱 [verify-phone/send] Generated code: ${verificationCode}`);
+    console.log(`📱 [verify-phone/send] Code expires at: ${expiresAt.toISOString()}`);
     
     const templateResult = await sendVerificationCode({
       receptor: phone,
@@ -131,29 +133,52 @@ export async function POST(request: NextRequest) {
       template: 'verify', // Template name in Kavehnegar panel
     });
 
+    console.log(`📱 [verify-phone/send] Template SMS result:`, {
+      success: templateResult.success,
+      error: templateResult.error,
+      status: templateResult.status,
+      messageId: templateResult.messageId,
+    });
+
     if (!templateResult.success) {
       // Fallback to simple SMS if template doesn't exist or fails
-      console.warn('📱 Template SMS failed, using simple SMS fallback:', templateResult.error);
+      console.warn('📱 [verify-phone/send] Template SMS failed, using simple SMS fallback:', {
+        error: templateResult.error,
+        status: templateResult.status,
+      });
+      
       const fallbackResult = await sendSMS({
         receptor: phone,
         message: `کد تأیید شما: ${verificationCode} - این کد 5 دقیقه اعتبار دارد.`,
       });
 
+      console.log(`📱 [verify-phone/send] Fallback SMS result:`, {
+        success: fallbackResult.success,
+        error: fallbackResult.error,
+        status: fallbackResult.status,
+        messageId: fallbackResult.messageId,
+      });
+
       if (!fallbackResult.success) {
-        console.error('📱 Both template and fallback SMS failed:', fallbackResult.error);
+        console.error('❌ [verify-phone/send] Both template and fallback SMS failed:', {
+          templateError: templateResult.error,
+          templateStatus: templateResult.status,
+          fallbackError: fallbackResult.error,
+          fallbackStatus: fallbackResult.status,
+        });
         // Still return success because code is saved in database
         // User can request a new code if SMS fails
         return NextResponse.json({
           success: true,
           message: "Verification code generated. SMS may not have been sent. Please try requesting a new code if you don't receive it.",
           expiresIn: 300,
-          warning: "SMS sending failed, but code is saved. You can request a new code."
+          warning: `SMS sending failed: ${fallbackResult.error || templateResult.error}. Code is saved in database. You can request a new code.`
         });
       } else {
-        console.log('📱 Fallback SMS sent successfully:', fallbackResult.messageId);
+        console.log('✅ [verify-phone/send] Fallback SMS sent successfully:', fallbackResult.messageId);
       }
     } else {
-      console.log('📱 Template SMS sent successfully:', templateResult.messageId);
+      console.log('✅ [verify-phone/send] Template SMS sent successfully:', templateResult.messageId);
     }
 
     return NextResponse.json({
