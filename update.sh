@@ -286,13 +286,38 @@ clean_reinstall_dependencies() {
     
     # Fresh install
     info "Installing fresh packages from npm registry..."
-    if npm install --no-audit --prefer-online; then
+    
+    # Try normal install first
+    if npm install --no-audit --prefer-online 2>&1 | tee /tmp/npm-install.log; then
         log "Fresh dependencies installed successfully"
+        rm -f /tmp/npm-install.log
         return 0
-    else
-        error "Failed to install fresh dependencies. Please check your internet connection and npm registry."
-        return 1
     fi
+    
+    # Check if it's a peer dependency issue
+    if grep -q "ERESOLVE unable to resolve dependency tree" /tmp/npm-install.log 2>/dev/null || \
+       grep -q "peer.*dependency" /tmp/npm-install.log 2>/dev/null; then
+        warning "Peer dependency conflict detected. Retrying with --legacy-peer-deps..."
+        
+        # Retry with legacy peer deps
+        if npm install --no-audit --prefer-online --legacy-peer-deps; then
+            log "Fresh dependencies installed successfully with --legacy-peer-deps"
+            rm -f /tmp/npm-install.log
+            return 0
+        fi
+    fi
+    
+    # If still failing, try with force
+    warning "Install still failing. Final attempt with --force..."
+    if npm install --force --no-audit 2>/dev/null; then
+        log "Dependencies installed with --force"
+        rm -f /tmp/npm-install.log
+        return 0
+    fi
+    
+    rm -f /tmp/npm-install.log
+    error "Failed to install dependencies after all attempts. Please check the error messages above."
+    return 1
 }
 
 # Install dependencies with integrity checks
@@ -317,8 +342,11 @@ install_dependencies() {
     
     # Normal update
     info "Installing/updating npm dependencies..."
-    if npm install --no-audit; then
+    
+    # Try normal install
+    if npm install --no-audit 2>&1 | tee /tmp/npm-update.log; then
         log "Dependencies installed successfully"
+        rm -f /tmp/npm-update.log
         
         # Verify integrity after install
         if ! check_node_modules_integrity; then
@@ -328,11 +356,30 @@ install_dependencies() {
         fi
         
         return 0
-    else
-        warning "Normal install failed. Attempting clean reinstall..."
-        clean_reinstall_dependencies
-        return $?
     fi
+    
+    # Check for peer dependency issues
+    if grep -q "ERESOLVE" /tmp/npm-update.log 2>/dev/null; then
+        warning "Peer dependency issue detected. Retrying with --legacy-peer-deps..."
+        rm -f /tmp/npm-update.log
+        
+        if npm install --no-audit --legacy-peer-deps; then
+            log "Dependencies installed successfully with --legacy-peer-deps"
+            
+            # Verify integrity
+            if ! check_node_modules_integrity; then
+                warning "Integrity check failed. Performing clean reinstall..."
+                clean_reinstall_dependencies
+                return $?
+            fi
+            return 0
+        fi
+    fi
+    
+    rm -f /tmp/npm-update.log
+    warning "Normal install failed. Attempting clean reinstall..."
+    clean_reinstall_dependencies
+    return $?
 }
 
 # Generate Prisma client with retry and recovery
