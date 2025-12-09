@@ -26,6 +26,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const [messages, setMessages] = useState<Messages | null>(null);
   const [locale, setLocale] = useState<string>("fa");
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+  // Store registration data until verification is complete
+  const [pendingRegistrationData, setPendingRegistrationData] = useState<RegisterFormData | null>(null);
 
   // Load messages and get callbackUrl from query params
   useEffect(() => {
@@ -52,9 +54,9 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     confirmPassword: z.string().min(1, messages?.auth?.passwordRequired || "Please confirm your password"),
     firstName: z.string().min(2, messages?.auth?.firstNameRequired || "First name must be at least 2 characters"),
     lastName: z.string().min(2, messages?.auth?.lastNameRequired || "Last name must be at least 2 characters"),
-    phone: z.string().optional(),
-    company: z.string().optional(),
-    position: z.string().optional(),
+    phone: z.string()
+      .min(1, messages?.auth?.phoneRequired || "Phone number is required")
+      .regex(/^09\d{9}$/, "Invalid phone number format. Use format: 09123456789"),
   }).refine((data) => data.password === data.confirmPassword, {
     message: messages?.auth?.passwordsDontMatch || "Passwords don't match",
     path: ["confirmPassword"],
@@ -76,37 +78,39 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/auth/register", {
+      // NEW FLOW: Send verification code FIRST, then save data AFTER verification
+      // Store registration data for later
+      setPendingRegistrationData(data);
+      setVerificationPhone(data.phone);
+      
+      // Send verification code
+      const sendCodeResponse = await fetch("/api/auth/verify-phone/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ phone: data.phone }),
       });
 
-      const result = await response.json();
+      const sendCodeResult = await sendCodeResponse.json();
 
-      if (!response.ok) {
-        setError(result.error || messages?.common?.error || "Registration failed");
-      } else {
-        // If phone is provided, show verification step
-        if (data.phone) {
-          setVerificationPhone(data.phone);
-          setShowVerification(true);
-          setSuccess(messages?.auth?.verificationCodeSent || "Registration successful! Please verify your phone number.");
-          // Auto-send verification code
-          handleSendVerificationCode(data.phone);
-        } else {
-          setSuccess(messages?.auth?.registerSuccess || "Registration successful!");
-          // Redirect to login (with callbackUrl if provided) after 2 seconds
-          setTimeout(() => {
-            if (callbackUrl) {
-              router.push(`/${locale}/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-            } else {
-              router.push(`/${locale}/auth/login`);
+      if (sendCodeResult.success) {
+        // Show verification step
+        setShowVerification(true);
+        setSuccess(messages?.auth?.verificationCodeSent || "Verification code sent! Please enter the code to complete registration.");
+        setCountdown(300); // 5 minutes
+        // Start countdown timer
+        const timer = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              return 0;
             }
-          }, 2000);
-        }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        setError(sendCodeResult.error || messages?.common?.error || "Failed to send verification code");
       }
     } catch {
       setError(messages?.common?.error || "An unexpected error occurred");
@@ -165,11 +169,17 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       return;
     }
 
+    if (!pendingRegistrationData) {
+      setError("Registration data not found. Please try again.");
+      return;
+    }
+
     setIsVerifying(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/verify-phone/verify", {
+      // Step 1: Verify the phone code
+      const verifyResponse = await fetch("/api/auth/verify-phone/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -177,22 +187,49 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         body: JSON.stringify({
           phone: verificationPhone,
           code: verificationCode,
+          verifyOnly: true, // Just verify, don't send new code
         }),
       });
 
-      const result = await response.json();
+      const verifyResult = await verifyResponse.json();
 
-      if (result.success) {
-        setSuccess(messages?.auth?.phoneVerified || "Phone number verified successfully!");
+      if (!verifyResult.success) {
+        setError(verifyResult.error || messages?.common?.error || "Invalid verification code");
+        setIsVerifying(false);
+        return;
+      }
+
+      // Step 2: Phone verified! Now create the user account
+      const registerResponse = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...pendingRegistrationData,
+          phoneVerified: true, // Mark phone as verified
+        }),
+      });
+
+      const registerResult = await registerResponse.json();
+
+      if (registerResponse.ok) {
+        setSuccess(messages?.auth?.registerSuccess || "Registration successful! Redirecting to login...");
+        // Clear pending data
+        setPendingRegistrationData(null);
         // Redirect to login after 2 seconds
         setTimeout(() => {
-          router.push(`/${locale}/auth/login`);
+          if (callbackUrl) {
+            router.push(`/${locale}/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+          } else {
+            router.push(`/${locale}/auth/login`);
+          }
         }, 2000);
       } else {
-        setError(result.error || messages?.common?.error || "Invalid verification code");
+        setError(registerResult.error || messages?.common?.error || "Registration failed");
       }
     } catch {
-      setError(messages?.common?.error || "Failed to verify code");
+      setError(messages?.common?.error || "Failed to complete registration");
     } finally {
       setIsVerifying(false);
     }
@@ -302,21 +339,10 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                   )}
                 </button>
 
-                {/* Skip Verification */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const loc = messages?.common?.locale || 'fa';
-                    if (callbackUrl) {
-                      router.push(`/${loc}/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-                    } else {
-                      router.push(`/${loc}/auth/login`);
-                    }
-                  }}
-                  className="w-full py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 text-sm"
-                >
-                  {messages.auth?.skipVerification}
-                </button>
+                {/* Note: Verification is required - no skip option */}
+                <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                  {(messages.auth?.verificationRequired as string) || "Phone verification is required to complete registration"}
+                </p>
               </div>
             </div>
           </div>
@@ -396,52 +422,19 @@ export default function RegisterPage({ params }: RegisterPageProps) {
               {/* Phone Field */}
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  {messages.auth?.phone}
+                  {messages.auth?.phone} <span className="text-red-500">*</span>
                 </label>
                 <input
                   {...register("phone")}
                   type="tel"
                   id="phone"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                  placeholder={messages.auth?.phone}
+                  placeholder="09123456789"
                 />
                 {errors.phone && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.phone.message}</p>
                 )}
-              </div>
-
-              {/* Company Field */}
-              <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  {messages.auth?.company}
-                </label>
-                <input
-                  {...register("company")}
-                  type="text"
-                  id="company"
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                  placeholder={messages.auth?.company}
-                />
-                {errors.company && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.company.message}</p>
-                )}
-              </div>
-
-              {/* Position Field */}
-              <div>
-                <label htmlFor="position" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  {messages.auth?.position}
-                </label>
-                <input
-                  {...register("position")}
-                  type="text"
-                  id="position"
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-transparent"
-                  placeholder={messages.auth?.position}
-                />
-                {errors.position && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.position.message}</p>
-                )}
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Format: 09123456789</p>
               </div>
 
               {/* Password Field */}

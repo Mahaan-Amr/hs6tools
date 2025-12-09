@@ -9,9 +9,8 @@ const registerSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  position: z.string().optional(),
+  phone: z.string().regex(/^09\d{9}$/, "Invalid phone number format"),
+  phoneVerified: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -57,12 +56,10 @@ export async function POST(request: NextRequest) {
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         phone: validatedData.phone,
-        company: validatedData.company,
-        position: validatedData.position,
         role: "CUSTOMER", // Default role
         isActive: true,
         emailVerified: false,
-        phoneVerified: false,
+        phoneVerified: validatedData.phoneVerified || false, // Set to true if phone was verified during registration
       },
       select: {
         id: true,
@@ -74,8 +71,6 @@ export async function POST(request: NextRequest) {
         isActive: true,
         emailVerified: true,
         phoneVerified: true,
-        company: true,
-        position: true,
         createdAt: true,
       }
     });

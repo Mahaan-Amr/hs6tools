@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { phone } = body;
+    const { phone, code, verifyOnly } = body;
 
     // Validate phone number
     if (!phone) {
@@ -46,21 +46,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if phone is already verified
+    // If verifyOnly is true, just verify the code and return
+    if (verifyOnly && code) {
+      const verificationCode = await prisma.verificationCode.findFirst({
+        where: {
+          phone,
+          code,
+          type: VerificationType.PHONE_VERIFICATION,
+          used: false,
+          expiresAt: { gt: new Date() }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (!verificationCode) {
+        return NextResponse.json(
+          { success: false, error: "Invalid or expired verification code" },
+          { status: 400 }
+        );
+      }
+
+      // Mark code as used
+      await prisma.verificationCode.update({
+        where: { id: verificationCode.id },
+        data: {
+          used: true,
+          usedAt: new Date()
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Code verified successfully"
+      });
+    }
+
+    // Check if phone is already registered (for new registrations only)
     const existingUser = await prisma.user.findUnique({
       where: { phone },
-      select: { phoneVerified: true }
+      select: { phoneVerified: true, email: true }
     });
 
-    if (existingUser?.phoneVerified) {
+    if (existingUser) {
       return NextResponse.json(
-        { success: false, error: "Phone number is already verified" },
+        { success: false, error: "Phone number is already registered" },
         { status: 400 }
       );
     }
 
     // Generate 6-digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Delete any existing unused codes for this phone
     await prisma.verificationCode.deleteMany({
@@ -77,7 +112,7 @@ export async function POST(request: NextRequest) {
     await prisma.verificationCode.create({
       data: {
         phone,
-        code,
+        code: verificationCode,
         type: VerificationType.PHONE_VERIFICATION,
         expiresAt
       }
@@ -89,7 +124,7 @@ export async function POST(request: NextRequest) {
     
     const templateResult = await sendVerificationCode({
       receptor: phone,
-      token: code,
+      token: verificationCode,
       template: 'verify', // Template name in Kavehnegar panel
     });
 
@@ -98,7 +133,7 @@ export async function POST(request: NextRequest) {
       console.warn('📱 Template SMS failed, using simple SMS fallback:', templateResult.error);
       const fallbackResult = await sendSMS({
         receptor: phone,
-        message: `کد تأیید شما: ${code} - این کد 5 دقیقه اعتبار دارد.`,
+        message: `کد تأیید شما: ${verificationCode} - این کد 5 دقیقه اعتبار دارد.`,
       });
 
       if (!fallbackResult.success) {
