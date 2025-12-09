@@ -135,11 +135,13 @@ export default function UsersTab() {
         fetchUsers();
         fetchStats();
       } else {
-        alert(`خطا در بروزرسانی کاربر: ${result.error}`);
+        const errorMessage = result.error || "خطای نامشخص";
+        console.error("Update user error:", errorMessage);
+        alert(`خطا در بروزرسانی کاربر: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("خطا در بروزرسانی کاربر");
+      alert(`خطا در بروزرسانی کاربر: ${error instanceof Error ? error.message : "خطای شبکه"}`);
     } finally {
       setIsSaving(false);
     }
@@ -159,11 +161,13 @@ export default function UsersTab() {
         fetchUsers();
         fetchStats();
       } else {
-        alert(`خطا در تغییر وضعیت کاربر: ${result.error}`);
+        const errorMessage = result.error || "خطای نامشخص";
+        console.error("Status change error:", errorMessage);
+        alert(`خطا در تغییر وضعیت کاربر: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Error updating user status:", error);
-      alert("خطا در تغییر وضعیت کاربر");
+      alert(`خطا در تغییر وضعیت کاربر: ${error instanceof Error ? error.message : "خطای شبکه"}`);
     }
   };
 
@@ -181,11 +185,13 @@ export default function UsersTab() {
         fetchUsers();
         fetchStats();
       } else {
-        alert(`خطا در تغییر نقش کاربر: ${result.error}`);
+        const errorMessage = result.error || "خطای نامشخص";
+        console.error("Role change error:", errorMessage);
+        alert(`خطا در تغییر نقش کاربر: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Error updating user role:", error);
-      alert("خطا در تغییر نقش کاربر");
+      alert(`خطا در تغییر نقش کاربر: ${error instanceof Error ? error.message : "خطای شبکه"}`);
     }
   };
 
@@ -201,11 +207,13 @@ export default function UsersTab() {
         fetchUsers();
         fetchStats();
       } else {
-        alert(`خطا در حذف کاربر: ${result.error}`);
+        const errorMessage = result.error || "خطای نامشخص";
+        console.error("Delete user error:", errorMessage);
+        alert(`خطا در حذف کاربر: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("خطا در حذف کاربر");
+      alert(`خطا در حذف کاربر: ${error instanceof Error ? error.message : "خطای شبکه"}`);
     }
   };
 

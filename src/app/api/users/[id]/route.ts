@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -70,7 +70,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -84,6 +84,22 @@ export async function PUT(
     const existingUser = await prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+    }
+
+    // ADMIN restrictions: Cannot modify SUPER_ADMIN users
+    if (session.user.role === "ADMIN" && existingUser.role === "SUPER_ADMIN") {
+      return NextResponse.json({ 
+        success: false, 
+        error: "You do not have permission to modify SUPER_ADMIN users" 
+      }, { status: 403 });
+    }
+
+    // ADMIN restrictions: Cannot change users to SUPER_ADMIN
+    if (session.user.role === "ADMIN" && body.role === "SUPER_ADMIN") {
+      return NextResponse.json({ 
+        success: false, 
+        error: "You do not have permission to assign SUPER_ADMIN role" 
+      }, { status: 403 });
     }
 
     // Prevent SUPER_ADMIN from changing their own role to lower level
@@ -158,7 +174,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -168,7 +184,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "User ID is required" }, { status: 400 });
     }
 
-    // Prevent SUPER_ADMIN from deleting themselves
+    // Prevent users from deleting themselves
     if (session.user.id === id) {
       return NextResponse.json({ 
         success: false, 
@@ -179,6 +195,14 @@ export async function DELETE(
     const existingUser = await prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+    }
+
+    // ADMIN restrictions: Cannot delete SUPER_ADMIN users
+    if (session.user.role === "ADMIN" && existingUser.role === "SUPER_ADMIN") {
+      return NextResponse.json({ 
+        success: false, 
+        error: "You do not have permission to delete SUPER_ADMIN users" 
+      }, { status: 403 });
     }
 
     // Soft delete - set deletedAt timestamp
