@@ -123,7 +123,6 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
               // Check if it's the Kavenegar test account limitation
               const isTestAccountLimitation = status === 501 || 
                 (message && (message.includes('صاحب حساب') || message.includes('account owner')));
-              const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
               
               if (isTestAccountLimitation) {
                 console.warn('⚠️ [sendSMS] Kavenegar test account limitation:', {
