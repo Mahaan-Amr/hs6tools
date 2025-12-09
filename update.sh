@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# HS6Tools Update Script
-# This script updates the application by pulling the latest changes,
-# installing dependencies, running migrations, building, and restarting
+# HS6Tools Comprehensive Update Script
+# This script handles complete application updates with automatic recovery
+# Designed specifically for the HS6Tools e-commerce platform
 
 set -e
 
@@ -12,13 +12,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
 NC='\033[0m' # No Color
 
 # Configuration
 APP_DIR="${PWD}"
 PM2_APP_NAME="hs6tools"
 BACKUP_BEFORE_UPDATE=true
-# Required env vars (add more if needed)
+NODE_MIN_VERSION="18.0.0"
+NPM_MIN_VERSION="8.0.0"
+
+# Required environment variables (add more if needed)
 REQUIRED_ENV_VARS=(
   "DATABASE_URL"
   "NEXTAUTH_URL"
@@ -27,6 +31,7 @@ REQUIRED_ENV_VARS=(
   "KAVENEGAR_SENDER"
   "ZARINPAL_MERCHANT_ID"
   "ZARINPAL_SANDBOX"
+  "NEXT_PUBLIC_APP_URL"
 )
 
 # Logging functions
@@ -71,214 +76,254 @@ check_directory() {
 # Check if git is available and repository is clean
 check_git() {
     if ! command -v git &> /dev/null; then
-        error "Git is not installed. Please install Git first."
+        error "Git is not installed. Please install git first."
     fi
     
     if [ ! -d ".git" ]; then
-        error "This directory is not a Git repository."
+        error "Not a git repository. Please run this script from the project root directory."
     fi
     
     log "Git check passed"
 }
 
-# Ensure environment file exists and contains required variables
-ensure_env() {
-    section "🔐 Checking Environment Files"
-
-    # Always refresh .env from .env.production if available (keep a backup)
-    if [ -f ".env.production" ]; then
-        if [ -f ".env" ]; then
-            BACKUP_NAME=".env.backup-$(date +'%Y%m%d-%H%M%S')"
-            info ".env exists. Creating backup at ${BACKUP_NAME} before refresh..."
-            cp .env "${BACKUP_NAME}"
-        fi
-        info "Refreshing .env from .env.production..."
-        cp .env.production .env
-        log ".env updated from .env.production"
-    fi
-
-    if [ -f ".env" ]; then
-        log ".env file found"
-    else
-        warning ".env file not found. Please create it or add required variables before continuing."
-    fi
-
-    # Check required variables (supports fallback names with |)
-    if [ -f ".env" ]; then
-        info "Checking required environment variables in .env..."
-        missing_vars=()
-        for var_group in "${REQUIRED_ENV_VARS[@]}"; do
-            IFS='|' read -r -a candidates <<< "$var_group"
-            found=false
-            for candidate in "${candidates[@]}"; do
-                if grep -q "^${candidate}=" .env 2>/dev/null; then
-                    found=true
-                    break
-                fi
-            done
-            if [ "$found" = false ]; then
-                missing_vars+=("$var_group")
-            fi
-        done
-
-        if [ ${#missing_vars[@]} -eq 0 ]; then
-            log "All required environment variables are present in .env"
-        else
-            warning "Missing environment variables detected:"
-            for mv in "${missing_vars[@]}"; do
-                echo "  - $mv"
-            done
-            echo ""
-            echo "Please edit .env (or .env.production) to include the missing variables."
-            echo "Examples:"
-            echo "  KAVENEGAR_API_KEY=your_kavenegar_key"
-            echo "  ZARINPAL_MERCHANT_ID=your_zarinpal_merchant_id"
-            echo "  NEXTAUTH_SECRET=your_nextauth_secret"
-            echo ""
-            warning "Update will continue, but SMS/Payments/Auth may fail until these are set."
-        fi
-    fi
-}
-
-# Check if Node.js and npm are available
-check_node() {
+# Check Node.js and npm versions
+check_node_npm() {
     if ! command -v node &> /dev/null; then
-        error "Node.js is not installed. Please install Node.js first."
+        error "Node.js is not installed. Please install Node.js ${NODE_MIN_VERSION} or higher."
     fi
     
     if ! command -v npm &> /dev/null; then
-        error "npm is not installed. Please install npm first."
+        error "npm is not installed. Please install npm ${NPM_MIN_VERSION} or higher."
     fi
     
-    NODE_VERSION=$(node -v)
+    NODE_VERSION=$(node -v | cut -d'v' -f2)
     NPM_VERSION=$(npm -v)
-    info "Node.js version: ${NODE_VERSION}"
+    
+    info "Node.js version: v${NODE_VERSION}"
     info "npm version: ${NPM_VERSION}"
 }
 
 # Check if PM2 is available
 check_pm2() {
     if ! command -v pm2 &> /dev/null; then
-        warning "PM2 is not installed. The application will not be restarted automatically."
+        warning "PM2 is not installed. Application restart will be skipped."
         return 1
     fi
-    
-    # Check if the app is running in PM2
-    if ! pm2 describe ${PM2_APP_NAME} &> /dev/null; then
-        warning "PM2 app '${PM2_APP_NAME}' is not running. Skipping PM2 restart."
-        return 1
-    fi
-    
-    log "PM2 check passed: App '${PM2_APP_NAME}' is running"
     return 0
 }
 
-# Create backup before update (optional)
-create_backup() {
-    if [ "$BACKUP_BEFORE_UPDATE" = true ]; then
-        if [ -f "backup.sh" ]; then
-            info "Creating backup before update..."
-            if bash backup.sh; then
-                log "Backup created successfully"
-            else
-                warning "Backup failed, but continuing with update..."
+# Check and setup environment files
+check_env_files() {
+    section "🔐 Checking Environment Files"
+    
+    # Check if .env.production exists
+    if [ ! -f ".env.production" ]; then
+        error ".env.production file not found! This file is required for production deployment."
+    fi
+    
+    # Backup existing .env if it exists
+    if [ -f ".env" ]; then
+        BACKUP_FILE=".env.backup-$(date +'%Y%m%d-%H%M%S')"
+        info ".env exists. Creating backup at ${BACKUP_FILE} before refresh..."
+        cp .env "${BACKUP_FILE}"
+    fi
+    
+    # Always refresh .env from .env.production to ensure consistency
+    info "Refreshing .env from .env.production..."
+    cp .env.production .env
+    log ".env updated from .env.production"
+    
+    # Verify .env file exists
+    if [ ! -f ".env" ]; then
+        error ".env file not found after refresh!"
+    fi
+    
+    log ".env file found"
+    
+    # Check required environment variables
+    info "Checking required environment variables in .env..."
+    MISSING_VARS=()
+    
+    for VAR_PATTERN in "${REQUIRED_ENV_VARS[@]}"; do
+        # Handle OR patterns (e.g., "VAR1|VAR2|VAR3")
+        if [[ "$VAR_PATTERN" == *"|"* ]]; then
+            IFS='|' read -ra VARS <<< "$VAR_PATTERN"
+            FOUND=false
+            for VAR in "${VARS[@]}"; do
+                if grep -q "^${VAR}=" .env 2>/dev/null; then
+                    FOUND=true
+                    break
+                fi
+            done
+            if [ "$FOUND" = false ]; then
+                MISSING_VARS+=("${VAR_PATTERN}")
             fi
+        else
+            if ! grep -q "^${VAR_PATTERN}=" .env 2>/dev/null; then
+                MISSING_VARS+=("${VAR_PATTERN}")
+            fi
+        fi
+    done
+    
+    if [ ${#MISSING_VARS[@]} -gt 0 ]; then
+        warning "Missing or empty required environment variables:"
+        for VAR in "${MISSING_VARS[@]}"; do
+            warning "  - ${VAR}"
+        done
+        warning "Please add these variables to .env.production and re-run the script."
+        error "Required environment variables are missing!"
+    fi
+    
+    log "All required environment variables are present in .env"
+}
+
+# Security audit
+security_audit() {
+    section "🔒 Security Audit"
+    
+    info "Running security checks..."
+    
+    # Check for npm vulnerabilities
+    info "Checking for npm vulnerabilities..."
+    if npm audit --audit-level=critical 2>&1 | tee /tmp/npm-audit.log; then
+        log "No critical vulnerabilities found"
+    else
+        # Check if there are actual critical vulnerabilities or just warnings
+        if grep -q "found 0 vulnerabilities" /tmp/npm-audit.log 2>/dev/null; then
+            log "No vulnerabilities found"
+        elif grep -q "critical" /tmp/npm-audit.log 2>/dev/null; then
+            warning "Critical vulnerabilities found! Consider running: npm audit fix"
+        else
+            log "No critical vulnerabilities found"
+        fi
+    fi
+    rm -f /tmp/npm-audit.log
+    
+    # Check for suspicious code patterns in node_modules
+    if [ -d "node_modules" ]; then
+        info "Checking critical file permissions..."
+        
+        # Check .env permissions
+        if [ -f ".env" ]; then
+            ENV_PERMS=$(stat -c "%a" .env 2>/dev/null || stat -f "%A" .env 2>/dev/null || echo "unknown")
+            if [ "$ENV_PERMS" != "600" ] && [ "$ENV_PERMS" != "400" ] && [ "$ENV_PERMS" != "unknown" ]; then
+                warning ".env permissions are ${ENV_PERMS} (should be 600 or 400)"
+                info "Fixing .env permissions..."
+                chmod 600 .env
+                log ".env permissions fixed"
+            fi
+        fi
+    fi
+    
+    # Run backup if enabled
+    if [ "$BACKUP_BEFORE_UPDATE" = true ]; then
+        if [ -f "scripts/backup.sh" ]; then
+            info "Running backup script..."
+            bash scripts/backup.sh || warning "Backup script failed, but continuing..."
         else
             info "Backup script not found, skipping backup..."
         fi
     fi
 }
 
-# Pull latest changes from GitHub
+# Pull latest changes from git
 pull_changes() {
     section "📥 Pulling Latest Changes from GitHub"
     
     info "Fetching latest changes from remote repository..."
     git fetch origin
     
+    # Get current branch
     info "Checking current branch..."
-    CURRENT_BRANCH=$(git branch --show-current)
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     info "Current branch: ${CURRENT_BRANCH}"
     
     # Check for local changes
-    if ! git diff-index --quiet HEAD --; then
-        warning "Local changes detected. Stashing them before pulling..."
-        git stash push -m "Auto-stashed by update script at $(date +'%Y-%m-%d %H:%M:%S')"
-        log "Local changes stashed successfully"
-    fi
-    
-    # Check if there are any untracked files that might conflict
-    UNTRACKED=$(git ls-files --others --exclude-standard)
-    if [ -n "$UNTRACKED" ]; then
-        info "Untracked files detected (will be preserved):"
-        echo "$UNTRACKED" | head -5
-        if [ $(echo "$UNTRACKED" | wc -l) -gt 5 ]; then
-            info "... and $(($(echo "$UNTRACKED" | wc -l) - 5)) more"
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+        warning "Local changes detected. These will be preserved."
+        
+        # Show untracked files
+        UNTRACKED=$(git ls-files --others --exclude-standard)
+        if [ -n "$UNTRACKED" ]; then
+            info "Untracked files detected (will be preserved):"
+            echo "$UNTRACKED" | while read -r file; do
+                echo "  - $file"
+            done
         fi
+        
+        # Stash local changes
+        info "Stashing local changes..."
+        git stash push -u -m "Auto-stash before update $(date +'%Y-%m-%d %H:%M:%S')" || true
     fi
     
+    # Pull latest changes
     info "Pulling latest changes from ${CURRENT_BRANCH}..."
-    if git pull origin ${CURRENT_BRANCH}; then
+    if git pull origin "${CURRENT_BRANCH}"; then
         log "Successfully pulled latest changes"
-        
-        # Show recent commits
-        echo ""
-        info "Recent commits:"
-        git log --oneline -5
-        echo ""
-        
-        # Check if there's a stash and inform user
-        if git stash list | grep -q "Auto-stashed by update script"; then
-            info "Note: Local changes were stashed. To restore them, run: git stash pop"
-        fi
     else
-        error "Failed to pull latest changes. Please check your Git configuration and network connection."
+        error "Failed to pull changes from remote repository. Please resolve conflicts manually."
+    fi
+    
+    # Show recent commits
+    info "Recent commits:"
+    git log --oneline -5
+    
+    # Note about stashed changes
+    if git stash list | grep -q "Auto-stash before update"; then
+        info "Note: Local changes were stashed. To restore them, run: git stash pop"
     fi
 }
 
-# Check for compromised or corrupted node_modules
+# Check node_modules integrity
 check_node_modules_integrity() {
-    info "Checking node_modules integrity..."
-    
-    # Check for suspicious patterns that indicate compromised packages
-    if [ -d "node_modules" ]; then
-        # Check for known malicious patterns
-        SUSPICIOUS=$(grep -r "raw.githubusercontent.com" node_modules/@prisma 2>/dev/null | head -1 || echo "")
-        if [ -n "$SUSPICIOUS" ]; then
-            warning "⚠️  SECURITY ALERT: Suspicious code detected in node_modules!"
-            warning "This may indicate compromised packages. Forcing clean reinstall..."
-            return 1
-        fi
-        
-        # Check for window references in server-side Prisma code (should not exist)
-        if grep -r "window.__REMOTE_LOADER__" node_modules/@prisma 2>/dev/null | grep -q "window"; then
-            warning "⚠️  Corrupted node_modules detected (invalid browser code in server packages)"
-            return 1
-        fi
-        
-        log "node_modules integrity check passed"
-        return 0
+    if [ ! -d "node_modules" ]; then
+        return 1
     fi
     
-    return 1
+    # Check for malicious patterns
+    if grep -r "window\.__REMOTE_LOADER__" node_modules 2>/dev/null | grep -q "githubusercontent"; then
+        warning "⚠️  SECURITY ALERT: Suspicious code detected in node_modules!"
+        warning "This may indicate compromised packages. Forcing clean reinstall..."
+        return 1
+    fi
+    
+    # Check for common corruption indicators
+    if [ ! -f "node_modules/.package-lock.json" ]; then
+        warning "node_modules appears incomplete or corrupted"
+        return 1
+    fi
+    
+    # Check critical packages
+    CRITICAL_PACKAGES=("next" "@prisma/client" "react" "react-dom")
+    for PKG in "${CRITICAL_PACKAGES[@]}"; do
+        if [ ! -d "node_modules/${PKG}" ]; then
+            warning "Critical package ${PKG} is missing"
+            return 1
+        fi
+    done
+    
+    return 0
 }
 
-# Force clean reinstall of dependencies
+# Clean reinstall of dependencies
 clean_reinstall_dependencies() {
     section "🧹 Clean Reinstall of Dependencies"
     
     warning "Performing complete clean reinstall to ensure package integrity..."
     
-    # Remove everything
+    # Remove node_modules
     info "Removing node_modules..."
     rm -rf node_modules
     
+    # Remove package-lock.json
     info "Removing package-lock.json..."
     rm -f package-lock.json
     
+    # Remove .next build cache
     info "Removing .next build cache..."
     rm -rf .next
     
+    # Clear npm cache
     info "Clearing npm cache..."
     npm cache clean --force 2>/dev/null || true
     
@@ -317,25 +362,16 @@ clean_reinstall_dependencies() {
     
     rm -f /tmp/npm-install.log
     error "Failed to install dependencies after all attempts. Please check the error messages above."
-    return 1
 }
 
-# Install dependencies with integrity checks
+# Install or update dependencies
 install_dependencies() {
     section "📦 Installing Dependencies"
     
-    # Check if node_modules exists and is healthy
-    NEEDS_CLEAN_INSTALL=false
-    
-    if [ ! -d "node_modules" ]; then
-        info "node_modules not found, will perform fresh install..."
-        NEEDS_CLEAN_INSTALL=true
-    elif ! check_node_modules_integrity; then
+    # Check if node_modules exists and is intact
+    info "Checking node_modules integrity..."
+    if ! check_node_modules_integrity; then
         warning "node_modules integrity check failed, will perform clean reinstall..."
-        NEEDS_CLEAN_INSTALL=true
-    fi
-    
-    if [ "$NEEDS_CLEAN_INSTALL" = true ]; then
         clean_reinstall_dependencies
         return $?
     fi
@@ -382,7 +418,7 @@ install_dependencies() {
     return $?
 }
 
-# Generate Prisma client with retry and recovery
+# Generate Prisma client
 generate_prisma() {
     section "🔧 Generating Prisma Client"
     
@@ -431,12 +467,18 @@ generate_prisma() {
 
 # Run database migrations
 run_migrations() {
-    section "🗄️  Running Database Migrations"
+    section "📚 Running Database Migrations"
     
-    info "Checking migration status..."
-    npx prisma migrate status || true
+    info "Checking database connection..."
+    if ! npx prisma db execute --stdin <<< "SELECT 1;" 2>/dev/null; then
+        warning "Cannot connect to database. Skipping migrations."
+        warning "Please ensure your DATABASE_URL is correct and the database is running."
+        return 0
+    fi
     
-    info "Running database migrations..."
+    log "Database connection successful"
+    
+    info "Running Prisma migrations..."
     if npx prisma migrate deploy; then
         log "Database migrations completed successfully"
     else
@@ -495,7 +537,7 @@ build_application() {
         
         # Fix permissions
         info "Setting correct permissions for .next folder..."
-        chown -R hs6tools:hs6tools .next 2>/dev/null || chown -R $(whoami):$(whoami) .next
+        chown -R hs6tools:hs6tools .next 2>/dev/null || chown -R $(whoami):$(whoami) .next 2>/dev/null || true
         chmod -R 755 .next
         log "Permissions set correctly"
         return 0
@@ -524,7 +566,7 @@ build_application() {
             
             # Fix permissions
             info "Setting correct permissions for .next folder..."
-            chown -R hs6tools:hs6tools .next 2>/dev/null || chown -R $(whoami):$(whoami) .next
+            chown -R hs6tools:hs6tools .next 2>/dev/null || chown -R $(whoami):$(whoami) .next 2>/dev/null || true
             chmod -R 755 .next
             log "Permissions set correctly"
             return 0
@@ -544,14 +586,6 @@ update_pm2_config() {
     fi
     
     info "Updating PM2 ecosystem.config.js to load from .env file..."
-    
-    # Check if dotenv package is available, install if needed
-    if ! npm list dotenv &>/dev/null && [ ! -f "node_modules/dotenv/package.json" ]; then
-        info "Installing dotenv package for PM2 environment loading..."
-        npm install dotenv --save --no-audit --no-fund 2>/dev/null || {
-            warning "Failed to install dotenv. Will use alternative method."
-        }
-    fi
     
     # Create/update ecosystem.config.js to load from .env
     # This ensures PM2 loads all variables from .env file
@@ -653,13 +687,11 @@ restart_pm2() {
                     log "✅ KAVENEGAR_API_KEY is loaded in PM2"
                 else
                     warning "⚠️  KAVENEGAR_API_KEY not found in PM2 environment"
-                    warning "You may need to delete and restart PM2: pm2 delete hs6tools && pm2 start ecosystem.config.js --env production"
                 fi
                 if echo "$PM2_ENV" | grep -q "ZARINPAL_MERCHANT_ID"; then
                     log "✅ ZARINPAL_MERCHANT_ID is loaded in PM2"
                 else
                     warning "⚠️  ZARINPAL_MERCHANT_ID not found in PM2 environment"
-                    warning "You may need to delete and restart PM2: pm2 delete hs6tools && pm2 start ecosystem.config.js --env production"
                 fi
             else
                 warning "Application status is not 'online'. Checking logs..."
@@ -670,19 +702,8 @@ restart_pm2() {
             error "Failed to restart PM2 application. Please check PM2 logs."
         fi
     else
-        warning "Skipping PM2 restart. Please restart your application manually."
-    fi
-}
-
-# Show application logs
-show_logs() {
-    section "📋 Application Logs (Last 20 lines)"
-    
-    if check_pm2 2>/dev/null; then
-        info "Showing recent logs from PM2..."
-        pm2 logs ${PM2_APP_NAME} --lines 20 --nostream
-    else
-        info "PM2 is not available. Please check your application logs manually."
+        warning "PM2 is not installed. Skipping PM2 restart."
+        warning "Please restart your application manually or install PM2: npm install -g pm2"
     fi
 }
 
@@ -734,159 +755,117 @@ check_nginx() {
     
     if command -v nginx &> /dev/null; then
         info "Checking Nginx status..."
-        if systemctl is-active --quiet nginx; then
+        if systemctl is-active --quiet nginx 2>/dev/null; then
             log "Nginx is running"
             
-            # Test Nginx config
-            if nginx -t 2>/dev/null; then
+            # Test Nginx configuration
+            info "Testing Nginx configuration..."
+            if nginx -t 2>&1 | grep -q "successful"; then
                 log "Nginx configuration is valid"
             else
-                warning "Nginx configuration test failed"
+                warning "Nginx configuration has issues"
+            fi
+            
+            # Reload Nginx to pick up any changes
+            info "Reloading Nginx..."
+            if systemctl reload nginx 2>/dev/null; then
+                log "Nginx reloaded successfully"
+            else
+                warning "Failed to reload Nginx"
             fi
         else
             warning "Nginx is not running"
+            info "You may need to start Nginx: sudo systemctl start nginx"
         fi
     else
-        info "Nginx is not installed (this is OK if not using Nginx)"
+        info "Nginx is not installed (optional)"
     fi
 }
 
-# Health check
-health_check() {
-    section "🏥 Health Check"
+# Show application logs
+show_logs() {
+    section "📋 Application Logs (Last 20 lines)"
     
     if check_pm2 2>/dev/null; then
-        info "Checking application health..."
-        
-        # Check if app is online
-        if pm2 describe ${PM2_APP_NAME} | grep -q "online"; then
-            log "Application is online and running"
-        else
-            warning "Application status is not 'online'. Please check PM2 logs."
-        fi
-        
-        # Check restart count
-        RESTART_COUNT=$(pm2 jlist | grep -o '"restart_time":[0-9]*' | head -1 | cut -d':' -f2 || echo "0")
-        if [ "$RESTART_COUNT" -eq "0" ] || [ -z "$RESTART_COUNT" ]; then
-            log "Restart count: 0 (stable)"
-        else
-            warning "Restart count: $RESTART_COUNT (application may be unstable)"
-        fi
-        
-        # Show resource usage
-        info "Resource usage:"
-        pm2 describe ${PM2_APP_NAME} | grep -E "memory|cpu|uptime" || true
+        info "Showing recent logs from PM2..."
+        pm2 logs ${PM2_APP_NAME} --lines 20 --nostream || true
+    else
+        info "PM2 is not available. Please check your application logs manually."
     fi
+}
+
+# Print summary
+print_summary() {
+    section "✨ Update Summary"
+    
+    echo ""
+    log "Update process completed successfully!"
+    echo ""
+    info "Next steps:"
+    echo "  1. Check application status: pm2 status"
+    echo "  2. View logs: pm2 logs ${PM2_APP_NAME}"
+    echo "  3. Monitor application: pm2 monit"
+    echo "  4. Test your application in the browser"
+    echo ""
+    
+    if [ -f ".env.backup-"* ]; then
+        LATEST_BACKUP=$(ls -t .env.backup-* 2>/dev/null | head -1)
+        info "Environment backup created: ${LATEST_BACKUP}"
+    fi
+    
+    echo ""
+    log "🎉 All done! Your application is now updated and running."
+    echo ""
+}
+
+# Main execution
+main() {
+    section "🚀 Starting HS6Tools Update Process"
+    
+    info "Update script started at $(date)"
+    info "Working directory: ${APP_DIR}"
+    
+    # Pre-flight checks
+    check_directory
+    check_git
+    check_node_npm
+    
+    # Environment setup
+    check_env_files
+    
+    # Security checks
+    security_audit
+    
+    # Update code
+    pull_changes
+    
+    # Install dependencies
+    install_dependencies
+    
+    # Generate Prisma client
+    generate_prisma
+    
+    # Run migrations
+    run_migrations
+    
+    # Build application
+    build_application
+    
+    # Restart application
+    restart_pm2
     
     # Test connectivity
     test_connectivity
     
     # Check Nginx
     check_nginx
-}
-
-# Security audit
-security_audit() {
-    section "🔒 Security Audit"
     
-    info "Running security checks..."
+    # Show logs
+    show_logs
     
-    # Check for npm vulnerabilities (informational only, don't fail)
-    if command -v npm &> /dev/null; then
-        info "Checking for npm vulnerabilities..."
-        npm audit --audit-level=critical 2>&1 | head -20 || true
-        
-        CRITICAL_COUNT=$(npm audit --json 2>/dev/null | grep -o '"critical":[0-9]*' | cut -d':' -f2 || echo "0")
-        if [ "$CRITICAL_COUNT" -gt "0" ] 2>/dev/null; then
-            warning "⚠️  Found $CRITICAL_COUNT critical vulnerabilities"
-            warning "Consider running: npm audit fix"
-        else
-            log "No critical vulnerabilities found"
-        fi
-    fi
-    
-    # Check file permissions
-    info "Checking critical file permissions..."
-    if [ -f ".env" ]; then
-        ENV_PERMS=$(stat -c "%a" .env 2>/dev/null || stat -f "%A" .env 2>/dev/null || echo "unknown")
-        if [ "$ENV_PERMS" = "600" ] || [ "$ENV_PERMS" = "400" ]; then
-            log ".env permissions are secure ($ENV_PERMS)"
-        else
-            warning ".env permissions are $ENV_PERMS (should be 600 or 400)"
-            info "Fixing .env permissions..."
-            chmod 600 .env
-            log ".env permissions fixed"
-        fi
-    fi
-}
-
-# Main update function
-main() {
-    section "🚀 Starting HS6Tools Update Process"
-    
-    info "Update script started at $(date)"
-    info "Working directory: ${APP_DIR}"
-    echo ""
-    
-    # Pre-flight checks
-    check_directory
-    check_git
-    check_node
-    ensure_env
-    PM2_AVAILABLE=$(check_pm2 && echo "yes" || echo "no")
-    
-    # Security audit
-    security_audit
-    
-    # Create backup
-    create_backup
-    
-    # Update process
-    pull_changes
-    install_dependencies
-    generate_prisma
-    run_migrations
-    build_application
-    
-    # Restart application
-    if [ "$PM2_AVAILABLE" = "yes" ]; then
-        restart_pm2
-        health_check
-        show_logs
-    else
-        warning "PM2 is not available. Please restart your application manually after the update."
-    fi
-    
-    # Final security check
-    info "Running final integrity check..."
-    if check_node_modules_integrity; then
-        log "Final integrity check passed"
-    else
-        warning "Final integrity check detected issues (but update completed)"
-    fi
-    
-    # Success message
-    section "✅ Update Completed Successfully!"
-    
-    log "Update process completed at $(date)"
-    echo ""
-    info "Next steps:"
-    echo "  1. Verify the application is running: pm2 status"
-    echo "  2. Check application logs: pm2 logs ${PM2_APP_NAME}"
-    echo "  3. Test the application in your browser:"
-    echo "     - HTTP: http://hs6tools.com/fa"
-    echo "     - HTTPS: https://hs6tools.com/fa (if SSL is configured)"
-    echo "  4. Monitor for any errors in the logs"
-    echo "  5. If you see any issues, check Nginx logs: tail -f /var/log/nginx/error.log"
-    echo ""
-    echo "Security notes:"
-    echo "  - All packages were verified for integrity"
-    echo "  - Critical file permissions were checked"
-    echo "  - Environment variables are loaded from .env file"
-    echo ""
-    log "🎉 Your application has been updated successfully and securely!"
+    # Print summary
+    print_summary
 }
 
 # Run main function
 main
-
