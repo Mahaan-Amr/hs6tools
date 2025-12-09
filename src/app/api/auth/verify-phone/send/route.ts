@@ -81,9 +81,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if phone is already registered (for new registrations only)
-    const existingUser = await prisma.user.findUnique({
-      where: { phone },
+    // Check if phone is already registered (excluding soft-deleted users)
+    const existingUser = await prisma.user.findFirst({
+      where: { 
+        phone,
+        deletedAt: null // Only check non-deleted users
+      },
       select: { phoneVerified: true, email: true }
     });
 

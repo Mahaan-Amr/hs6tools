@@ -215,6 +215,44 @@ This ensures that:
 - Soft delete functionality works as intended
 - Users can be recovered if needed (by removing `deletedAt` in database)
 
+## 🔧 Additional Fix: Re-registration with Deleted User's Phone/Email
+
+### Problem:
+After deleting a user, you couldn't register again with the same phone number or email. This was because:
+1. **Soft Delete**: User data (including phone/email) remains in database with `deletedAt` set
+2. **Uniqueness Checks**: Registration endpoints checked for existing phone/email without filtering deleted users
+3. **Result**: Deleted user's phone/email was still considered "taken"
+
+### Solution:
+Updated all uniqueness checks to exclude soft-deleted users when validating phone/email availability.
+
+**Files Modified:**
+- `src/app/api/auth/register/route.ts` - Email and phone uniqueness checks
+- `src/app/api/auth/verify-phone/send/route.ts` - Phone uniqueness check
+- `src/app/api/users/route.ts` - Admin user creation email/phone checks
+
+### Code Changes:
+```typescript
+// ❌ BEFORE: Checked all users including deleted ones
+const existingUser = await prisma.user.findUnique({
+  where: { email: validatedData.email }
+});
+
+// ✅ AFTER: Only check non-deleted users
+const existingUser = await prisma.user.findFirst({
+  where: { 
+    email: validatedData.email,
+    deletedAt: null // Exclude soft-deleted users
+  }
+});
+```
+
+### What This Means:
+- ✅ **Data Preservation**: Deleted user data remains in database (soft delete)
+- ✅ **Re-registration**: Phone/email from deleted users can be reused
+- ✅ **Data Recovery**: Deleted users can be restored if needed
+- ✅ **Uniqueness**: Active users still have unique phone/email constraints
+
 ## 🔄 Migration Notes
 
 ### Before Fix:

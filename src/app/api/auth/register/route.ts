@@ -18,9 +18,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = registerSchema.parse(body);
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email }
+    // Check if user already exists (excluding soft-deleted users)
+    const existingUser = await prisma.user.findFirst({
+      where: { 
+        email: validatedData.email,
+        deletedAt: null // Only check non-deleted users
+      }
     });
 
     if (existingUser) {
@@ -30,10 +33,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if phone is already taken (if provided)
+    // Check if phone is already taken (excluding soft-deleted users)
     if (validatedData.phone) {
-      const existingPhoneUser = await prisma.user.findUnique({
-        where: { phone: validatedData.phone }
+      const existingPhoneUser = await prisma.user.findFirst({
+        where: { 
+          phone: validatedData.phone,
+          deletedAt: null // Only check non-deleted users
+        }
       });
 
       if (existingPhoneUser) {
