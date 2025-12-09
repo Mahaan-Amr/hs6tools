@@ -141,12 +141,17 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                 });
               }
               
-              resolve({
+              const response: SMSResponse = {
                 success: false,
                 error: message || 'Failed to send SMS',
                 status: status,
-                isTestAccountLimitation: isTestAccountLimitation || undefined,
-              });
+              };
+              
+              if (isTestAccountLimitation) {
+                response.isTestAccountLimitation = true;
+              }
+              
+              resolve(response);
             }
           }
         );

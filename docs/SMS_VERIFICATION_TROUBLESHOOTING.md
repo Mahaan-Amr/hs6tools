@@ -285,6 +285,49 @@ LIMIT 5;
 
 ---
 
+## 🎯 Test Account Limitation - Automatic Handling
+
+### What Happens:
+
+When a Kavenegar test account limitation is detected:
+
+1. **Code Generation:** Verification code is still generated and saved in database ✅
+2. **Error Detection:** System detects status 501 or error message containing "صاحب حساب"
+3. **Development Mode:** Code is automatically provided in API response for testing
+4. **User Experience:** Frontend displays code prominently with clear instructions
+5. **Production Ready:** In production, this limitation doesn't exist
+
+### Development Mode Behavior:
+
+**API Response:**
+```json
+{
+  "success": true,
+  "message": "Verification code generated...",
+  "warning": "SMS sending failed (Test account limitation...). Your verification code is: 123456.",
+  "devCode": "123456"
+}
+```
+
+**Frontend displays:**
+```
+Development Mode: Your verification code is 123456. 
+Enter this code to continue. 
+(SMS not sent due to test account limitation)
+```
+
+**Server Logs:**
+```
+⚠️ [sendVerificationCode] Kavenegar test account limitation: {
+  status: 501,
+  message: "امکان ارسال پیامک فقط به شماره صاحب حساب داده شده است",
+  note: "In Kavenegar test/sandbox mode, SMS can only be sent to the account owner's number..."
+}
+🔑 [verify-phone/send] Development mode - Verification code for 09051305165: 123456
+```
+
+---
+
 **Last Updated**: December 9, 2025
-**Status**: ✅ Enhanced Error Handling Implemented
+**Status**: ✅ Enhanced Error Handling + Test Account Limitation Detection Implemented
 
