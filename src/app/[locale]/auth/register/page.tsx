@@ -113,7 +113,14 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         // Show warning if SMS might not have been sent
         if (sendCodeResult.warning) {
           console.warn('⚠️ [Register] SMS warning:', sendCodeResult.warning);
-          infoMessage += ` (${sendCodeResult.warning})`;
+          
+          // In development mode, if we have a dev code, show it prominently
+          if (sendCodeResult.devCode) {
+            console.log(`🔑 [Register] Development mode - Your verification code is: ${sendCodeResult.devCode}`);
+            infoMessage = `Development Mode: Your verification code is ${sendCodeResult.devCode}. Enter this code to continue. (SMS not sent due to test account limitation)`;
+          } else {
+            infoMessage += ` (${sendCodeResult.warning})`;
+          }
         }
         
         setInfo(infoMessage);

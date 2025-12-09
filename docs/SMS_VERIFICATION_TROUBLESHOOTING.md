@@ -93,11 +93,20 @@ KAVENEGAR_SENDER=10004346  # Optional, defaults to 10004346
 **Symptoms:**
 - Error: `501: امکان ارسال پیامک فقط به شماره صاحب حساب داده شده است`
 - SMS only works for account owner's phone number
+- Warning message: "SMS sending failed: امکان ارسال پیامک فقط به شماره صاحب حساب داده شده است"
 
 **Solution:**
-- This is expected in test/sandbox mode
-- Upgrade to production account in Kavenegar panel
-- Or test with account owner's phone number
+- **This is expected in test/sandbox mode** - Kavenegar test accounts can only send SMS to the account owner's registered phone number
+- **Development Mode:** The system automatically detects this limitation and provides the verification code in the response for testing purposes
+- **Production:** Upgrade to production account in Kavenegar panel - this limitation doesn't exist in production
+- **Testing:** Use account owner's phone number for testing, or check server logs/console for the verification code in development mode
+
+**How It Works:**
+1. System detects test account limitation (status 501 or error message contains "صاحب حساب")
+2. Verification code is still generated and saved in database
+3. In development mode, the code is included in the API response (`devCode` field)
+4. Frontend displays the code prominently when test account limitation is detected
+5. User can enter the code manually to complete registration
 
 ### Issue 4: Timeout Issues
 

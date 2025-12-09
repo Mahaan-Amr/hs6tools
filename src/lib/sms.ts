@@ -48,6 +48,7 @@ export interface SMSResponse {
   messageId?: string;
   status?: number;
   error?: string;
+  isTestAccountLimitation?: boolean; // True if error is due to Kavenegar test account limitation
 }
 
 export interface SendSMSOptions {
@@ -119,16 +120,32 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                 status: entries[0].status,
               });
             } else {
-              console.error('❌ [sendSMS] SMS sending failed:', {
-                status,
-                message,
-                receptor: options.receptor,
-                entries: entries,
-              });
+              // Check if it's the Kavenegar test account limitation
+              const isTestAccountLimitation = status === 501 || 
+                (message && (message.includes('صاحب حساب') || message.includes('account owner')));
+              const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+              
+              if (isTestAccountLimitation) {
+                console.warn('⚠️ [sendSMS] Kavenegar test account limitation:', {
+                  status,
+                  message,
+                  receptor: options.receptor,
+                  note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
+                });
+              } else {
+                console.error('❌ [sendSMS] SMS sending failed:', {
+                  status,
+                  message,
+                  receptor: options.receptor,
+                  entries: entries,
+                });
+              }
+              
               resolve({
                 success: false,
                 error: message || 'Failed to send SMS',
                 status: status,
+                isTestAccountLimitation: isTestAccountLimitation || undefined,
               });
             }
           }
@@ -211,18 +228,40 @@ export async function sendVerificationCode(
                 status: entries[0].status,
               });
             } else {
-              console.error('❌ [sendVerificationCode] SMS sending failed:', {
-                status,
-                message,
-                receptor: options.receptor,
-                template: options.template,
-                entries: entries,
-              });
-              resolve({
+              // Check if it's the Kavenegar test account limitation
+              const isTestAccountLimitation = status === 501 || 
+                (message && (message.includes('صاحب حساب') || message.includes('account owner')));
+              const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+              
+              if (isTestAccountLimitation) {
+                console.warn('⚠️ [sendVerificationCode] Kavenegar test account limitation:', {
+                  status,
+                  message,
+                  receptor: options.receptor,
+                  note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
+                  code: isDevelopment ? options.token : undefined, // Log code in dev mode only
+                });
+              } else {
+                console.error('❌ [sendVerificationCode] SMS sending failed:', {
+                  status,
+                  message,
+                  receptor: options.receptor,
+                  template: options.template,
+                  entries: entries,
+                });
+              }
+              
+              const response: SMSResponse = {
                 success: false,
                 error: message || 'Failed to send verification code',
                 status: status,
-              });
+              };
+              
+              if (isTestAccountLimitation) {
+                response.isTestAccountLimitation = true;
+              }
+              
+              resolve(response);
             }
           }
         );

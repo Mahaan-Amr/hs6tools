@@ -160,19 +160,35 @@ export async function POST(request: NextRequest) {
       });
 
       if (!fallbackResult.success) {
+        // Check if it's a test account limitation
+        const isTestAccountLimitation = fallbackResult.isTestAccountLimitation || templateResult.isTestAccountLimitation;
+        const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+        
         console.error('❌ [verify-phone/send] Both template and fallback SMS failed:', {
           templateError: templateResult.error,
           templateStatus: templateResult.status,
           fallbackError: fallbackResult.error,
           fallbackStatus: fallbackResult.status,
+          isTestAccountLimitation,
         });
+        
         // Still return success because code is saved in database
         // User can request a new code if SMS fails
+        let warningMessage = `SMS sending failed: ${fallbackResult.error || templateResult.error}. Code is saved in database. You can request a new code.`;
+        
+        if (isTestAccountLimitation && isDevelopment) {
+          // In development mode with test account, provide the code for testing
+          warningMessage = `SMS sending failed (Test account limitation: SMS can only be sent to account owner's number). Your verification code is: ${verificationCode}. This code is valid for 5 minutes. In production, SMS will work normally.`;
+          console.log(`🔑 [verify-phone/send] Development mode - Verification code for ${phone}: ${verificationCode}`);
+        }
+        
         return NextResponse.json({
           success: true,
           message: "Verification code generated. SMS may not have been sent. Please try requesting a new code if you don't receive it.",
           expiresIn: 300,
-          warning: `SMS sending failed: ${fallbackResult.error || templateResult.error}. Code is saved in database. You can request a new code.`
+          warning: warningMessage,
+          // In development mode with test account limitation, include code for testing
+          ...(isTestAccountLimitation && isDevelopment ? { devCode: verificationCode } : {}),
         });
       } else {
         console.log('✅ [verify-phone/send] Fallback SMS sent successfully:', fallbackResult.messageId);
