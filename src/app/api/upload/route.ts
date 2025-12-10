@@ -1,14 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isAdmin } from "@/lib/admin-auth";
 import { fileStorage } from "@/lib/file-storage";
+import { rateLimitByIp } from "@/lib/rateLimit";
+import { isAllowedOrigin } from "@/utils/origin";
+import { hasRole } from "@/lib/authz";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit uploads to reduce abuse
+    const forwarded = request.headers.get("x-forwarded-for");
+    const ip =
+      (forwarded && forwarded.split(",")[0]?.trim()) ||
+      request.headers.get("x-real-ip") ||
+      null;
+    const limitResult = rateLimitByIp(ip, "upload", 10, 5 * 60 * 1000); // 10 uploads / 5 min
+    if (!limitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many upload attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
+    // CSRF: require same-origin requests
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host") || "";
+    if (!isAllowedOrigin(origin, host)) {
+      return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
+    }
+
     // Check authentication and admin access
     const session = await getServerSession(authOptions);
-    if (!session?.user || !isAdmin(session.user.role)) {
+    if (!session?.user || !hasRole(session.user.role, ["ADMIN", "SUPER_ADMIN"])) {
       return NextResponse.json(
         { error: "Unauthorized - Admin access required" },
         { status: 401 }

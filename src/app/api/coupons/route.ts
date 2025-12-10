@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DiscountType, CouponApplicableTo, Prisma } from "@prisma/client";
+import { requireAuth } from "@/lib/authz";
 
 // GET /api/coupons - List all coupons (admin only)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -68,13 +62,8 @@ export async function GET(request: NextRequest) {
 // POST /api/coupons - Create new coupon (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
 
     const body = await request.json();
     const {

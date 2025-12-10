@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -15,6 +16,17 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 3 registrations per 15 minutes per IP
+    const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0] || 
+                     request.headers.get("x-real-ip") || 
+                     "unknown";
+    const rateLimitResult = checkRateLimit(clientIp, 3, 15 * 60 * 1000, 'register');
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
     const body = await request.json();
     const validatedData = registerSchema.parse(body);
 

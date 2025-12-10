@@ -7,6 +7,7 @@ import { getMessages, Messages } from "@/lib/i18n";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { sanitizeCallbackUrl } from "@/utils/safeRedirect";
 
 interface RegisterPageProps {
   params: Promise<{ locale: string }>;
@@ -37,15 +38,16 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       setLocale(loc);
       const msg = await getMessages(loc);
       setMessages(msg);
+
+      // Get callbackUrl from URL search params (only same-origin paths allowed)
+      const searchParams = new URLSearchParams(window.location.search);
+      const callback = searchParams.get("callbackUrl");
+      const safe = sanitizeCallbackUrl(callback, loc);
+      if (safe) {
+        setCallbackUrl(safe);
+      }
     };
     loadMessages();
-
-    // Get callbackUrl from URL search params
-    const searchParams = new URLSearchParams(window.location.search);
-    const callback = searchParams.get("callbackUrl");
-    if (callback) {
-      setCallbackUrl(decodeURIComponent(callback));
-    }
   }, [params]);
 
   // Create schema with translated messages

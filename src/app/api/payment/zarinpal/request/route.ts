@@ -165,7 +165,8 @@ export async function POST(request: NextRequest) {
     }
     
     // Get callback URL based on locale
-    const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // Use request origin for callback URL - more secure than env var
+    const origin = request.headers.get("origin") || request.nextUrl.origin;
     const callbackUrl = `${origin}/api/payment/zarinpal/callback`;
     
     // Validate callback URL format

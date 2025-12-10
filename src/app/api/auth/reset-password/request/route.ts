@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationCode, sendSMSSafe } from "@/lib/sms";
 import { VerificationType } from "@prisma/client";
+import { rateLimitByIp } from "@/lib/rateLimit";
+import { isAllowedOrigin } from "@/utils/origin";
 
 /**
  * POST /api/auth/reset-password/request
@@ -9,6 +11,30 @@ import { VerificationType } from "@prisma/client";
  */
 export async function POST(request: NextRequest) {
   try {
+    // CSRF: require same-origin requests
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host") || "";
+    if (!isAllowedOrigin(origin, host)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid origin" },
+        { status: 403 }
+      );
+    }
+
+    // Rate limit by IP for password reset code requests
+    const forwarded = request.headers.get("x-forwarded-for");
+    const ip =
+      (forwarded && forwarded.split(",")[0]?.trim()) ||
+      request.headers.get("x-real-ip") ||
+      null;
+    const limitResult = rateLimitByIp(ip, "reset-password-request", 5, 5 * 60 * 1000); // 5 requests / 5 min
+    if (!limitResult.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { phone } = body;
 

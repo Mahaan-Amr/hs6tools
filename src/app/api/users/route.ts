@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { PaginatedResponse } from "@/types/admin";
+import { requireAuth } from "@/lib/authz";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -136,19 +130,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
 
     const body = await request.json();
     const { email, phone, firstName, lastName, password, role, company, position } = body;
 
     // ADMIN restrictions: Cannot create SUPER_ADMIN users
-    if (session.user.role === "ADMIN" && role === "SUPER_ADMIN") {
+    if (authResult.user.role === "ADMIN" && role === "SUPER_ADMIN") {
       return NextResponse.json(
         { success: false, error: "You do not have permission to create SUPER_ADMIN users" },
         { status: 403 }

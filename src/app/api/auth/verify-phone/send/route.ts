@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationCode, sendSMS } from "@/lib/sms";
+import { rateLimitByIp } from "@/lib/rateLimit";
+import { isAllowedOrigin } from "@/utils/origin";
 import { VerificationType } from "@prisma/client";
 
 /**
@@ -23,6 +25,30 @@ export async function POST(request: NextRequest) {
           error: "SMS service is not configured. Please contact support." 
         },
         { status: 500 }
+      );
+    }
+
+    // CSRF: require same-origin requests
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host") || "";
+    if (!isAllowedOrigin(origin, host)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid origin" },
+        { status: 403 }
+      );
+    }
+
+    // Rate limit by IP for SMS send attempts
+    const forwarded = request.headers.get("x-forwarded-for");
+    const ip =
+      (forwarded && forwarded.split(",")[0]?.trim()) ||
+      request.headers.get("x-real-ip") ||
+      null;
+    const limitResult = rateLimitByIp(ip, "verify-phone-send", 5, 5 * 60 * 1000); // 5 requests / 5 min
+    if (!limitResult.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
       );
     }
 

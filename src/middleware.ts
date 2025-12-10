@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { rateLimitByIp } from '@/lib/rateLimit';
 
 const locales = ['fa', 'en', 'ar'];
 const defaultLocale = 'fa';
@@ -7,6 +8,22 @@ const defaultLocale = 'fa';
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
+  // Rate limit NextAuth credential POSTs to reduce brute-force risk
+  if (pathname.startsWith('/api/auth') && request.method === 'POST') {
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip =
+      (forwarded && forwarded.split(',')[0]?.trim()) ||
+      request.headers.get('x-real-ip') ||
+      null;
+    const limitResult = rateLimitByIp(ip, 'auth-login', 10, 5 * 60 * 1000); // 10 requests / 5 min
+    if (!limitResult.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many login attempts. Please try again later.' },
+        { status: 429 }
+      );
+    }
+  }
+
   // CRITICAL: Handle ZarinPal verification file BEFORE any other processing
   // This must be checked first to prevent Next.js from treating it as a locale
   if (pathname === '/28569823.txt' || 

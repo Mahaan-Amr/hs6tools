@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { sendSMS, sendVerificationCode, SendSMSOptions, VerifyLookupOptions } from "@/lib/sms";
+import { requireAuth } from "@/lib/authz";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 /**
  * POST /api/sms/send
- * Send SMS message
+ * Send SMS message (admin only, rate limited)
  * 
  * Body:
  * {
@@ -20,11 +20,18 @@ import { sendSMS, sendVerificationCode, SendSMSOptions, VerifyLookupOptions } fr
 export async function POST(request: NextRequest) {
   try {
     // Check authentication (only admins can send SMS directly)
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
+
+    // Rate limit: 20 SMS per 5 minutes per IP
+    const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0] || 
+                     request.headers.get("x-real-ip") || 
+                     "unknown";
+    const rateLimitResult = checkRateLimit(clientIp, 20, 5 * 60 * 1000, 'sms-send');
+    if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
       );
     }
 
