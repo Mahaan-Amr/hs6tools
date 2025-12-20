@@ -26,6 +26,7 @@ export async function GET() {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const diagnostics: Record<string, any> = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
