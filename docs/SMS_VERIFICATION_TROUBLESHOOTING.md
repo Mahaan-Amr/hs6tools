@@ -88,7 +88,26 @@ KAVENEGAR_SENDER=2000660110  # Optional, defaults to 2000660110 (purchased numbe
 4. Wait for template approval (usually instant)
 5. System will automatically use simple SMS as fallback if template fails
 
-### Issue 3: Test Account Limitation
+### Issue 3: Account Verification Required
+
+**Symptoms:**
+- Error: `403: حساب کاربری احراز هویت نشده است` (Account is not verified)
+- SMS sending fails with account verification error
+- Error message: "Account verification required"
+
+**Solution:**
+1. Login to [Kavenegar Console](https://console.kavenegar.com)
+2. Go to **Account Settings** or **Membership** section
+3. Complete account verification:
+   - Upload ID document (National ID or Passport)
+   - Verify phone number
+   - Complete profile information
+4. Wait for approval (usually 1-24 hours)
+5. Once verified, SMS will work normally
+
+**Note:** The system now automatically detects this error and provides clear guidance. See [Account Verification Fix](./KAVENEGAR_ACCOUNT_VERIFICATION_FIX.md) for detailed steps.
+
+### Issue 4: Test Account Limitation
 
 **Symptoms:**
 - Error: `501: امکان ارسال پیامک فقط به شماره صاحب حساب داده شده است`
@@ -108,7 +127,7 @@ KAVENEGAR_SENDER=2000660110  # Optional, defaults to 2000660110 (purchased numbe
 4. Frontend displays the code prominently when test account limitation is detected
 5. User can enter the code manually to complete registration
 
-### Issue 4: Timeout Issues
+### Issue 5: Timeout Issues
 
 **Symptoms:**
 - Error: "SMS service timeout - please try again"
@@ -279,6 +298,7 @@ LIMIT 5;
 
 ## 🔗 Related Documentation
 
+- [Account Verification Fix](./KAVENEGAR_ACCOUNT_VERIFICATION_FIX.md) - **NEW:** Fix for "Account not verified" error
 - [SMS Integration Guide](./SMS_INTEGRATION_GUIDE.md)
 - [Kavenegar Comprehensive Audit](./KAVENEGAR_COMPREHENSIVE_AUDIT.md)
 - [Registration Flow Fix](./REGISTRATION_FLOW_FIX.md)

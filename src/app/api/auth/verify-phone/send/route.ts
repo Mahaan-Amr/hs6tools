@@ -198,11 +198,32 @@ export async function POST(request: NextRequest) {
           isTestAccountLimitation,
         });
         
+        // Check if it's an account verification error
+        const isAccountVerificationError = 
+          (fallbackResult.error && (
+            fallbackResult.error.includes('verification required') ||
+            fallbackResult.error.includes('احراز هویت') ||
+            fallbackResult.error.includes('verify your account')
+          )) ||
+          (templateResult.error && (
+            templateResult.error.includes('verification required') ||
+            templateResult.error.includes('احراز هویت') ||
+            templateResult.error.includes('verify your account')
+          ));
+        
         // Still return success because code is saved in database
         // User can request a new code if SMS fails
         let warningMessage = `SMS sending failed: ${fallbackResult.error || templateResult.error}. Code is saved in database. You can request a new code.`;
         
-        if (isTestAccountLimitation && isDevelopment) {
+        if (isAccountVerificationError) {
+          warningMessage = `SMS sending failed: Account verification required. Please verify your Kavenegar account at https://console.kavenegar.com. Code is saved in database. You can request a new code after account verification.`;
+          console.error('❌ [verify-phone/send] Account verification required:', {
+            phone,
+            templateError: templateResult.error,
+            fallbackError: fallbackResult.error,
+            action: 'Please verify Kavenegar account at https://console.kavenegar.com',
+          });
+        } else if (isTestAccountLimitation && isDevelopment) {
           // In development mode with test account, provide the code for testing
           warningMessage = `SMS sending failed (Test account limitation: SMS can only be sent to account owner's number). Your verification code is: ${verificationCode}. This code is valid for 5 minutes. In production, SMS will work normally.`;
           console.log(`🔑 [verify-phone/send] Development mode - Verification code for ${phone}: ${verificationCode}`);

@@ -125,6 +125,16 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
               const isTestAccountLimitation = status === 501 || 
                 (message && (message.includes('صاحب حساب') || message.includes('account owner')));
               
+              // Check if it's an account verification error
+              const isAccountVerificationError = message && (
+                message.includes('احراز هویت نشده') ||
+                message.includes('احراز هویت نشده است') ||
+                message.includes('not verified') ||
+                message.includes('account not verified') ||
+                message.includes('account verification') ||
+                message.includes('verification required')
+              );
+              
               // Map common Kavenegar API error codes to user-friendly messages
               let errorMessage = message || 'Failed to send SMS';
               const errorDetails: Record<string, string | number | boolean | undefined> = {
@@ -146,7 +156,11 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                   errorMessage = 'Insufficient account credit. Please recharge your Kavenegar account.';
                   break;
                 case 403:
-                  errorMessage = 'Access forbidden. Please check your account permissions and sender number.';
+                  if (isAccountVerificationError) {
+                    errorMessage = 'Account verification required. Please verify your Kavenegar account in the panel (https://console.kavenegar.com). Your account needs to be verified before sending SMS.';
+                  } else {
+                    errorMessage = 'Access forbidden. Please check your account permissions and sender number.';
+                  }
                   break;
                 case 404:
                   errorMessage = 'Sender number not found. Please verify KAVENEGAR_SENDER is correct.';
@@ -167,6 +181,13 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                   ...errorDetails,
                   note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
                 });
+              } else if (isAccountVerificationError) {
+                console.error('❌ [sendSMS] Account verification required:', {
+                  ...errorDetails,
+                  errorMessage,
+                  action: 'Please verify your Kavenegar account at https://console.kavenegar.com',
+                  note: 'Your Kavenegar account needs to be verified before you can send SMS. Please complete account verification in the Kavenegar panel.',
+                });
               } else {
                 console.error('❌ [sendSMS] SMS sending failed:', {
                   ...errorDetails,
@@ -183,6 +204,11 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
               
               if (isTestAccountLimitation) {
                 response.isTestAccountLimitation = true;
+              }
+              
+              if (isAccountVerificationError) {
+                // Add account verification flag for frontend handling
+                response.error = errorMessage + ' Visit https://console.kavenegar.com to verify your account.';
               }
               
               resolve(response);
@@ -270,6 +296,17 @@ export async function sendVerificationCode(
               // Check if it's the Kavenegar test account limitation
               const isTestAccountLimitation = status === 501 || 
                 (message && (message.includes('صاحب حساب') || message.includes('account owner')));
+              
+              // Check if it's an account verification error
+              const isAccountVerificationError = message && (
+                message.includes('احراز هویت نشده') ||
+                message.includes('احراز هویت نشده است') ||
+                message.includes('not verified') ||
+                message.includes('account not verified') ||
+                message.includes('account verification') ||
+                message.includes('verification required')
+              );
+              
               const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
               
               // Map common Kavenegar API error codes to user-friendly messages
@@ -294,7 +331,11 @@ export async function sendVerificationCode(
                   errorMessage = 'Insufficient account credit. Please recharge your Kavenegar account.';
                   break;
                 case 403:
-                  errorMessage = 'Access forbidden. Please check your account permissions and template access.';
+                  if (isAccountVerificationError) {
+                    errorMessage = 'Account verification required. Please verify your Kavenegar account in the panel (https://console.kavenegar.com). Your account needs to be verified before sending SMS.';
+                  } else {
+                    errorMessage = 'Access forbidden. Please check your account permissions and template access.';
+                  }
                   break;
                 case 404:
                   errorMessage = `Template '${options.template}' not found. Please create it in Kavenegar panel or use simple SMS.`;
@@ -316,6 +357,13 @@ export async function sendVerificationCode(
                   note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
                   code: isDevelopment ? options.token : undefined, // Log code in dev mode only
                 });
+              } else if (isAccountVerificationError) {
+                console.error('❌ [sendVerificationCode] Account verification required:', {
+                  ...errorDetails,
+                  errorMessage,
+                  action: 'Please verify your Kavenegar account at https://console.kavenegar.com',
+                  note: 'Your Kavenegar account needs to be verified before you can send SMS. Please complete account verification in the Kavenegar panel.',
+                });
               } else {
                 console.error('❌ [sendVerificationCode] SMS sending failed:', {
                   ...errorDetails,
@@ -332,6 +380,11 @@ export async function sendVerificationCode(
               
               if (isTestAccountLimitation) {
                 response.isTestAccountLimitation = true;
+              }
+              
+              if (isAccountVerificationError) {
+                // Add account verification flag for frontend handling
+                response.error = errorMessage + ' Visit https://console.kavenegar.com to verify your account.';
               }
               
               resolve(response);
