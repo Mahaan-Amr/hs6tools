@@ -200,11 +200,26 @@ async function getSMSIrToken(): Promise<string> {
     });
 
     if (!tokenResult) {
+      // Package returned null - try direct HTTP call as fallback
+      console.warn('⚠️ [getSMSIrToken] Package returned null, trying direct HTTP call to SMS.ir API...');
+      try {
+        const directTokenResult = await getSMSIrTokenDirect(apiKey, secretKey);
+        if (directTokenResult) {
+          console.log('✅ [getSMSIrToken] Direct HTTP call succeeded, package may have a bug');
+          return directTokenResult;
+        }
+      } catch (directError) {
+        console.error('❌ [getSMSIrToken] Direct HTTP call also failed:', {
+          error: directError instanceof Error ? directError.message : String(directError),
+        });
+      }
+
       const error = 'SMS.ir token API returned null/undefined response. This usually means: 1) Invalid API key, 2) Network connectivity issue, 3) SMS.ir service is down, or 4) IP address not whitelisted in SMS.ir panel.';
       console.error('❌ [getSMSIrToken]', error, {
         apiKeyLength: apiKey.length,
         apiKeyPreview: apiKey.substring(0, 16) + '...',
         secretKeyProvided: !!secretKey,
+        note: 'Both package and direct HTTP call failed',
       });
       throw new Error(`Failed to get SMS.ir token: ${error}`);
     }
