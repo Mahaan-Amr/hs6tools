@@ -110,9 +110,6 @@ async function getSMSIrTokenDirect(
   secretKey: string | null
 ): Promise<string | null> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
     const requestBody: { UserApiKey: string; SecretKey?: string } = {
       UserApiKey: apiKey,
     };
