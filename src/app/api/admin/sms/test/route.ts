@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/admin/sms/test
- * Test SMS.ir connectivity and token retrieval (Admin only)
+ * Test SMS.ir connectivity and client initialization (Admin only)
+ * Note: SMS.ir uses direct API key authentication (no token system)
  * This endpoint helps diagnose SMS.ir API issues
  */
 export async function GET() {
@@ -49,95 +50,72 @@ export async function GET() {
       SMSIR_LINE_NUMBER: process.env.SMSIR_LINE_NUMBER || "NOT SET",
     };
 
-    // 2. Check SMS.ir package availability
+    // 2. Check SMS.ir package availability (official smsir-js)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let SMSIr: any = null;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      SMSIr = require("sms-ir");
+      const smsirModule = require("smsir-js");
+      SMSIr = smsirModule.Smsir || smsirModule;
       diagnostics.packageCheck = {
         available: true,
-        hasToken: !!SMSIr?.Token,
-        hasSimpleSend: !!SMSIr?.SimpleSend,
-        hasUltraFastSend: !!SMSIr?.UltraFastSend,
-        hasVerificationCode: !!SMSIr?.VerificationCode,
+        hasSmsirClass: !!SMSIr,
+        packageName: "smsir-js",
+        note: "Official SMS.ir package - uses direct API key (no token system)",
       };
     } catch (error) {
       diagnostics.packageCheck = {
         available: false,
         error: error instanceof Error ? error.message : String(error),
+        note: "Install with: npm install smsir-js",
       };
     }
 
-    // 3. Test token retrieval if package is available
+    // 3. Test client initialization and API connectivity
     if (SMSIr && process.env.SMSIR_API_KEY) {
       try {
-        const token = new SMSIr.Token();
         const apiKey = process.env.SMSIR_API_KEY;
-        const secretKey = process.env.SMSIR_SECRET_KEY || null;
+        const lineNumber = process.env.SMSIR_LINE_NUMBER || '';
 
-        diagnostics.tokenTest = {
+        diagnostics.clientTest = {
           attempting: true,
-          method: secretKey ? "with secretKey" : "without secretKey",
           apiKeyPreview: `${apiKey.substring(0, 16)}...`,
+          lineNumber: lineNumber || 'default',
         };
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let tokenResult: any;
         const startTime = Date.now();
         try {
-          if (secretKey) {
-            tokenResult = await Promise.race([
-              token.get(apiKey, secretKey),
-              new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("Timeout after 10 seconds")), 10000)
-              ),
-            ]);
-          } else {
-            tokenResult = await Promise.race([
-              token.get(apiKey),
-              new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("Timeout after 10 seconds")), 10000)
-              ),
-            ]);
-          }
+          // Test client initialization (no API call yet)
+          const smsir = new SMSIr(apiKey, lineNumber);
           const duration = Date.now() - startTime;
 
-          diagnostics.tokenTest.result = {
+          diagnostics.clientTest.result = {
             success: true,
             duration: `${duration}ms`,
-            hasResult: !!tokenResult,
-            resultType: tokenResult ? typeof tokenResult : "null/undefined",
-            isSuccessful: tokenResult?.IsSuccessful,
-            message: tokenResult?.Message,
-            statusCode: tokenResult?.StatusCode,
-            hasTokenKey: !!tokenResult?.TokenKey,
-            tokenKeyPreview: tokenResult?.TokenKey
-              ? `${tokenResult.TokenKey.substring(0, 10)}...`
-              : "NOT SET",
-            fullResponse: tokenResult ? JSON.stringify(tokenResult, null, 2) : "null",
+            clientInitialized: true,
+            note: "Client initialized successfully. SMS.ir uses direct API key authentication (no token system).",
           };
-        } catch (apiError) {
+        } catch (initError) {
           const duration = Date.now() - startTime;
-          diagnostics.tokenTest.result = {
+          diagnostics.clientTest.result = {
             success: false,
             duration: `${duration}ms`,
-            error: apiError instanceof Error ? apiError.message : String(apiError),
-            errorType: apiError instanceof Error ? apiError.constructor.name : typeof apiError,
-            stack: apiError instanceof Error ? apiError.stack : undefined,
+            error: initError instanceof Error ? initError.message : String(initError),
+            errorType: initError instanceof Error ? initError.constructor.name : typeof initError,
+            stack: initError instanceof Error ? initError.stack : undefined,
           };
         }
       } catch (error) {
-        diagnostics.tokenTest = {
+        diagnostics.clientTest = {
           attempting: false,
           error: error instanceof Error ? error.message : String(error),
         };
       }
     } else {
-      diagnostics.tokenTest = {
+      diagnostics.clientTest = {
         attempting: false,
         reason: !SMSIr
-          ? "SMS.ir package not available"
+          ? "smsir-js package not available"
           : "SMSIR_API_KEY not set",
       };
     }

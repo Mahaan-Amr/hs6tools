@@ -121,7 +121,6 @@ function getSMSIrClient() {
   }
 
   // Official SMS.ir API: new Smsir(api_key, line_number)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new SMSIr(apiKey, lineNumber);
 }
 
