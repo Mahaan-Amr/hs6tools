@@ -15,9 +15,10 @@ import type { kavenegar } from 'kavenegar';
 let SMSIr: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  SMSIr = require('sms-ir');
+  const smsirModule = require('smsir-js');
+  SMSIr = smsirModule.Smsir || smsirModule;
 } catch {
-  console.warn('⚠️ [SMS] sms-ir package not found. SMS.ir functionality will be disabled.');
+  console.warn('⚠️ [SMS] smsir-js package not found. SMS.ir functionality will be disabled.');
 }
 
 // Type definitions for Kavenegar responses
@@ -98,316 +99,34 @@ export interface VerifyLookupOptions {
 }
 
 // ============================================================================
-// SMS.ir Implementation
+// SMS.ir Implementation (Official smsir-js package)
 // ============================================================================
 
 /**
- * Get SMS.ir token via direct HTTP call (fallback when package fails)
- * SMS.ir API endpoint: POST https://api.sms.ir/v1/auth/token
+ * Initialize SMS.ir client
+ * Official package: smsir-js
+ * Documentation: https://sms.ir/web-service/پکیج-های-وب-سرویس/
+ * API: Direct API key authentication (no token system)
  */
-async function getSMSIrTokenDirect(
-  apiKey: string,
-  secretKey: string | null
-): Promise<string | null> {
-  try {
-    const requestBody: { UserApiKey: string; SecretKey?: string } = {
-      UserApiKey: apiKey,
-    };
-
-    // Only include SecretKey if provided (new panels don't need it)
-    if (secretKey) {
-      requestBody.SecretKey = secretKey;
-    }
-
-    // Try different possible endpoints (SMS.ir API might use different paths)
-    // The 404 error suggests the endpoint might be wrong
-    const possibleEndpoints = [
-      'https://api.sms.ir/v1/token',  // Try without /auth (most likely)
-      'https://api.sms.ir/v1/auth/token',  // Original attempt (returned 404)
-      'https://rest.sms.ir/v1/token',  // Alternative base URL
-    ];
-
-    let lastError: Error | null = null;
-    for (const endpoint of possibleEndpoints) {
-      try {
-        console.log('🌐 [getSMSIrTokenDirect] Trying endpoint:', endpoint, {
-          hasSecretKey: !!secretKey,
-        });
-
-        const endpointController = new AbortController();
-        const endpointTimeoutId = setTimeout(() => endpointController.abort(), 10000);
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-          signal: endpointController.signal,
-        });
-
-        clearTimeout(endpointTimeoutId);
-
-        const responseText = await response.text();
-        console.log('🌐 [getSMSIrTokenDirect] HTTP response from', endpoint, ':', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          bodyPreview: responseText.substring(0, 200),
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            // Try next endpoint
-            console.warn('⚠️ [getSMSIrTokenDirect] Endpoint returned 404, trying next...');
-            lastError = new Error(`Endpoint ${endpoint} returned 404 Not Found`);
-            continue;
-          }
-          console.error('❌ [getSMSIrTokenDirect] HTTP error:', {
-            endpoint,
-            status: response.status,
-            statusText: response.statusText,
-            body: responseText,
-          });
-          lastError = new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText.substring(0, 100)}`);
-          continue;
-        }
-
-        let responseData;
-        try {
-          responseData = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('❌ [getSMSIrTokenDirect] Failed to parse JSON response:', {
-            endpoint,
-            error: parseError instanceof Error ? parseError.message : String(parseError),
-            body: responseText,
-          });
-          lastError = new Error(`Failed to parse JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
-          continue;
-        }
-
-        console.log('🌐 [getSMSIrTokenDirect] Parsed response from', endpoint, ':', {
-          isSuccessful: responseData.IsSuccessful,
-          message: responseData.Message,
-          statusCode: responseData.StatusCode,
-          hasTokenKey: !!responseData.TokenKey,
-        });
-
-        if (responseData.IsSuccessful && responseData.TokenKey) {
-          console.log('✅ [getSMSIrTokenDirect] Token obtained via direct HTTP call from', endpoint);
-          return responseData.TokenKey;
-        } else {
-          console.error('❌ [getSMSIrTokenDirect] API returned unsuccessful response:', {
-            endpoint,
-            message: responseData.Message,
-            statusCode: responseData.StatusCode,
-            fullResponse: responseData,
-          });
-          lastError = new Error(`API returned unsuccessful: ${responseData.Message || 'Unknown error'} (Status: ${responseData.StatusCode || 'Unknown'})`);
-          continue;
-        }
-      } catch (fetchError) {
-        const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
-        const isAbortError = fetchError instanceof Error && fetchError.name === 'AbortError';
-        
-        if (isAbortError) {
-          console.error('❌ [getSMSIrTokenDirect] Request timeout for', endpoint);
-          lastError = new Error(`Request timeout for ${endpoint}`);
-          continue;
-        }
-        
-        console.error('❌ [getSMSIrTokenDirect] Fetch error for', endpoint, ':', {
-          error: errorMessage,
-          errorType: fetchError instanceof Error ? fetchError.constructor.name : typeof fetchError,
-        });
-        lastError = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
-        continue;
-      }
-    }
-
-    // All endpoints failed
-    console.error('❌ [getSMSIrTokenDirect] All endpoints failed. Last error:', lastError?.message || 'Unknown');
-    return null;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('❌ [getSMSIrTokenDirect] Unexpected error:', {
-      error: errorMessage,
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
-    });
-    return null;
-  }
-}
-
-/**
- * Initialize SMS.ir Token
- * Note: New SMS.ir panels only require API Key (no Secret Key needed)
- * Falls back to direct HTTP call if package fails
- */
-async function getSMSIrToken(): Promise<string> {
+function getSMSIrClient() {
   const apiKey = process.env.SMSIR_API_KEY;
-  // New SMS.ir panels only provide API key, secretKey is optional
-  const secretKey = process.env.SMSIR_SECRET_KEY || null;
-
-  console.log('🔑 [getSMSIrToken] Starting token request:', {
-    apiKeyPresent: !!apiKey,
-    apiKeyLength: apiKey?.length || 0,
-    secretKeyPresent: !!secretKey,
-    smsIrPackageAvailable: !!SMSIr,
-  });
+  const lineNumber = process.env.SMSIR_LINE_NUMBER || '';
 
   if (!apiKey) {
-    const error = 'SMSIR_API_KEY is not set in environment variables';
-    console.error('❌ [getSMSIrToken]', error);
-    throw new Error(error);
+    throw new Error('SMSIR_API_KEY is not set in environment variables');
   }
 
   if (!SMSIr) {
-    const error = 'sms-ir package is not installed';
-    console.error('❌ [getSMSIrToken]', error);
-    throw new Error(error);
+    throw new Error('smsir-js package is not installed. Run: npm install smsir-js');
   }
 
-  try {
-    const token = new SMSIr.Token();
-    // For new panels, secretKey can be null or empty string
-    console.log('🔑 [getSMSIrToken] Calling SMS.ir Token API...', {
-      apiKeyPreview: apiKey.substring(0, 16) + '...',
-      secretKeyProvided: !!secretKey,
-    });
-
-    let tokenResult: { IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string } | null = null;
-    try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('SMS.ir token API timeout after 15 seconds')), 15000)
-      );
-
-      // Try with secretKey first (if provided)
-      if (secretKey) {
-        console.log('🔑 [getSMSIrToken] Attempting token request with secret key...');
-        tokenResult = await Promise.race([
-          token.get(apiKey, secretKey) as Promise<{ IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string }>,
-          timeoutPromise,
-        ]);
-      } else {
-        // Try without secretKey (new panels)
-        // Note: Some versions of sms-ir package might require passing null/undefined explicitly
-        console.log('🔑 [getSMSIrToken] Attempting token request without secret key...');
-        try {
-          // First try: call with just apiKey
-          tokenResult = await Promise.race([
-            token.get(apiKey) as Promise<{ IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string }>,
-            timeoutPromise,
-          ]);
-        } catch {
-          // If that fails, try with null as second parameter
-          console.log('🔑 [getSMSIrToken] Retrying with null secretKey parameter...');
-          tokenResult = await Promise.race([
-            token.get(apiKey, null) as Promise<{ IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string }>,
-            timeoutPromise,
-          ]);
-        }
-      }
-    } catch (apiError) {
-      // Catch any exceptions from the API call itself
-      const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
-      console.error('❌ [getSMSIrToken] SMS.ir API call threw an exception:', {
-        error: errorMessage,
-        errorType: apiError instanceof Error ? apiError.constructor.name : typeof apiError,
-        stack: apiError instanceof Error ? apiError.stack : undefined,
-      });
-      
-      // Provide more helpful error messages
-      if (errorMessage.includes('timeout')) {
-        throw new Error(`Failed to get SMS.ir token: Request timeout - SMS.ir API is not responding. Check network connectivity.`);
-      } else if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
-        throw new Error(`Failed to get SMS.ir token: Network error - Cannot reach SMS.ir API. Check firewall and DNS settings.`);
-      } else {
-        throw new Error(`Failed to get SMS.ir token: API call failed - ${errorMessage}`);
-      }
-    }
-
-    console.log('🔑 [getSMSIrToken] Token API response:', {
-      hasResult: !!tokenResult,
-      resultType: tokenResult ? typeof tokenResult : 'null/undefined',
-      isSuccessful: tokenResult?.IsSuccessful,
-      message: tokenResult?.Message,
-      statusCode: tokenResult?.StatusCode,
-      hasTokenKey: !!tokenResult?.TokenKey,
-      fullResponse: tokenResult ? JSON.stringify(tokenResult) : 'null',
-    });
-
-    if (!tokenResult) {
-      // Package returned null - try direct HTTP call as fallback
-      console.warn('⚠️ [getSMSIrToken] Package returned null, trying direct HTTP call to SMS.ir API...');
-      try {
-        const directTokenResult = await getSMSIrTokenDirect(apiKey, secretKey);
-        if (directTokenResult) {
-          console.log('✅ [getSMSIrToken] Direct HTTP call succeeded, package may have a bug');
-          return directTokenResult;
-        }
-      } catch (directError) {
-        console.error('❌ [getSMSIrToken] Direct HTTP call also failed:', {
-          error: directError instanceof Error ? directError.message : String(directError),
-        });
-      }
-
-      const error = 'SMS.ir token API returned null/undefined response. This usually means: 1) Invalid API key, 2) Network connectivity issue, 3) SMS.ir service is down, or 4) IP address not whitelisted in SMS.ir panel.';
-      console.error('❌ [getSMSIrToken]', error, {
-        apiKeyLength: apiKey.length,
-        apiKeyPreview: apiKey.substring(0, 16) + '...',
-        secretKeyProvided: !!secretKey,
-        note: 'Both package and direct HTTP call failed',
-      });
-      throw new Error(`Failed to get SMS.ir token: ${error}`);
-    }
-
-    if (!tokenResult.IsSuccessful) {
-      const errorMessage = tokenResult.Message || 'No error message provided';
-      const statusCode = tokenResult.StatusCode || 'Unknown';
-      const error = `Failed to get SMS.ir token: ${errorMessage} (Status: ${statusCode})`;
-      console.error('❌ [getSMSIrToken]', {
-        error: errorMessage,
-        statusCode,
-        fullResponse: JSON.stringify(tokenResult),
-      });
-      throw new Error(error);
-    }
-
-    if (!tokenResult.TokenKey) {
-      const error = 'SMS.ir token API returned success but no TokenKey';
-      console.error('❌ [getSMSIrToken]', error, {
-        fullResponse: JSON.stringify(tokenResult),
-      });
-      throw new Error(`Failed to get SMS.ir token: ${error}`);
-    }
-
-    console.log('✅ [getSMSIrToken] Token obtained successfully:', {
-      tokenKeyLength: tokenResult.TokenKey.length,
-      tokenKeyPreview: tokenResult.TokenKey.substring(0, 10) + '...',
-    });
-
-    return tokenResult.TokenKey;
-  } catch (error) {
-    // If it's already our formatted error, re-throw it
-    if (error instanceof Error && error.message.includes('Failed to get SMS.ir token')) {
-      throw error;
-    }
-
-    // Otherwise, wrap the unknown error
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('❌ [getSMSIrToken] Unexpected error:', {
-      error: errorMessage,
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw new Error(`Failed to get SMS.ir token: ${errorMessage}`);
-  }
+  // Official SMS.ir API: new Smsir(api_key, line_number)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new SMSIr(apiKey, lineNumber);
 }
 
 /**
- * Send SMS using SMS.ir
+ * Send SMS using SMS.ir (Official smsir-js package)
  */
 async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
   try {
@@ -419,39 +138,44 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
       messageLength: options.message.length,
     });
 
-    const tokenKey = await getSMSIrToken();
-    const simpleSend = new SMSIr.SimpleSend();
+    const smsir = getSMSIrClient();
     
-    const result = await simpleSend.send(
-      tokenKey,
-      lineNumber,
-      options.message,
-      options.receptor
-    );
+    // Official API: smsir.send({ message, mobileNumbers: [phone] })
+    const result = await smsir.send({
+      message: options.message,
+      mobileNumbers: [options.receptor],
+    });
 
-    if (result && result.IsSuccessful) {
+    console.log('📱 [sendSMS] SMS.ir - API response:', {
+      success: result?.success,
+      messageId: result?.messageId,
+      status: result?.status,
+      error: result?.error,
+    });
+
+    if (result && result.success) {
       console.log('✅ [sendSMS] SMS.ir - SMS sent successfully:', {
-        messageId: result.MessageId?.toString(),
+        messageId: result.messageId?.toString(),
         receptor: options.receptor,
       });
       return {
         success: true,
         message: 'SMS sent successfully',
-        messageId: result.MessageId?.toString(),
-        status: 200,
+        messageId: result.messageId?.toString(),
+        status: result.status || 200,
         provider: 'smsir',
       };
     } else {
-      const errorMessage = result?.Message || 'Failed to send SMS via SMS.ir';
+      const errorMessage = result?.error || result?.message || 'Failed to send SMS via SMS.ir';
       console.error('❌ [sendSMS] SMS.ir - SMS sending failed:', {
         error: errorMessage,
         receptor: options.receptor,
-        status: result?.StatusCode,
+        status: result?.status,
       });
       return {
         success: false,
         error: errorMessage,
-        status: result?.StatusCode || 500,
+        status: result?.status || 500,
         provider: 'smsir',
       };
     }
@@ -467,8 +191,8 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
 }
 
 /**
- * Send verification code using SMS.ir template
- * Supports both VerificationCode (simple) and UltraFastSend (template with variables)
+ * Send verification code using SMS.ir template (Official smsir-js package)
+ * Uses verifySend method: smsir.verifySend(mobile, templateId, parameters)
  */
 async function sendVerificationCodeViaSMSIr(
   options: VerifyLookupOptions
@@ -486,73 +210,54 @@ async function sendVerificationCodeViaSMSIr(
       token: options.token,
     });
 
-    const tokenKey = await getSMSIrToken();
+    const smsir = getSMSIrClient();
     
-    // Try UltraFastSend first (recommended for template-based sending)
-    // Falls back to VerificationCode if UltraFastSend is not available
-    try {
-      if (SMSIr.UltraFastSend) {
-        const ultraFastSend = new SMSIr.UltraFastSend();
-        // UltraFastSend parameter order: tokenKey, templateId, receptor, parameters
-        // Parameters should match template placeholders (e.g., {OTP} or #OTP#)
-        const result = await ultraFastSend.send(
-          tokenKey,
-          templateId,
-          options.receptor,
-          [{ Parameter: 'OTP', ParameterValue: options.token }] // SMS.ir uses array format
-        );
+    // Official API: smsir.verifySend(mobile, templateId, parameters)
+    // Parameters format: [{ name: "Code", value: "12345" }]
+    const parameters = [
+      {
+        name: 'Code',
+        value: options.token,
+      },
+    ];
 
-        if (result && result.IsSuccessful) {
-          console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully (UltraFastSend):', {
-            messageId: result.MessageId?.toString(),
-            receptor: options.receptor,
-          });
-          return {
-            success: true,
-            message: 'Verification code sent successfully',
-            messageId: result.MessageId?.toString(),
-            status: 200,
-            provider: 'smsir',
-          };
-        }
-      }
-    } catch (ultraFastError) {
-      console.warn('⚠️ [sendVerificationCode] SMS.ir - UltraFastSend failed, trying VerificationCode:', ultraFastError);
-    }
-
-    // Fallback to VerificationCode (simpler method)
-    const verificationCode = new SMSIr.VerificationCode();
-    const result = await verificationCode.send(
-      tokenKey,
+    const result = await smsir.verifySend(
       options.receptor,
-      options.token,
-      templateId
+      templateId,
+      parameters
     );
 
-    if (result && result.IsSuccessful) {
-      console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully (VerificationCode):', {
-        messageId: result.MessageId?.toString(),
+    console.log('📱 [sendVerificationCode] SMS.ir - API response:', {
+      success: result?.success,
+      messageId: result?.messageId,
+      status: result?.status,
+      error: result?.error,
+    });
+
+    if (result && result.success) {
+      console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully:', {
+        messageId: result.messageId?.toString(),
         receptor: options.receptor,
       });
       return {
         success: true,
         message: 'Verification code sent successfully',
-        messageId: result.MessageId?.toString(),
-        status: 200,
+        messageId: result.messageId?.toString(),
+        status: result.status || 200,
         provider: 'smsir',
       };
     } else {
-      const errorMessage = result?.Message || 'Failed to send verification code via SMS.ir';
+      const errorMessage = result?.error || result?.message || 'Failed to send verification code via SMS.ir';
       console.error('❌ [sendVerificationCode] SMS.ir - Failed:', {
         error: errorMessage,
         receptor: options.receptor,
         templateId,
-        status: result?.StatusCode,
+        status: result?.status,
       });
       return {
         success: false,
         error: errorMessage,
-        status: result?.StatusCode || 500,
+        status: result?.status || 500,
         provider: 'smsir',
       };
     }
