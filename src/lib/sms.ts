@@ -110,23 +110,86 @@ async function getSMSIrToken(): Promise<string> {
   // New SMS.ir panels only provide API key, secretKey is optional
   const secretKey = process.env.SMSIR_SECRET_KEY || null;
 
+  console.log('🔑 [getSMSIrToken] Starting token request:', {
+    apiKeyPresent: !!apiKey,
+    apiKeyLength: apiKey?.length || 0,
+    secretKeyPresent: !!secretKey,
+    smsIrPackageAvailable: !!SMSIr,
+  });
+
   if (!apiKey) {
-    throw new Error('SMSIR_API_KEY is not set in environment variables');
+    const error = 'SMSIR_API_KEY is not set in environment variables';
+    console.error('❌ [getSMSIrToken]', error);
+    throw new Error(error);
   }
 
   if (!SMSIr) {
-    throw new Error('sms-ir package is not installed');
+    const error = 'sms-ir package is not installed';
+    console.error('❌ [getSMSIrToken]', error);
+    throw new Error(error);
   }
 
-  const token = new SMSIr.Token();
-  // For new panels, secretKey can be null or empty string
-  const tokenResult = await token.get(apiKey, secretKey);
+  try {
+    const token = new SMSIr.Token();
+    // For new panels, secretKey can be null or empty string
+    console.log('🔑 [getSMSIrToken] Calling SMS.ir Token API...');
+    const tokenResult = await token.get(apiKey, secretKey);
 
-  if (!tokenResult || !tokenResult.IsSuccessful) {
-    throw new Error(`Failed to get SMS.ir token: ${tokenResult?.Message || 'Unknown error'}`);
+    console.log('🔑 [getSMSIrToken] Token API response:', {
+      hasResult: !!tokenResult,
+      isSuccessful: tokenResult?.IsSuccessful,
+      message: tokenResult?.Message,
+      statusCode: tokenResult?.StatusCode,
+      hasTokenKey: !!tokenResult?.TokenKey,
+    });
+
+    if (!tokenResult) {
+      const error = 'SMS.ir token API returned null/undefined response';
+      console.error('❌ [getSMSIrToken]', error);
+      throw new Error(`Failed to get SMS.ir token: ${error}`);
+    }
+
+    if (!tokenResult.IsSuccessful) {
+      const errorMessage = tokenResult.Message || 'No error message provided';
+      const statusCode = tokenResult.StatusCode || 'Unknown';
+      const error = `Failed to get SMS.ir token: ${errorMessage} (Status: ${statusCode})`;
+      console.error('❌ [getSMSIrToken]', {
+        error: errorMessage,
+        statusCode,
+        fullResponse: JSON.stringify(tokenResult),
+      });
+      throw new Error(error);
+    }
+
+    if (!tokenResult.TokenKey) {
+      const error = 'SMS.ir token API returned success but no TokenKey';
+      console.error('❌ [getSMSIrToken]', error, {
+        fullResponse: JSON.stringify(tokenResult),
+      });
+      throw new Error(`Failed to get SMS.ir token: ${error}`);
+    }
+
+    console.log('✅ [getSMSIrToken] Token obtained successfully:', {
+      tokenKeyLength: tokenResult.TokenKey.length,
+      tokenKeyPreview: tokenResult.TokenKey.substring(0, 10) + '...',
+    });
+
+    return tokenResult.TokenKey;
+  } catch (error) {
+    // If it's already our formatted error, re-throw it
+    if (error instanceof Error && error.message.includes('Failed to get SMS.ir token')) {
+      throw error;
+    }
+
+    // Otherwise, wrap the unknown error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('❌ [getSMSIrToken] Unexpected error:', {
+      error: errorMessage,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw new Error(`Failed to get SMS.ir token: ${errorMessage}`);
   }
-
-  return tokenResult.TokenKey;
 }
 
 /**
