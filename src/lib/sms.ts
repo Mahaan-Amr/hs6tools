@@ -71,7 +71,8 @@ export interface VerifyLookupOptions {
 export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
   try {
     const api = getKavenegarClient();
-    const sender = options.sender || process.env.KAVENEGAR_SENDER || '10004346';
+    // Use purchased sender number (2000660110) as default, fallback to env var or public number
+    const sender = options.sender || process.env.KAVENEGAR_SENDER || '2000660110';
 
     console.log('📱 [sendSMS] Attempting to send SMS:', {
       receptor: options.receptor,
@@ -124,25 +125,59 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
               const isTestAccountLimitation = status === 501 || 
                 (message && (message.includes('صاحب حساب') || message.includes('account owner')));
               
+              // Map common Kavenegar API error codes to user-friendly messages
+              let errorMessage = message || 'Failed to send SMS';
+              const errorDetails: Record<string, string | number | boolean | undefined> = {
+                status,
+                message,
+                receptor: options.receptor,
+              };
+
+              // Handle specific error codes for production
+              switch (status) {
+                case 400:
+                  errorMessage = 'Invalid request parameters. Please check phone number format and message content.';
+                  break;
+                case 401:
+                  errorMessage = 'Invalid API key. Please check your KAVENEGAR_API_KEY configuration.';
+                  errorDetails.apiKeyConfigured = !!process.env.KAVENEGAR_API_KEY;
+                  break;
+                case 402:
+                  errorMessage = 'Insufficient account credit. Please recharge your Kavenegar account.';
+                  break;
+                case 403:
+                  errorMessage = 'Access forbidden. Please check your account permissions and sender number.';
+                  break;
+                case 404:
+                  errorMessage = 'Sender number not found. Please verify KAVENEGAR_SENDER is correct.';
+                  break;
+                case 501:
+                  errorMessage = 'Test account limitation: SMS can only be sent to account owner\'s number.';
+                  break;
+                case 502:
+                  errorMessage = 'Invalid phone number format. Use format: 09123456789';
+                  break;
+                default:
+                  // Keep original message for unknown errors
+                  break;
+              }
+              
               if (isTestAccountLimitation) {
                 console.warn('⚠️ [sendSMS] Kavenegar test account limitation:', {
-                  status,
-                  message,
-                  receptor: options.receptor,
+                  ...errorDetails,
                   note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
                 });
               } else {
                 console.error('❌ [sendSMS] SMS sending failed:', {
-                  status,
-                  message,
-                  receptor: options.receptor,
+                  ...errorDetails,
                   entries: entries,
+                  errorMessage,
                 });
               }
               
               const response: SMSResponse = {
                 success: false,
-                error: message || 'Failed to send SMS',
+                error: errorMessage,
                 status: status,
               };
               
@@ -237,27 +272,61 @@ export async function sendVerificationCode(
                 (message && (message.includes('صاحب حساب') || message.includes('account owner')));
               const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
               
+              // Map common Kavenegar API error codes to user-friendly messages
+              let errorMessage = message || 'Failed to send verification code';
+              const errorDetails: Record<string, string | number | boolean | undefined> = {
+                status,
+                message,
+                receptor: options.receptor,
+                template: options.template,
+              };
+
+              // Handle specific error codes for production
+              switch (status) {
+                case 400:
+                  errorMessage = 'Invalid request parameters or template not found. Please check template name and phone number format.';
+                  break;
+                case 401:
+                  errorMessage = 'Invalid API key. Please check your KAVENEGAR_API_KEY configuration.';
+                  errorDetails.apiKeyConfigured = !!process.env.KAVENEGAR_API_KEY;
+                  break;
+                case 402:
+                  errorMessage = 'Insufficient account credit. Please recharge your Kavenegar account.';
+                  break;
+                case 403:
+                  errorMessage = 'Access forbidden. Please check your account permissions and template access.';
+                  break;
+                case 404:
+                  errorMessage = `Template '${options.template}' not found. Please create it in Kavenegar panel or use simple SMS.`;
+                  break;
+                case 501:
+                  errorMessage = 'Test account limitation: SMS can only be sent to account owner\'s number.';
+                  break;
+                case 502:
+                  errorMessage = 'Invalid phone number format. Use format: 09123456789';
+                  break;
+                default:
+                  // Keep original message for unknown errors
+                  break;
+              }
+              
               if (isTestAccountLimitation) {
                 console.warn('⚠️ [sendVerificationCode] Kavenegar test account limitation:', {
-                  status,
-                  message,
-                  receptor: options.receptor,
+                  ...errorDetails,
                   note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
                   code: isDevelopment ? options.token : undefined, // Log code in dev mode only
                 });
               } else {
                 console.error('❌ [sendVerificationCode] SMS sending failed:', {
-                  status,
-                  message,
-                  receptor: options.receptor,
-                  template: options.template,
+                  ...errorDetails,
                   entries: entries,
+                  errorMessage,
                 });
               }
               
               const response: SMSResponse = {
                 success: false,
-                error: message || 'Failed to send verification code',
+                error: errorMessage,
                 status: status,
               };
               
@@ -298,7 +367,8 @@ export async function sendBulkSMS(
 ): Promise<SMSResponse> {
   try {
     const api = getKavenegarClient();
-    const senderNumber = sender || process.env.KAVENEGAR_SENDER || '10004346';
+    // Use purchased sender number (2000660110) as default, fallback to env var or public number
+    const senderNumber = sender || process.env.KAVENEGAR_SENDER || '2000660110';
 
     // For SendArray, we need arrays of equal length
     // Note: According to Kavehnegar docs, SendArray requires:

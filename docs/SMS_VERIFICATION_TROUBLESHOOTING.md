@@ -19,7 +19,7 @@ NEXT_PUBLIC_KAVENEGAR_API_KEY=your_api_key_here
 # OR
 KAVENEGAR_API_TOKEN=your_api_key_here
 
-KAVENEGAR_SENDER=10004346  # Optional, defaults to 10004346
+KAVENEGAR_SENDER=2000660110  # Optional, defaults to 2000660110 (purchased number)
 ```
 
 **Check if variables are set:**

@@ -131,10 +131,10 @@ Update your `.env` or `.env.production` file:
 
 ```env
 # Production API Key (from production account)
-KAVENEGAR_API_KEY=your_production_api_key_here
+KAVENEGAR_API_KEY=566555476F46314A72326D365563685134615464536C785744572F775A4463484B6469334E6E6F6B4D2F453D
 
-# Sender number (optional - defaults to 10004346 which is free)
-KAVENEGAR_SENDER=10004346
+# Sender number (optional - defaults to 2000660110 which is purchased)
+KAVENEGAR_SENDER=2000660110
 ```
 
 ### Step 6: Restart Your Server
@@ -193,8 +193,8 @@ KAVENEGAR_SENDER=10004346
 
 ```env
 # Use production account
-KAVENEGAR_API_KEY=your_production_api_key
-KAVENEGAR_SENDER=10004346  # Free public number works fine
+KAVENEGAR_API_KEY=566555476F46314A72326D365563685134615464536C785744572F775A4463484B6469334E6E6F6B4D2F453D
+KAVENEGAR_SENDER=2000660110  # Purchased sender number (default)
 ```
 
 **Benefits:**

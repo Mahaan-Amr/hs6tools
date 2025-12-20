@@ -175,6 +175,104 @@ check_env_files() {
     fi
     
     log "All required environment variables are present in .env"
+    
+    # Validate Kavenegar configuration
+    validate_kavenegar_config
+}
+
+# Validate Kavenegar configuration
+validate_kavenegar_config() {
+    section "📱 Validating Kavenegar Configuration"
+    
+    # Get Kavenegar API key (check all possible variable names)
+    KAVENEGAR_API_KEY_VALUE=""
+    if grep -q "^KAVENEGAR_API_KEY=" .env 2>/dev/null; then
+        KAVENEGAR_API_KEY_VALUE=$(grep "^KAVENEGAR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    elif grep -q "^NEXT_PUBLIC_KAVENEGAR_API_KEY=" .env 2>/dev/null; then
+        KAVENEGAR_API_KEY_VALUE=$(grep "^NEXT_PUBLIC_KAVENEGAR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+        warning "Using NEXT_PUBLIC_KAVENEGAR_API_KEY (not recommended - exposes key to client)"
+        warning "Consider using KAVENEGAR_API_KEY instead for better security"
+    elif grep -q "^KAVENEGAR_API_TOKEN=" .env 2>/dev/null; then
+        KAVENEGAR_API_KEY_VALUE=$(grep "^KAVENEGAR_API_TOKEN=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    fi
+    
+    # Validate API key format
+    if [ -n "$KAVENEGAR_API_KEY_VALUE" ]; then
+        # Check for placeholder values
+        if [[ "$KAVENEGAR_API_KEY_VALUE" == *"your"* ]] || \
+           [[ "$KAVENEGAR_API_KEY_VALUE" == *"YOUR"* ]] || \
+           [[ "$KAVENEGAR_API_KEY_VALUE" == *"example"* ]] || \
+           [[ "$KAVENEGAR_API_KEY_VALUE" == *"EXAMPLE"* ]] || \
+           [[ -z "$KAVENEGAR_API_KEY_VALUE" ]]; then
+            error "KAVENEGAR_API_KEY appears to be a placeholder value. Please set your actual API key in .env.production"
+        fi
+        
+        # Check API key length (Kavenegar API keys are typically 64+ characters)
+        if [ ${#KAVENEGAR_API_KEY_VALUE} -lt 32 ]; then
+            warning "KAVENEGAR_API_KEY seems too short (${#KAVENEGAR_API_KEY_VALUE} chars). Expected 64+ characters."
+        fi
+        
+        # Verify it's the correct production API key format (hexadecimal)
+        if [[ ! "$KAVENEGAR_API_KEY_VALUE" =~ ^[0-9A-Fa-f]{32,}$ ]]; then
+            warning "KAVENEGAR_API_KEY format may be incorrect. Expected hexadecimal string."
+        fi
+        
+        log "KAVENEGAR_API_KEY validated (length: ${#KAVENEGAR_API_KEY_VALUE} chars)"
+    else
+        error "KAVENEGAR_API_KEY not found in .env file. Please add it to .env.production"
+    fi
+    
+    # Get and validate KAVENEGAR_SENDER
+    KAVENEGAR_SENDER_VALUE=""
+    if grep -q "^KAVENEGAR_SENDER=" .env 2>/dev/null; then
+        KAVENEGAR_SENDER_VALUE=$(grep "^KAVENEGAR_SENDER=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    fi
+    
+    # Validate or set default sender number
+    if [ -z "$KAVENEGAR_SENDER_VALUE" ] || [[ "$KAVENEGAR_SENDER_VALUE" == *"your"* ]] || [[ "$KAVENEGAR_SENDER_VALUE" == *"YOUR"* ]]; then
+        warning "KAVENEGAR_SENDER is not set or is a placeholder. Setting default to 2000660110 (purchased number)..."
+        
+        # Remove existing KAVENEGAR_SENDER line if it exists
+        sed -i.bak '/^KAVENEGAR_SENDER=/d' .env 2>/dev/null || sed -i '/^KAVENEGAR_SENDER=/d' .env 2>/dev/null || true
+        
+        # Add correct sender number
+        echo "" >> .env
+        echo "# Kavenegar Sender Number (purchased)" >> .env
+        echo "KAVENEGAR_SENDER=2000660110" >> .env
+        
+        log "KAVENEGAR_SENDER set to default: 2000660110"
+        
+        # Also update .env.production for future runs
+        if [ -f ".env.production" ]; then
+            # Remove existing KAVENEGAR_SENDER line if it exists
+            sed -i.bak '/^KAVENEGAR_SENDER=/d' .env.production 2>/dev/null || sed -i '/^KAVENEGAR_SENDER=/d' .env.production 2>/dev/null || true
+            
+            # Add correct sender number
+            echo "" >> .env.production
+            echo "# Kavenegar Sender Number (purchased)" >> .env.production
+            echo "KAVENEGAR_SENDER=2000660110" >> .env.production
+            
+            info "Updated .env.production with KAVENEGAR_SENDER=2000660110"
+        fi
+    else
+        # Validate sender number format (should be 10 digits starting with 2 or 1)
+        if [[ ! "$KAVENEGAR_SENDER_VALUE" =~ ^[12][0-9]{9}$ ]]; then
+            warning "KAVENEGAR_SENDER format may be incorrect: ${KAVENEGAR_SENDER_VALUE}"
+            warning "Expected format: 10 digits starting with 1 or 2 (e.g., 2000660110 or 10004346)"
+        else
+            log "KAVENEGAR_SENDER validated: ${KAVENEGAR_SENDER_VALUE}"
+            
+            # Warn if using old default instead of purchased number
+            if [ "$KAVENEGAR_SENDER_VALUE" = "10004346" ]; then
+                warning "Using public sender number (10004346). Consider using purchased number (2000660110) for better branding."
+            fi
+        fi
+    fi
+    
+    # Summary
+    info "Kavenegar Configuration Summary:"
+    info "  API Key: ${KAVENEGAR_API_KEY_VALUE:0:16}... (${#KAVENEGAR_API_KEY_VALUE} chars)"
+    info "  Sender: ${KAVENEGAR_SENDER_VALUE:-2000660110}"
 }
 
 # Security audit
@@ -785,11 +883,35 @@ restart_pm2() {
                 # Verify environment variables are loaded
                 info "Verifying critical environment variables in PM2..."
                 PM2_ENV=$(pm2 env ${PM2_APP_NAME} 2>/dev/null || echo "")
+                
+                # Check Kavenegar API key (check all possible variable names)
                 if echo "$PM2_ENV" | grep -q "KAVENEGAR_API_KEY"; then
                     log "✅ KAVENEGAR_API_KEY is loaded in PM2"
+                elif echo "$PM2_ENV" | grep -q "NEXT_PUBLIC_KAVENEGAR_API_KEY"; then
+                    log "✅ NEXT_PUBLIC_KAVENEGAR_API_KEY is loaded in PM2"
+                    warning "⚠️  Using NEXT_PUBLIC_KAVENEGAR_API_KEY (not recommended - exposes key to client)"
+                elif echo "$PM2_ENV" | grep -q "KAVENEGAR_API_TOKEN"; then
+                    log "✅ KAVENEGAR_API_TOKEN is loaded in PM2"
                 else
                     warning "⚠️  KAVENEGAR_API_KEY not found in PM2 environment"
+                    warning "⚠️  SMS functionality may not work. Please check .env.production file."
                 fi
+                
+                # Check Kavenegar sender number
+                if echo "$PM2_ENV" | grep -q "KAVENEGAR_SENDER"; then
+                    SENDER_VALUE=$(echo "$PM2_ENV" | grep "KAVENEGAR_SENDER" | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                    log "✅ KAVENEGAR_SENDER is loaded in PM2: ${SENDER_VALUE}"
+                    
+                    # Warn if using old default
+                    if [ "$SENDER_VALUE" = "10004346" ]; then
+                        warning "⚠️  Using public sender number (10004346). Consider using purchased number (2000660110)."
+                    fi
+                else
+                    warning "⚠️  KAVENEGAR_SENDER not found in PM2 environment"
+                    info "ℹ️  Default sender (2000660110) will be used from code"
+                fi
+                
+                # Check Zarinpal
                 if echo "$PM2_ENV" | grep -q "ZARINPAL_MERCHANT_ID"; then
                     log "✅ ZARINPAL_MERCHANT_ID is loaded in PM2"
                 else

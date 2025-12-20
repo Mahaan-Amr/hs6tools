@@ -44,13 +44,13 @@ NEXTAUTH_URL="https://your-domain.com"
 NEXTAUTH_SECRET="your-secret-key"
 
 # SMS Service (at least one required)
-KAVENEGAR_API_KEY="your-api-key"
+KAVENEGAR_API_KEY="566555476F46314A72326D365563685134615464536C785744572F775A4463484B6469334E6E6F6B4D2F453D"
 # OR
-NEXT_PUBLIC_KAVENEGAR_API_KEY="your-api-key"
+NEXT_PUBLIC_KAVENEGAR_API_KEY="your-api-key"  # Not recommended - exposes key to client
 # OR
 KAVENEGAR_API_TOKEN="your-token"
 
-KAVENEGAR_SENDER="your-sender-number"
+KAVENEGAR_SENDER="2000660110"  # Optional - defaults to 2000660110 if not set
 
 # Payment Gateway
 ZARINPAL_MERCHANT_ID="your-merchant-id"
@@ -638,6 +638,7 @@ df -h
 
 - [ZarinPal Integration](./ZARINPAL_INTEGRATION.md)
 - [Kavenegar SMS](./KAVENEGAR_COMPREHENSIVE_AUDIT.md)
+- [Update Script - Kavenegar Configuration](./UPDATE_SCRIPT_KAVENEGAR_CONFIG.md) - How update.sh handles Kavenegar config
 - [Registration Flow](./REGISTRATION_FLOW_FIX.md)
 - [Currency Fix](./ZARINPAL_CURRENCY_FIX.md)
 - [Payment Flow](./PAYMENT_FLOW_ANALYSIS.md)
