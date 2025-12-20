@@ -122,75 +122,121 @@ async function getSMSIrTokenDirect(
       requestBody.SecretKey = secretKey;
     }
 
-    console.log('🌐 [getSMSIrTokenDirect] Making direct HTTP call to SMS.ir API...', {
-      url: 'https://api.sms.ir/v1/auth/token',
-      hasSecretKey: !!secretKey,
-    });
+    // Try different possible endpoints (SMS.ir API might use different paths)
+    // The 404 error suggests the endpoint might be wrong
+    const possibleEndpoints = [
+      'https://api.sms.ir/v1/token',  // Try without /auth (most likely)
+      'https://api.sms.ir/v1/auth/token',  // Original attempt (returned 404)
+      'https://rest.sms.ir/v1/token',  // Alternative base URL
+    ];
 
-    const response = await fetch('https://api.sms.ir/v1/auth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-    });
+    let lastError: Error | null = null;
+    for (const endpoint of possibleEndpoints) {
+      try {
+        console.log('🌐 [getSMSIrTokenDirect] Trying endpoint:', endpoint, {
+          hasSecretKey: !!secretKey,
+        });
 
-    clearTimeout(timeoutId);
+        const endpointController = new AbortController();
+        const endpointTimeoutId = setTimeout(() => endpointController.abort(), 10000);
 
-    const responseText = await response.text();
-    console.log('🌐 [getSMSIrTokenDirect] HTTP response:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries()),
-      bodyPreview: responseText.substring(0, 200),
-    });
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+          signal: endpointController.signal,
+        });
 
-    if (!response.ok) {
-      console.error('❌ [getSMSIrTokenDirect] HTTP error:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseText,
-      });
-      return null;
+        clearTimeout(endpointTimeoutId);
+
+        const responseText = await response.text();
+        console.log('🌐 [getSMSIrTokenDirect] HTTP response from', endpoint, ':', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          bodyPreview: responseText.substring(0, 200),
+        });
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            // Try next endpoint
+            console.warn('⚠️ [getSMSIrTokenDirect] Endpoint returned 404, trying next...');
+            lastError = new Error(`Endpoint ${endpoint} returned 404 Not Found`);
+            continue;
+          }
+          console.error('❌ [getSMSIrTokenDirect] HTTP error:', {
+            endpoint,
+            status: response.status,
+            statusText: response.statusText,
+            body: responseText,
+          });
+          lastError = new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText.substring(0, 100)}`);
+          continue;
+        }
+
+        let responseData;
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('❌ [getSMSIrTokenDirect] Failed to parse JSON response:', {
+            endpoint,
+            error: parseError instanceof Error ? parseError.message : String(parseError),
+            body: responseText,
+          });
+          lastError = new Error(`Failed to parse JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+          continue;
+        }
+
+        console.log('🌐 [getSMSIrTokenDirect] Parsed response from', endpoint, ':', {
+          isSuccessful: responseData.IsSuccessful,
+          message: responseData.Message,
+          statusCode: responseData.StatusCode,
+          hasTokenKey: !!responseData.TokenKey,
+        });
+
+        if (responseData.IsSuccessful && responseData.TokenKey) {
+          console.log('✅ [getSMSIrTokenDirect] Token obtained via direct HTTP call from', endpoint);
+          return responseData.TokenKey;
+        } else {
+          console.error('❌ [getSMSIrTokenDirect] API returned unsuccessful response:', {
+            endpoint,
+            message: responseData.Message,
+            statusCode: responseData.StatusCode,
+            fullResponse: responseData,
+          });
+          lastError = new Error(`API returned unsuccessful: ${responseData.Message || 'Unknown error'} (Status: ${responseData.StatusCode || 'Unknown'})`);
+          continue;
+        }
+      } catch (fetchError) {
+        const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        const isAbortError = fetchError instanceof Error && fetchError.name === 'AbortError';
+        
+        if (isAbortError) {
+          console.error('❌ [getSMSIrTokenDirect] Request timeout for', endpoint);
+          lastError = new Error(`Request timeout for ${endpoint}`);
+          continue;
+        }
+        
+        console.error('❌ [getSMSIrTokenDirect] Fetch error for', endpoint, ':', {
+          error: errorMessage,
+          errorType: fetchError instanceof Error ? fetchError.constructor.name : typeof fetchError,
+        });
+        lastError = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
+        continue;
+      }
     }
 
-    let responseData;
-    try {
-      responseData = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('❌ [getSMSIrTokenDirect] Failed to parse JSON response:', {
-        error: parseError instanceof Error ? parseError.message : String(parseError),
-        body: responseText,
-      });
-      return null;
-    }
-
-    console.log('🌐 [getSMSIrTokenDirect] Parsed response:', {
-      isSuccessful: responseData.IsSuccessful,
-      message: responseData.Message,
-      statusCode: responseData.StatusCode,
-      hasTokenKey: !!responseData.TokenKey,
-    });
-
-    if (responseData.IsSuccessful && responseData.TokenKey) {
-      console.log('✅ [getSMSIrTokenDirect] Token obtained via direct HTTP call');
-      return responseData.TokenKey;
-    } else {
-      console.error('❌ [getSMSIrTokenDirect] API returned unsuccessful response:', {
-        message: responseData.Message,
-        statusCode: responseData.StatusCode,
-        fullResponse: responseData,
-      });
-      return null;
-    }
+    // All endpoints failed
+    console.error('❌ [getSMSIrTokenDirect] All endpoints failed. Last error:', lastError?.message || 'Unknown');
+    return null;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('❌ [getSMSIrTokenDirect] Direct HTTP call failed:', {
+    console.error('❌ [getSMSIrTokenDirect] Unexpected error:', {
       error: errorMessage,
       errorType: error instanceof Error ? error.constructor.name : typeof error,
-      isAbortError: error instanceof Error && error.name === 'AbortError',
     });
     return null;
   }
