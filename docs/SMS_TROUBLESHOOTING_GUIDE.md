@@ -242,25 +242,80 @@ After fixing issues, verify everything works:
 
 ---
 
+## 🔧 Diagnostic Endpoint
+
+**NEW:** Use the diagnostic endpoint to get comprehensive SMS.ir status:
+
+```bash
+# As admin user, access:
+GET /api/admin/sms/test
+```
+
+**What it checks:**
+- ✅ Environment variables (API key, template ID, etc.)
+- ✅ SMS.ir package availability
+- ✅ Token retrieval (with detailed response)
+- ✅ Network connectivity to SMS.ir API
+- ✅ Complete diagnostics summary
+
+**Response includes:**
+- Environment variable status
+- Package availability
+- Token retrieval attempt and result
+- Network connectivity test
+- Ready status (all checks passed)
+
+**Example Response:**
+```json
+{
+  "success": true,
+  "diagnostics": {
+    "envCheck": { ... },
+    "packageCheck": { ... },
+    "tokenTest": {
+      "result": {
+        "success": true,
+        "isSuccessful": true,
+        "tokenKeyPreview": "abc123..."
+      }
+    },
+    "networkTest": { ... },
+    "summary": {
+      "ready": true
+    }
+  }
+}
+```
+
+---
+
 ## 📞 Still Having Issues?
 
-1. **Check all logs:**
+1. **Use Diagnostic Endpoint:**
    ```bash
-   pm2 logs hs6tools --lines 200
+   # Access as admin: GET /api/admin/sms/test
+   # This will show you exactly what's wrong
    ```
 
-2. **Verify SMS.ir account:**
+2. **Check all logs:**
+   ```bash
+   pm2 logs hs6tools --lines 200 | grep -i "getSMSIrToken"
+   ```
+
+3. **Verify SMS.ir account:**
    - Login: https://app.sms.ir/dashboard
    - Check API key: https://app.sms.ir/developer/list
    - Check template: https://app.sms.ir/fast-send/template
    - Check logs: https://app.sms.ir/developer/logs
+   - **Check IP Whitelist:** https://app.sms.ir/developer/list → Click on your API key → Check IP restrictions
 
-3. **Test SMS manually:**
+4. **Test SMS manually:**
    - Use SMS.ir panel to send a test SMS
    - Verify account has credit
    - Check if template is approved
 
-4. **Contact Support:**
+5. **Contact Support:**
+   - Include diagnostic endpoint output
    - Include PM2 logs
    - Include application logs
    - Include `.env` file (remove sensitive values)

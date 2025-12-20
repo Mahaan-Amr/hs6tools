@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth";
  * Test SMS.ir connectivity and token retrieval (Admin only)
  * This endpoint helps diagnose SMS.ir API issues
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
@@ -49,8 +49,10 @@ export async function GET(request: NextRequest) {
     };
 
     // 2. Check SMS.ir package availability
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let SMSIr: any = null;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       SMSIr = require("sms-ir");
       diagnostics.packageCheck = {
         available: true,
@@ -79,20 +81,21 @@ export async function GET(request: NextRequest) {
           apiKeyPreview: `${apiKey.substring(0, 16)}...`,
         };
 
-        let tokenResult;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let tokenResult: any;
         const startTime = Date.now();
         try {
           if (secretKey) {
             tokenResult = await Promise.race([
               token.get(apiKey, secretKey),
-              new Promise((_, reject) =>
+              new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error("Timeout after 10 seconds")), 10000)
               ),
             ]);
           } else {
             tokenResult = await Promise.race([
               token.get(apiKey),
-              new Promise((_, reject) =>
+              new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error("Timeout after 10 seconds")), 10000)
               ),
             ]);

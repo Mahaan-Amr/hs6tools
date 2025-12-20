@@ -137,10 +137,10 @@ async function getSMSIrToken(): Promise<string> {
       secretKeyProvided: !!secretKey,
     });
 
-    let tokenResult;
+    let tokenResult: { IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string } | null = null;
     try {
       // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) =>
+      const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('SMS.ir token API timeout after 15 seconds')), 15000)
       );
 
@@ -148,9 +148,9 @@ async function getSMSIrToken(): Promise<string> {
       if (secretKey) {
         console.log('🔑 [getSMSIrToken] Attempting token request with secret key...');
         tokenResult = await Promise.race([
-          token.get(apiKey, secretKey),
+          token.get(apiKey, secretKey) as Promise<{ IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string }>,
           timeoutPromise,
-        ]) as any;
+        ]);
       } else {
         // Try without secretKey (new panels)
         // Note: Some versions of sms-ir package might require passing null/undefined explicitly
@@ -158,16 +158,16 @@ async function getSMSIrToken(): Promise<string> {
         try {
           // First try: call with just apiKey
           tokenResult = await Promise.race([
-            token.get(apiKey),
+            token.get(apiKey) as Promise<{ IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string }>,
             timeoutPromise,
-          ]) as any;
-        } catch (firstError) {
+          ]);
+        } catch {
           // If that fails, try with null as second parameter
           console.log('🔑 [getSMSIrToken] Retrying with null secretKey parameter...');
           tokenResult = await Promise.race([
-            token.get(apiKey, null),
+            token.get(apiKey, null) as Promise<{ IsSuccessful?: boolean; Message?: string; StatusCode?: number; TokenKey?: string }>,
             timeoutPromise,
-          ]) as any;
+          ]);
         }
       }
     } catch (apiError) {
