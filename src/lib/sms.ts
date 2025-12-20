@@ -41,6 +41,11 @@ function detectSMSProvider(): SMSProvider {
   // Check for SMS.ir configuration first
   const smsirApiKey = process.env.SMSIR_API_KEY;
   if (smsirApiKey && SMSIr) {
+    console.log('📱 [SMS Provider] Detected SMS.ir:', {
+      apiKeyLength: smsirApiKey.length,
+      smsIrPackageAvailable: !!SMSIr,
+      templateId: process.env.SMSIR_VERIFY_TEMPLATE_ID || 'NOT SET',
+    });
     return 'smsir';
   }
 
@@ -50,9 +55,18 @@ function detectSMSProvider(): SMSProvider {
     process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ||
     process.env.KAVENEGAR_API_TOKEN;
   if (kavenegarApiKey) {
+    console.log('📱 [SMS Provider] Detected Kavenegar:', {
+      apiKeyLength: kavenegarApiKey.length,
+      sender: process.env.KAVENEGAR_SENDER || 'default',
+    });
     return 'kavenegar';
   }
 
+  console.error('❌ [SMS Provider] No SMS provider detected:', {
+    SMSIR_API_KEY: process.env.SMSIR_API_KEY ? 'SET' : 'NOT SET',
+    SMSIrPackage: SMSIr ? 'AVAILABLE' : 'NOT AVAILABLE',
+    KAVENEGAR_API_KEY: process.env.KAVENEGAR_API_KEY ? 'SET' : 'NOT SET',
+  });
   return 'none';
 }
 
@@ -202,11 +216,13 @@ async function sendVerificationCodeViaSMSIr(
     try {
       if (SMSIr.UltraFastSend) {
         const ultraFastSend = new SMSIr.UltraFastSend();
+        // UltraFastSend parameter order: tokenKey, templateId, receptor, parameters
+        // Parameters should match template placeholders (e.g., {OTP} or #OTP#)
         const result = await ultraFastSend.send(
           tokenKey,
-          options.receptor,
           templateId,
-          { OTP: options.token } // Variables object for template placeholders
+          options.receptor,
+          [{ Parameter: 'OTP', ParameterValue: options.token }] // SMS.ir uses array format
         );
 
         if (result && result.IsSuccessful) {

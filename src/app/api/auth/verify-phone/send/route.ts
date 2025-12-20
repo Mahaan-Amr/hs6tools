@@ -13,13 +13,28 @@ export async function POST(request: NextRequest) {
   try {
     // Check if SMS service is configured (SMS.ir takes priority, then Kavenegar)
     const smsirApiKey = process.env.SMSIR_API_KEY;
+    const smsirTemplateId = process.env.SMSIR_VERIFY_TEMPLATE_ID;
     const kavenegarApiKey =
       process.env.KAVENEGAR_API_KEY ||
       process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ||
       process.env.KAVENEGAR_API_TOKEN;
 
+    // Enhanced logging for debugging
+    console.log('📱 [verify-phone/send] SMS Provider Detection:', {
+      smsirApiKey: smsirApiKey ? `${smsirApiKey.substring(0, 16)}... (${smsirApiKey.length} chars)` : 'NOT SET',
+      smsirTemplateId: smsirTemplateId || 'NOT SET',
+      kavenegarApiKey: kavenegarApiKey ? `${kavenegarApiKey.substring(0, 16)}... (${kavenegarApiKey.length} chars)` : 'NOT SET',
+      nodeEnv: process.env.NODE_ENV,
+    });
+
     if (!smsirApiKey && !kavenegarApiKey) {
-      console.error('❌ SMS API key is not set (SMSIR_API_KEY or KAVENEGAR_API_KEY)');
+      console.error('❌ [verify-phone/send] SMS API key is not set (SMSIR_API_KEY or KAVENEGAR_API_KEY)');
+      console.error('❌ [verify-phone/send] Environment check:', {
+        SMSIR_API_KEY: process.env.SMSIR_API_KEY ? 'SET' : 'NOT SET',
+        KAVENEGAR_API_KEY: process.env.KAVENEGAR_API_KEY ? 'SET' : 'NOT SET',
+        NEXT_PUBLIC_KAVENEGAR_API_KEY: process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ? 'SET' : 'NOT SET',
+        KAVENEGAR_API_TOKEN: process.env.KAVENEGAR_API_TOKEN ? 'SET' : 'NOT SET',
+      });
       return NextResponse.json(
         { 
           success: false, 

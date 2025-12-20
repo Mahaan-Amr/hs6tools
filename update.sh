@@ -931,33 +931,60 @@ update_pm2_config() {
     # This ensures PM2 loads all variables from .env file
     cat > ecosystem.config.js << 'EOF'
 // Load environment variables from .env file
-try {
-  require('dotenv').config({ path: require('path').join(__dirname, '.env') });
-} catch (e) {
-  console.warn('dotenv not available, using system environment variables');
-}
+// This is critical for SMS.ir API keys and other sensitive configuration
 
-// Read and parse .env file manually as fallback
 const fs = require('fs');
 const path = require('path');
 const envPath = path.join(__dirname, '.env');
 
+// Read and parse .env file manually (more reliable than dotenv for PM2)
 let envVars = {};
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
   envContent.split('\n').forEach(line => {
     line = line.trim();
+    // Skip comments and empty lines
     if (line && !line.startsWith('#') && line.includes('=')) {
-      const [key, ...valueParts] = line.split('=');
-      const value = valueParts.join('=').replace(/^["']|["']$/g, '');
-      if (key && value !== undefined) {
-        envVars[key.trim()] = value.trim();
+      const equalIndex = line.indexOf('=');
+      if (equalIndex > 0) {
+        const key = line.substring(0, equalIndex).trim();
+        let value = line.substring(equalIndex + 1).trim();
+        
+        // Remove quotes if present
+        if ((value.startsWith('"') && value.endsWith('"')) || 
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+        
+        // Only set if value is not empty (unless it's explicitly empty string)
+        if (key && value !== undefined) {
+          envVars[key] = value;
+        }
       }
     }
   });
+  
+  console.log(`[PM2 Config] Loaded ${Object.keys(envVars).length} environment variables from .env`);
+  console.log(`[PM2 Config] SMS.ir API Key present: ${envVars.SMSIR_API_KEY ? 'YES (' + envVars.SMSIR_API_KEY.substring(0, 16) + '...)' : 'NO'}`);
+  console.log(`[PM2 Config] SMS.ir Template ID: ${envVars.SMSIR_VERIFY_TEMPLATE_ID || 'NOT SET'}`);
+} else {
+  console.warn('[PM2 Config] .env file not found at:', envPath);
 }
 
-// Merge with process.env (dotenv may have already loaded some)
+// Try dotenv as well (if available)
+try {
+  require('dotenv').config({ path: envPath });
+  // Merge dotenv results
+  Object.keys(process.env).forEach(key => {
+    if (key.startsWith('SMSIR_') || key.startsWith('KAVENEGAR_') || key.startsWith('DATABASE_') || key.startsWith('NEXTAUTH_') || key.startsWith('ZARINPAL_')) {
+      envVars[key] = process.env[key];
+    }
+  });
+} catch (e) {
+  console.warn('[PM2 Config] dotenv not available, using manual parsing only');
+}
+
+// Merge with process.env (system environment takes precedence)
 const finalEnv = { ...envVars, ...process.env };
 
 module.exports = {
@@ -1024,12 +1051,33 @@ restart_pm2() {
                 
                 # Verify environment variables are loaded
                 info "Verifying critical environment variables in PM2..."
+                
+                # Check .env file first to see what should be loaded
+                if [ -f ".env" ]; then
+                    info "Checking .env file for SMS.ir variables..."
+                    if grep -q "^SMSIR_API_KEY=" .env 2>/dev/null; then
+                        ENV_SMSIR_KEY=$(grep "^SMSIR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                        if [ -n "$ENV_SMSIR_KEY" ]; then
+                            log "✅ SMSIR_API_KEY found in .env file (length: ${#ENV_SMSIR_KEY} chars)"
+                        fi
+                    fi
+                    if grep -q "^SMSIR_VERIFY_TEMPLATE_ID=" .env 2>/dev/null; then
+                        ENV_TEMPLATE_ID=$(grep "^SMSIR_VERIFY_TEMPLATE_ID=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                        if [ -n "$ENV_TEMPLATE_ID" ]; then
+                            log "✅ SMSIR_VERIFY_TEMPLATE_ID found in .env file: ${ENV_TEMPLATE_ID}"
+                        fi
+                    fi
+                fi
+                
+                # Check PM2 environment (pm2 env command might not show all vars, so also check describe)
                 PM2_ENV=$(pm2 env ${PM2_APP_NAME} 2>/dev/null || echo "")
+                PM2_DESCRIBE=$(pm2 describe ${PM2_APP_NAME} 2>/dev/null || echo "")
                 
                 # Check SMS service configuration (SMS.ir takes priority)
                 SMS_PROVIDER_FOUND=false
                 
-                if echo "$PM2_ENV" | grep -q "SMSIR_API_KEY"; then
+                # Check both PM2_ENV and PM2_DESCRIBE for SMSIR_API_KEY
+                if echo "$PM2_ENV" | grep -q "SMSIR_API_KEY" || echo "$PM2_DESCRIBE" | grep -q "SMSIR_API_KEY"; then
                     SMS_PROVIDER_FOUND=true
                     SMSIR_API_KEY_PM2=$(echo "$PM2_ENV" | grep "SMSIR_API_KEY" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
                     if [ -n "$SMSIR_API_KEY_PM2" ]; then
@@ -1100,9 +1148,22 @@ restart_pm2() {
                 fi
                 
                 if [ "$SMS_PROVIDER_FOUND" = false ]; then
-                    warning "⚠️  No SMS service API key found in PM2 environment"
-                    warning "⚠️  SMS functionality will not work. Please check .env.production file."
-                    warning "⚠️  Set SMSIR_API_KEY (for SMS.ir) or KAVENEGAR_API_KEY (for Kavenegar)"
+                    warning "⚠️  No SMS service API key found in PM2 environment output"
+                    warning "⚠️  This might be a PM2 display issue - checking .env file..."
+                    
+                    # Double-check .env file
+                    if [ -f ".env" ] && grep -q "^SMSIR_API_KEY=" .env 2>/dev/null; then
+                        ENV_CHECK_KEY=$(grep "^SMSIR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                        if [ -n "$ENV_CHECK_KEY" ]; then
+                            warning "⚠️  SMSIR_API_KEY exists in .env file (${#ENV_CHECK_KEY} chars) but PM2 might not have loaded it."
+                            warning "⚠️  The variables ARE in .env and ecosystem.config.js should load them."
+                            warning "⚠️  Check PM2 startup logs for '[PM2 Config]' messages to verify loading."
+                            info "ℹ️  Application should still work - PM2 loads from ecosystem.config.js at startup"
+                            info "ℹ️  Check application logs: pm2 logs hs6tools --lines 50 | grep -i 'sms\|provider'"
+                        fi
+                    else
+                        error "SMSIR_API_KEY not found in .env file! Please add it to .env.production and run update.sh again"
+                    fi
                 fi
                 
                 # Check Kavenegar sender number (only if using Kavenegar)
@@ -1240,9 +1301,10 @@ print_summary() {
     echo "  4. Test your application in the browser"
     echo ""
     
-    if [ -f ".env.backup-"* ]; then
-        LATEST_BACKUP=$(ls -t .env.backup-* 2>/dev/null | head -1)
-        info "Environment backup created: ${LATEST_BACKUP}"
+    # Check for backup files (fix the glob issue)
+    BACKUP_FILES=$(ls -t .env.backup-* 2>/dev/null | head -1)
+    if [ -n "$BACKUP_FILES" ] && [ -f "$BACKUP_FILES" ]; then
+        info "Environment backup created: ${BACKUP_FILES}"
     fi
     
     echo ""
