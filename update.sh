@@ -23,12 +23,11 @@ NODE_MIN_VERSION="18.0.0"
 NPM_MIN_VERSION="8.0.0"
 
 # Required environment variables (add more if needed)
+# Note: SMS service variables (SMS.ir or Kavenegar) are validated separately in validate_sms_config()
 REQUIRED_ENV_VARS=(
   "DATABASE_URL"
   "NEXTAUTH_URL"
   "NEXTAUTH_SECRET"
-  "KAVENEGAR_API_KEY|NEXT_PUBLIC_KAVENEGAR_API_KEY|KAVENEGAR_API_TOKEN"
-  "KAVENEGAR_SENDER"
   "ZARINPAL_MERCHANT_ID"
   "ZARINPAL_SANDBOX"
   "NEXT_PUBLIC_APP_URL"
@@ -129,9 +128,11 @@ check_env_files() {
     fi
     
     # Always refresh .env from .env.production to ensure consistency
+    # This ensures all environment variables (including SMS.ir API keys) are loaded
     info "Refreshing .env from .env.production..."
+    info "This will automatically load SMS.ir API keys and all other environment variables"
     cp .env.production .env
-    log ".env updated from .env.production"
+    log ".env updated from .env.production (all API keys and variables loaded)"
     
     # Verify .env file exists
     if [ ! -f ".env" ]; then
@@ -176,8 +177,147 @@ check_env_files() {
     
     log "All required environment variables are present in .env"
     
-    # Validate Kavenegar configuration
-    validate_kavenegar_config
+    # Validate SMS configuration (SMS.ir takes priority, then Kavenegar)
+    validate_sms_config
+}
+
+# Validate SMS configuration (SMS.ir priority, Kavenegar fallback)
+validate_sms_config() {
+    # Check which SMS provider is configured
+    SMSIR_API_KEY_VALUE=""
+    if grep -q "^SMSIR_API_KEY=" .env 2>/dev/null; then
+        SMSIR_API_KEY_VALUE=$(grep "^SMSIR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    fi
+    
+    # Check for Kavenegar API key (all possible variable names)
+    KAVENEGAR_API_KEY_VALUE=""
+    if grep -q "^KAVENEGAR_API_KEY=" .env 2>/dev/null; then
+        KAVENEGAR_API_KEY_VALUE=$(grep "^KAVENEGAR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    elif grep -q "^NEXT_PUBLIC_KAVENEGAR_API_KEY=" .env 2>/dev/null; then
+        KAVENEGAR_API_KEY_VALUE=$(grep "^NEXT_PUBLIC_KAVENEGAR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    elif grep -q "^KAVENEGAR_API_TOKEN=" .env 2>/dev/null; then
+        KAVENEGAR_API_KEY_VALUE=$(grep "^KAVENEGAR_API_TOKEN=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    fi
+    
+    # Ensure at least one SMS provider is configured
+    if [ -z "$SMSIR_API_KEY_VALUE" ] && [ -z "$KAVENEGAR_API_KEY_VALUE" ]; then
+        error "No SMS service configured! Please set either SMSIR_API_KEY (for SMS.ir) or KAVENEGAR_API_KEY (for Kavenegar) in .env.production"
+    fi
+    
+    # Validate the configured provider
+    if [ -n "$SMSIR_API_KEY_VALUE" ]; then
+        validate_smsir_config
+    else
+        validate_kavenegar_config
+    fi
+}
+
+# Validate SMS.ir configuration
+validate_smsir_config() {
+    section "📱 Validating SMS.ir Configuration"
+    
+    # Get SMS.ir API key
+    SMSIR_API_KEY_VALUE=""
+    if grep -q "^SMSIR_API_KEY=" .env 2>/dev/null; then
+        SMSIR_API_KEY_VALUE=$(grep "^SMSIR_API_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+    fi
+    
+    # Validate API key
+    if [ -n "$SMSIR_API_KEY_VALUE" ]; then
+        # Check for placeholder values
+        if [[ "$SMSIR_API_KEY_VALUE" == *"your"* ]] || \
+           [[ "$SMSIR_API_KEY_VALUE" == *"YOUR"* ]] || \
+           [[ "$SMSIR_API_KEY_VALUE" == *"example"* ]] || \
+           [[ "$SMSIR_API_KEY_VALUE" == *"EXAMPLE"* ]] || \
+           [[ -z "$SMSIR_API_KEY_VALUE" ]]; then
+            error "SMSIR_API_KEY appears to be a placeholder value. Please set your actual API key in .env.production"
+        fi
+        
+        log "SMSIR_API_KEY validated (length: ${#SMSIR_API_KEY_VALUE} chars)"
+    else
+        error "SMSIR_API_KEY not found in .env file. Please add it to .env.production"
+    fi
+    
+    # Get and validate SMSIR_SECRET_KEY (optional)
+    SMSIR_SECRET_KEY_VALUE=""
+    if grep -q "^SMSIR_SECRET_KEY=" .env 2>/dev/null; then
+        SMSIR_SECRET_KEY_VALUE=$(grep "^SMSIR_SECRET_KEY=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+        if [ -n "$SMSIR_SECRET_KEY_VALUE" ]; then
+            log "SMSIR_SECRET_KEY found (length: ${#SMSIR_SECRET_KEY_VALUE} chars)"
+        fi
+    else
+        info "SMSIR_SECRET_KEY not set (optional - only required if your account needs it)"
+    fi
+    
+    # Get and validate SMSIR_LINE_NUMBER (optional)
+    SMSIR_LINE_NUMBER_VALUE=""
+    if grep -q "^SMSIR_LINE_NUMBER=" .env 2>/dev/null; then
+        SMSIR_LINE_NUMBER_VALUE=$(grep "^SMSIR_LINE_NUMBER=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+        if [ -n "$SMSIR_LINE_NUMBER_VALUE" ]; then
+            log "SMSIR_LINE_NUMBER validated: ${SMSIR_LINE_NUMBER_VALUE}"
+        fi
+    else
+        info "SMSIR_LINE_NUMBER not set (will use default service number)"
+    fi
+    
+    # Get and validate SMSIR_VERIFY_TEMPLATE_ID (required for verification codes)
+    SMSIR_VERIFY_TEMPLATE_ID_VALUE=""
+    if grep -q "^SMSIR_VERIFY_TEMPLATE_ID=" .env 2>/dev/null; then
+        SMSIR_VERIFY_TEMPLATE_ID_VALUE=$(grep "^SMSIR_VERIFY_TEMPLATE_ID=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+        if [ -n "$SMSIR_VERIFY_TEMPLATE_ID_VALUE" ]; then
+            # Validate it's a number
+            if [[ ! "$SMSIR_VERIFY_TEMPLATE_ID_VALUE" =~ ^[0-9]+$ ]]; then
+                error "SMSIR_VERIFY_TEMPLATE_ID must be a number (Template ID/Pattern Code from SMS.ir panel). Current value: ${SMSIR_VERIFY_TEMPLATE_ID_VALUE}"
+            else
+                log "SMSIR_VERIFY_TEMPLATE_ID validated: ${SMSIR_VERIFY_TEMPLATE_ID_VALUE}"
+            fi
+        else
+            error "SMSIR_VERIFY_TEMPLATE_ID is empty. Please set it to your Template ID (Pattern Code) from SMS.ir panel."
+        fi
+    else
+        error "SMSIR_VERIFY_TEMPLATE_ID not set. This is required for SMS.ir verification codes."
+        error "Please create a template in SMS.ir panel (https://app.sms.ir/fast-send/template) and set SMSIR_VERIFY_TEMPLATE_ID to the Template ID."
+    fi
+    
+    # Get and validate SMSIR_PASSWORD_RESET_TEMPLATE_ID (optional, falls back to verify template)
+    SMSIR_PASSWORD_RESET_TEMPLATE_ID_VALUE=""
+    if grep -q "^SMSIR_PASSWORD_RESET_TEMPLATE_ID=" .env 2>/dev/null; then
+        SMSIR_PASSWORD_RESET_TEMPLATE_ID_VALUE=$(grep "^SMSIR_PASSWORD_RESET_TEMPLATE_ID=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+        if [ -n "$SMSIR_PASSWORD_RESET_TEMPLATE_ID_VALUE" ]; then
+            if [[ ! "$SMSIR_PASSWORD_RESET_TEMPLATE_ID_VALUE" =~ ^[0-9]+$ ]]; then
+                warning "SMSIR_PASSWORD_RESET_TEMPLATE_ID should be a number. Will fallback to SMSIR_VERIFY_TEMPLATE_ID."
+            else
+                log "SMSIR_PASSWORD_RESET_TEMPLATE_ID validated: ${SMSIR_PASSWORD_RESET_TEMPLATE_ID_VALUE}"
+            fi
+        fi
+    else
+        info "SMSIR_PASSWORD_RESET_TEMPLATE_ID not set (optional - will use SMSIR_VERIFY_TEMPLATE_ID for password reset)"
+    fi
+    
+    # Summary
+    info "SMS.ir Configuration Summary:"
+    info "  ✅ API Key: ${SMSIR_API_KEY_VALUE:0:16}... (${#SMSIR_API_KEY_VALUE} chars)"
+    if [ -n "$SMSIR_SECRET_KEY_VALUE" ]; then
+        info "  ✅ Secret Key: ${SMSIR_SECRET_KEY_VALUE:0:16}... (${#SMSIR_SECRET_KEY_VALUE} chars)"
+    else
+        info "  ℹ️  Secret Key: Not set (optional - new panels don't require it)"
+    fi
+    if [ -n "$SMSIR_LINE_NUMBER_VALUE" ]; then
+        info "  ✅ Line Number: ${SMSIR_LINE_NUMBER_VALUE}"
+    else
+        info "  ℹ️  Line Number: Not set (will use default service number)"
+    fi
+    if [ -n "$SMSIR_VERIFY_TEMPLATE_ID_VALUE" ]; then
+        info "  ✅ Verify Template ID: ${SMSIR_VERIFY_TEMPLATE_ID_VALUE}"
+    else
+        info "  ❌ Verify Template ID: Not set (REQUIRED)"
+    fi
+    if [ -n "$SMSIR_PASSWORD_RESET_TEMPLATE_ID_VALUE" ]; then
+        info "  ✅ Password Reset Template ID: ${SMSIR_PASSWORD_RESET_TEMPLATE_ID_VALUE}"
+    else
+        info "  ℹ️  Password Reset Template ID: Not set (will use Verify Template ID)"
+    fi
+    log "SMS.ir configuration validated successfully"
 }
 
 # Validate Kavenegar configuration
@@ -844,6 +984,7 @@ module.exports = {
 EOF
     
     log "PM2 ecosystem.config.js updated to load from .env file"
+    info "All environment variables (including SMS.ir API keys) will be automatically loaded from .env.production"
 }
 
 # Restart PM2 application
@@ -856,6 +997,7 @@ restart_pm2() {
         
         info "Deleting and restarting PM2 application to load new environment variables..."
         info "This ensures PM2 picks up all variables from .env file via ecosystem.config.js"
+        info "SMS.ir API keys and Template IDs will be automatically loaded from .env.production"
         
         # Delete the existing process to force a fresh start with new config
         pm2 delete ${PM2_APP_NAME} 2>/dev/null || true
@@ -884,20 +1026,86 @@ restart_pm2() {
                 info "Verifying critical environment variables in PM2..."
                 PM2_ENV=$(pm2 env ${PM2_APP_NAME} 2>/dev/null || echo "")
                 
-                # Check Kavenegar API key (check all possible variable names)
-                if echo "$PM2_ENV" | grep -q "KAVENEGAR_API_KEY"; then
-                    log "✅ KAVENEGAR_API_KEY is loaded in PM2"
+                # Check SMS service configuration (SMS.ir takes priority)
+                SMS_PROVIDER_FOUND=false
+                
+                if echo "$PM2_ENV" | grep -q "SMSIR_API_KEY"; then
+                    SMS_PROVIDER_FOUND=true
+                    SMSIR_API_KEY_PM2=$(echo "$PM2_ENV" | grep "SMSIR_API_KEY" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                    if [ -n "$SMSIR_API_KEY_PM2" ]; then
+                        log "✅ SMSIR_API_KEY is loaded in PM2 (length: ${#SMSIR_API_KEY_PM2} chars)"
+                    else
+                        warning "⚠️  SMSIR_API_KEY is empty in PM2 environment"
+                    fi
+                    
+                    # Check SMS.ir secret key (optional)
+                    if echo "$PM2_ENV" | grep -q "SMSIR_SECRET_KEY"; then
+                        SMSIR_SECRET_KEY_PM2=$(echo "$PM2_ENV" | grep "SMSIR_SECRET_KEY" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                        if [ -n "$SMSIR_SECRET_KEY_PM2" ]; then
+                            log "✅ SMSIR_SECRET_KEY is loaded in PM2 (length: ${#SMSIR_SECRET_KEY_PM2} chars)"
+                        fi
+                    else
+                        info "ℹ️  SMSIR_SECRET_KEY not found in PM2 (optional - new panels don't require it)"
+                    fi
+                    
+                    # Check SMS.ir verify template ID (required)
+                    if echo "$PM2_ENV" | grep -q "SMSIR_VERIFY_TEMPLATE_ID"; then
+                        SMSIR_TEMPLATE_ID_PM2=$(echo "$PM2_ENV" | grep "SMSIR_VERIFY_TEMPLATE_ID" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                        if [ -n "$SMSIR_TEMPLATE_ID_PM2" ]; then
+                            log "✅ SMSIR_VERIFY_TEMPLATE_ID is loaded in PM2: ${SMSIR_TEMPLATE_ID_PM2}"
+                        else
+                            warning "⚠️  SMSIR_VERIFY_TEMPLATE_ID is empty in PM2 environment"
+                            warning "⚠️  Verification codes will not work. Please set SMSIR_VERIFY_TEMPLATE_ID in .env.production"
+                        fi
+                    else
+                        warning "⚠️  SMSIR_VERIFY_TEMPLATE_ID not found in PM2 environment"
+                        warning "⚠️  Verification codes will not work. Please set SMSIR_VERIFY_TEMPLATE_ID in .env.production"
+                    fi
+                    
+                    # Check SMS.ir password reset template ID (optional)
+                    if echo "$PM2_ENV" | grep -q "SMSIR_PASSWORD_RESET_TEMPLATE_ID"; then
+                        SMSIR_PASSWORD_RESET_TEMPLATE_ID_PM2=$(echo "$PM2_ENV" | grep "SMSIR_PASSWORD_RESET_TEMPLATE_ID" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                        if [ -n "$SMSIR_PASSWORD_RESET_TEMPLATE_ID_PM2" ]; then
+                            log "✅ SMSIR_PASSWORD_RESET_TEMPLATE_ID is loaded in PM2: ${SMSIR_PASSWORD_RESET_TEMPLATE_ID_PM2}"
+                        fi
+                    else
+                        info "ℹ️  SMSIR_PASSWORD_RESET_TEMPLATE_ID not found in PM2 (optional - will use SMSIR_VERIFY_TEMPLATE_ID)"
+                    fi
+                    
+                    # Check SMS.ir line number (optional)
+                    if echo "$PM2_ENV" | grep -q "SMSIR_LINE_NUMBER"; then
+                        SMSIR_LINE_PM2=$(echo "$PM2_ENV" | grep "SMSIR_LINE_NUMBER" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                        if [ -n "$SMSIR_LINE_PM2" ]; then
+                            log "✅ SMSIR_LINE_NUMBER is loaded in PM2: ${SMSIR_LINE_PM2}"
+                        fi
+                    else
+                        info "ℹ️  SMSIR_LINE_NUMBER not found in PM2 (will use default service number)"
+                    fi
+                elif echo "$PM2_ENV" | grep -q "KAVENEGAR_API_KEY"; then
+                    SMS_PROVIDER_FOUND=true
+                    KAVENEGAR_API_KEY_PM2=$(echo "$PM2_ENV" | grep "KAVENEGAR_API_KEY" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                    if [ -n "$KAVENEGAR_API_KEY_PM2" ]; then
+                        log "✅ KAVENEGAR_API_KEY is loaded in PM2 (length: ${#KAVENEGAR_API_KEY_PM2} chars)"
+                    else
+                        warning "⚠️  KAVENEGAR_API_KEY is empty in PM2 environment"
+                    fi
                 elif echo "$PM2_ENV" | grep -q "NEXT_PUBLIC_KAVENEGAR_API_KEY"; then
+                    SMS_PROVIDER_FOUND=true
                     log "✅ NEXT_PUBLIC_KAVENEGAR_API_KEY is loaded in PM2"
                     warning "⚠️  Using NEXT_PUBLIC_KAVENEGAR_API_KEY (not recommended - exposes key to client)"
+                    warning "⚠️  Consider using KAVENEGAR_API_KEY instead for better security"
                 elif echo "$PM2_ENV" | grep -q "KAVENEGAR_API_TOKEN"; then
+                    SMS_PROVIDER_FOUND=true
                     log "✅ KAVENEGAR_API_TOKEN is loaded in PM2"
-                else
-                    warning "⚠️  KAVENEGAR_API_KEY not found in PM2 environment"
-                    warning "⚠️  SMS functionality may not work. Please check .env.production file."
                 fi
                 
-                # Check Kavenegar sender number
+                if [ "$SMS_PROVIDER_FOUND" = false ]; then
+                    warning "⚠️  No SMS service API key found in PM2 environment"
+                    warning "⚠️  SMS functionality will not work. Please check .env.production file."
+                    warning "⚠️  Set SMSIR_API_KEY (for SMS.ir) or KAVENEGAR_API_KEY (for Kavenegar)"
+                fi
+                
+                # Check Kavenegar sender number (only if using Kavenegar)
                 if echo "$PM2_ENV" | grep -q "KAVENEGAR_SENDER"; then
                     SENDER_VALUE=$(echo "$PM2_ENV" | grep "KAVENEGAR_SENDER" | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
                     log "✅ KAVENEGAR_SENDER is loaded in PM2: ${SENDER_VALUE}"
@@ -906,7 +1114,7 @@ restart_pm2() {
                     if [ "$SENDER_VALUE" = "10004346" ]; then
                         warning "⚠️  Using public sender number (10004346). Consider using purchased number (2000660110)."
                     fi
-                else
+                elif ! echo "$PM2_ENV" | grep -q "SMSIR_API_KEY"; then
                     warning "⚠️  KAVENEGAR_SENDER not found in PM2 environment"
                     info "ℹ️  Default sender (2000660110) will be used from code"
                 fi

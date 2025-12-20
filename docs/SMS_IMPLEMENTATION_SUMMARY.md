@@ -1,9 +1,12 @@
-# 📱 Kavehnegar SMS Implementation Summary
+# 📱 SMS Implementation Summary
 
 ## ✅ What Has Been Implemented
 
 ### 1. **SMS Service Library** (`src/lib/sms.ts`)
    - ✅ Complete SMS service with TypeScript types
+   - ✅ **SMS.ir Integration** (Primary Provider)
+   - ✅ **Kavenegar Integration** (Fallback Provider)
+   - ✅ Automatic provider detection (SMS.ir priority)
    - ✅ `sendSMS()` - Send simple SMS messages
    - ✅ `sendVerificationCode()` - Send OTP/verification codes using templates
    - ✅ `sendBulkSMS()` - Send SMS to multiple recipients
@@ -23,32 +26,44 @@
    - ✅ Usage examples for all scenarios
    - ✅ Integration points documentation
 
-## 📦 Package Installed
+## 📦 Packages Installed
 
-- ✅ `kavenegar` - Official Kavehnegar Node.js package
+- ✅ `sms-ir` - SMS.ir Node.js package (Primary)
+- ✅ `kavenegar` - Official Kavenegar Node.js package (Fallback)
 - ✅ `@types/kavenegar` - TypeScript type definitions
 
-**Note:** The official package uses callback-based API. Our implementation wraps it in Promises for easier async/await usage.
+**Note:** 
+- SMS.ir uses Promise-based API (modern)
+- Kavenegar uses callback-based API (wrapped in Promises)
 
 ## 🔧 Required Configuration
 
 ### Environment Variables
 
-Add to `.env.local`:
-
+**Option 1: SMS.ir (Recommended)**
 ```env
-KAVENEGAR_API_KEY=your_api_key_here
-KAVENEGAR_SENDER=10004346  # Optional
-# The service also accepts NEXT_PUBLIC_KAVENEGAR_API_KEY or KAVENEGAR_API_TOKEN
-# (useful when the hosting provider prefixes env vars)
+# SMS.ir Configuration
+SMSIR_API_KEY=your_smsir_api_key
+SMSIR_VERIFY_TEMPLATE_ID=your_template_id
+SMSIR_SECRET_KEY=  # Optional (not needed for new panels)
+SMSIR_LINE_NUMBER=  # Optional
 ```
 
-> Note: `update.sh` now copies `.env.production` to `.env` if missing and warns if key SMS/Payments/Auth variables (e.g., `KAVENEGAR_API_KEY`, `ZARINPAL_MERCHANT_ID`, `NEXTAUTH_SECRET`) are absent. Ensure these are set before running the update on the server.
+**Option 2: Kavenegar (Fallback)**
+```env
+# Kavenegar Configuration
+KAVENEGAR_API_KEY=your_api_key_here
+KAVENEGAR_SENDER=2000660110  # Optional
+# The service also accepts NEXT_PUBLIC_KAVENEGAR_API_KEY or KAVENEGAR_API_TOKEN
+```
 
-**How to get API key:**
-1. Register at https://panel.kavenegar.com
-2. Get your API key from dashboard
-3. Add to environment variables
+**Provider Priority:** SMS.ir (if configured) > Kavenegar (if configured) > Error
+
+> Note: `update.sh` validates both SMS.ir and Kavenegar configurations. Ensure at least one is set before running the update on the server.
+
+**How to get API keys:**
+- **SMS.ir:** Register at https://sms.ir/ → Get API key from panel → Create templates
+- **Kavenegar:** Register at https://panel.kavenegar.com → Get API key from dashboard
 
 ## ✅ Recent Updates (2025-01-XX)
 
@@ -68,9 +83,11 @@ KAVENEGAR_SENDER=10004346  # Optional
    - Non-blocking (uses `sendSMSSafe`)
 
 ### Configuration
-- Kavenegar API key configured in both `.env.local` and `.env.production`
-- Sender number: 2000660110
+- **SMS.ir:** API key and template ID configured
+- **Kavenegar:** Fallback support maintained
+- Sender number: Uses SMS.ir default or Kavenegar configured number
 - All SMS sending is non-blocking to prevent order/payment flow interruption
+- Automatic provider detection ensures seamless operation
 
 ## 🎯 Where to Use SMS in Your Project
 
@@ -146,17 +163,18 @@ await sendSMS({
 1. ✅ **Add API Key to Environment** - DONE
    - API key added to `.env.local`
 
-2. **Create SMS Templates in Kavehnegar Panel** (Optional - system falls back to simple SMS)
-   - Login to https://panel.kavenegar.com
-   - Create templates: `verify`, `password-reset`
-   - If templates don't exist, system uses simple SMS format
+2. **Create SMS Templates** (Required for SMS.ir, Optional for Kavenegar)
+   - **SMS.ir:** Login to https://app.sms.ir/ → Create templates → Note Template ID (Pattern Code)
+   - **Kavenegar:** Login to https://panel.kavenegar.com → Create templates: `verify`, `password-reset`
+   - If templates don't exist, system uses simple SMS format (Kavenegar only)
 
 3. **Test All Integrations**
    - ✅ Test phone verification flow in registration page
    - ✅ Test password reset flow (forgot password → reset password)
    - Test with your phone number
-   - Verify delivery in Kavehnegar panel
+   - Verify delivery in SMS.ir panel (or Kavenegar panel if using fallback)
    - Check logs for any errors
+   - Monitor provider used in logs (should show 'smsir' or 'kavenegar')
 
 4. ✅ **Phone Verification UI** - Integrated into registration page
    - Automatic verification step after registration (if phone provided)
@@ -187,14 +205,23 @@ See `docs/SMS_INTEGRATION_GUIDE.md` for:
 ## ⚠️ Important Notes
 
 1. **SMS Costs Money**: Be mindful of usage
-2. **Rate Limits**: Kavehnegar has rate limits
+2. **Rate Limits**: Both providers have rate limits
 3. **Phone Format**: Use format `09123456789` (no +98)
-4. **Templates Required**: For verification codes, create templates first
+4. **Templates Required**: 
+   - **SMS.ir:** Template ID (Pattern Code) required for verification codes
+   - **Kavenegar:** Template name required (falls back to simple SMS if not found)
 5. **Error Handling**: Always handle SMS failures gracefully
+6. **Provider Detection**: System automatically uses SMS.ir if configured, otherwise Kavenegar
 
 ## 🔗 Resources
 
-- Kavehnegar Panel: https://panel.kavenegar.com
+### SMS.ir (Primary)
+- Panel: https://app.sms.ir/
+- API Documentation: https://github.com/movahhedi/sms-ir-node
+- Package: https://www.npmjs.com/package/sms-ir
+
+### Kavenegar (Fallback)
+- Panel: https://panel.kavenegar.com
 - API Documentation: https://kavenegar.com/rest.html
 - Package: https://www.npmjs.com/package/kavenegar
 - Type Definitions: https://www.npmjs.com/package/@types/kavenegar

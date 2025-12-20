@@ -95,15 +95,24 @@ export async function POST(request: NextRequest) {
 
     // Send SMS with verification code
     // Try using template first, fallback to simple SMS
-    try {
-      await sendVerificationCode({
-        receptor: phone,
-        token: code,
-        template: 'password-reset', // Template name in Kavehnegar panel
+    // Determine template based on SMS provider
+    const smsirApiKey = process.env.SMSIR_API_KEY;
+    const template = smsirApiKey 
+      ? (process.env.SMSIR_PASSWORD_RESET_TEMPLATE_ID || process.env.SMSIR_VERIFY_TEMPLATE_ID || 'password-reset')
+      : 'password-reset'; // Template name for Kavenegar
+    
+    const templateResult = await sendVerificationCode({
+      receptor: phone,
+      token: code,
+      template: template,
+    });
+
+    // Fallback to simple SMS if template fails
+    if (!templateResult.success) {
+      console.warn('📱 [reset-password] Template SMS failed, using simple SMS fallback:', {
+        error: templateResult.error,
+        status: templateResult.status,
       });
-    } catch (templateError) {
-      // Fallback to simple SMS if template doesn't exist
-      console.warn('Template not found, using simple SMS:', templateError);
       await sendSMSSafe({
         receptor: phone,
         message: `کد بازیابی رمز عبور شما: ${code} - این کد 10 دقیقه اعتبار دارد.`,

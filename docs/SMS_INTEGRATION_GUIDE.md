@@ -75,7 +75,7 @@ const code = '123456';
 const result = await sendVerificationCode({
   receptor: '09123456789',
   token: code,
-  template: 'verify', // Template name in Kavehnegar panel
+  template: '408915', // Template ID for SMS.ir (or template name 'verify' for Kavenegar)
 });
 
 if (result.success) {

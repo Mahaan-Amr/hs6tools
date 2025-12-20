@@ -1,17 +1,26 @@
 /**
- * Kavehnegar SMS Service
+ * SMS Service - Supports SMS.ir and Kavenegar
  * 
- * This service handles SMS sending using Kavehnegar API
- * Documentation: https://kavenegar.com/rest.html
+ * Priority: SMS.ir (if configured) > Kavenegar (fallback)
  * 
- * Official Package: kavenegar (not kavenegar-api)
- * Usage: Kavenegar.KavenegarApi({apikey: 'YOUR_API_KEY'})
+ * SMS.ir Documentation: https://github.com/movahhedi/sms-ir-node
+ * Kavenegar Documentation: https://kavenegar.com/rest.html
  */
 
 import * as Kavenegar from 'kavenegar';
 import type { kavenegar } from 'kavenegar';
 
-// Type definitions for Kavehnegar responses
+// SMS.ir imports (dynamic import to avoid errors if package not installed)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let SMSIr: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  SMSIr = require('sms-ir');
+} catch {
+  console.warn('⚠️ [SMS] sms-ir package not found. SMS.ir functionality will be disabled.');
+}
+
+// Type definitions for Kavenegar responses
 interface MessageEntry {
   messageid: number;
   message: string;
@@ -23,7 +32,255 @@ interface MessageEntry {
   cost: number;
 }
 
-// Initialize Kavehnegar API client
+/**
+ * SMS Service Provider Detection
+ */
+type SMSProvider = 'smsir' | 'kavenegar' | 'none';
+
+function detectSMSProvider(): SMSProvider {
+  // Check for SMS.ir configuration first
+  const smsirApiKey = process.env.SMSIR_API_KEY;
+  if (smsirApiKey && SMSIr) {
+    return 'smsir';
+  }
+
+  // Fallback to Kavenegar
+  const kavenegarApiKey =
+    process.env.KAVENEGAR_API_KEY ||
+    process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ||
+    process.env.KAVENEGAR_API_TOKEN;
+  if (kavenegarApiKey) {
+    return 'kavenegar';
+  }
+
+  return 'none';
+}
+
+/**
+ * SMS Service Response Types
+ */
+export interface SMSResponse {
+  success: boolean;
+  message?: string;
+  messageId?: string;
+  status?: number;
+  error?: string;
+  isTestAccountLimitation?: boolean; // True if error is due to Kavenegar test account limitation
+  provider?: SMSProvider; // Which provider was used
+}
+
+export interface SendSMSOptions {
+  receptor: string; // Phone number (e.g., '09123456789')
+  message: string; // SMS message content
+  sender?: string; // Sender number (optional, uses default if not provided)
+}
+
+export interface VerifyLookupOptions {
+  receptor: string; // Phone number
+  token: string; // Verification code
+  token2?: string; // Optional second token
+  token3?: string; // Optional third token
+  template: string; // Template name (Kavenegar) or Template ID (SMS.ir)
+}
+
+// ============================================================================
+// SMS.ir Implementation
+// ============================================================================
+
+/**
+ * Initialize SMS.ir Token
+ * Note: New SMS.ir panels only require API Key (no Secret Key needed)
+ */
+async function getSMSIrToken(): Promise<string> {
+  const apiKey = process.env.SMSIR_API_KEY;
+  // New SMS.ir panels only provide API key, secretKey is optional
+  const secretKey = process.env.SMSIR_SECRET_KEY || null;
+
+  if (!apiKey) {
+    throw new Error('SMSIR_API_KEY is not set in environment variables');
+  }
+
+  if (!SMSIr) {
+    throw new Error('sms-ir package is not installed');
+  }
+
+  const token = new SMSIr.Token();
+  // For new panels, secretKey can be null or empty string
+  const tokenResult = await token.get(apiKey, secretKey);
+
+  if (!tokenResult || !tokenResult.IsSuccessful) {
+    throw new Error(`Failed to get SMS.ir token: ${tokenResult?.Message || 'Unknown error'}`);
+  }
+
+  return tokenResult.TokenKey;
+}
+
+/**
+ * Send SMS using SMS.ir
+ */
+async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
+  try {
+    const lineNumber = options.sender || process.env.SMSIR_LINE_NUMBER || '';
+
+    console.log('📱 [sendSMS] SMS.ir - Attempting to send SMS:', {
+      receptor: options.receptor,
+      lineNumber: lineNumber || 'default',
+      messageLength: options.message.length,
+    });
+
+    const tokenKey = await getSMSIrToken();
+    const simpleSend = new SMSIr.SimpleSend();
+    
+    const result = await simpleSend.send(
+      tokenKey,
+      lineNumber,
+      options.message,
+      options.receptor
+    );
+
+    if (result && result.IsSuccessful) {
+      console.log('✅ [sendSMS] SMS.ir - SMS sent successfully:', {
+        messageId: result.MessageId?.toString(),
+        receptor: options.receptor,
+      });
+      return {
+        success: true,
+        message: 'SMS sent successfully',
+        messageId: result.MessageId?.toString(),
+        status: 200,
+        provider: 'smsir',
+      };
+    } else {
+      const errorMessage = result?.Message || 'Failed to send SMS via SMS.ir';
+      console.error('❌ [sendSMS] SMS.ir - SMS sending failed:', {
+        error: errorMessage,
+        receptor: options.receptor,
+        status: result?.StatusCode,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+        status: result?.StatusCode || 500,
+        provider: 'smsir',
+      };
+    }
+  } catch (error) {
+    console.error('❌ [sendSMS] SMS.ir - Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown SMS.ir error',
+      status: 500,
+      provider: 'smsir',
+    };
+  }
+}
+
+/**
+ * Send verification code using SMS.ir template
+ * Supports both VerificationCode (simple) and UltraFastSend (template with variables)
+ */
+async function sendVerificationCodeViaSMSIr(
+  options: VerifyLookupOptions
+): Promise<SMSResponse> {
+  try {
+    // For SMS.ir, template should be the Template ID (Pattern Code - number)
+    const templateId = parseInt(options.template, 10);
+    if (isNaN(templateId)) {
+      throw new Error(`Invalid SMS.ir template ID: ${options.template}. Template must be a number (Pattern Code).`);
+    }
+
+    console.log('📱 [sendVerificationCode] SMS.ir - Attempting to send verification code:', {
+      receptor: options.receptor,
+      templateId,
+      token: options.token,
+    });
+
+    const tokenKey = await getSMSIrToken();
+    
+    // Try UltraFastSend first (recommended for template-based sending)
+    // Falls back to VerificationCode if UltraFastSend is not available
+    try {
+      if (SMSIr.UltraFastSend) {
+        const ultraFastSend = new SMSIr.UltraFastSend();
+        const result = await ultraFastSend.send(
+          tokenKey,
+          options.receptor,
+          templateId,
+          { OTP: options.token } // Variables object for template placeholders
+        );
+
+        if (result && result.IsSuccessful) {
+          console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully (UltraFastSend):', {
+            messageId: result.MessageId?.toString(),
+            receptor: options.receptor,
+          });
+          return {
+            success: true,
+            message: 'Verification code sent successfully',
+            messageId: result.MessageId?.toString(),
+            status: 200,
+            provider: 'smsir',
+          };
+        }
+      }
+    } catch (ultraFastError) {
+      console.warn('⚠️ [sendVerificationCode] SMS.ir - UltraFastSend failed, trying VerificationCode:', ultraFastError);
+    }
+
+    // Fallback to VerificationCode (simpler method)
+    const verificationCode = new SMSIr.VerificationCode();
+    const result = await verificationCode.send(
+      tokenKey,
+      options.receptor,
+      options.token,
+      templateId
+    );
+
+    if (result && result.IsSuccessful) {
+      console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully (VerificationCode):', {
+        messageId: result.MessageId?.toString(),
+        receptor: options.receptor,
+      });
+      return {
+        success: true,
+        message: 'Verification code sent successfully',
+        messageId: result.MessageId?.toString(),
+        status: 200,
+        provider: 'smsir',
+      };
+    } else {
+      const errorMessage = result?.Message || 'Failed to send verification code via SMS.ir';
+      console.error('❌ [sendVerificationCode] SMS.ir - Failed:', {
+        error: errorMessage,
+        receptor: options.receptor,
+        templateId,
+        status: result?.StatusCode,
+      });
+      return {
+        success: false,
+        error: errorMessage,
+        status: result?.StatusCode || 500,
+        provider: 'smsir',
+      };
+    }
+  } catch (error) {
+    console.error('❌ [sendVerificationCode] SMS.ir - Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown SMS.ir error',
+      status: 500,
+      provider: 'smsir',
+    };
+  }
+}
+
+// ============================================================================
+// Kavenegar Implementation (Fallback)
+// ============================================================================
+
+/**
+ * Initialize Kavenegar API client
+ */
 const getKavenegarClient = (): kavenegar.KavenegarInstance => {
   const apiKey =
     process.env.KAVENEGAR_API_KEY ||
@@ -40,54 +297,27 @@ const getKavenegarClient = (): kavenegar.KavenegarInstance => {
 };
 
 /**
- * SMS Service Response Types
+ * Send SMS using Kavenegar
  */
-export interface SMSResponse {
-  success: boolean;
-  message?: string;
-  messageId?: string;
-  status?: number;
-  error?: string;
-  isTestAccountLimitation?: boolean; // True if error is due to Kavenegar test account limitation
-}
-
-export interface SendSMSOptions {
-  receptor: string; // Phone number (e.g., '09123456789')
-  message: string; // SMS message content
-  sender?: string; // Sender number (optional, uses default if not provided)
-}
-
-export interface VerifyLookupOptions {
-  receptor: string; // Phone number
-  token: string; // Verification code
-  token2?: string; // Optional second token
-  token3?: string; // Optional third token
-  template: string; // Template name registered in Kavehnegar panel
-}
-
-/**
- * Send a simple SMS message
- */
-export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
+async function sendSMSViaKavenegar(options: SendSMSOptions): Promise<SMSResponse> {
   try {
     const api = getKavenegarClient();
-    // Use purchased sender number (2000660110) as default, fallback to env var or public number
     const sender = options.sender || process.env.KAVENEGAR_SENDER || '2000660110';
 
-    console.log('📱 [sendSMS] Attempting to send SMS:', {
+    console.log('📱 [sendSMS] Kavenegar - Attempting to send SMS:', {
       receptor: options.receptor,
       sender,
       messageLength: options.message.length,
     });
 
     return new Promise((resolve) => {
-      // Add timeout to prevent hanging forever (30 seconds)
       const timeout = setTimeout(() => {
-        console.error('📱 [sendSMS] Timeout: No response from Kavenegar API after 30 seconds');
+        console.error('📱 [sendSMS] Kavenegar - Timeout: No response after 30 seconds');
         resolve({
           success: false,
           error: 'SMS service timeout - please try again',
           status: 408,
+          provider: 'kavenegar',
         });
       }, 30000);
 
@@ -101,7 +331,7 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
           (entries: MessageEntry[] | null, status: number, message: string) => {
             clearTimeout(timeout);
             
-            console.log('📱 [sendSMS] Kavenegar callback received:', {
+            console.log('📱 [sendSMS] Kavenegar - Callback received:', {
               status,
               message,
               entriesCount: entries?.length || 0,
@@ -109,7 +339,7 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
             });
 
             if (status === 200 && entries && entries.length > 0 && entries[0]?.messageid) {
-              console.log('✅ [sendSMS] SMS sent successfully:', {
+              console.log('✅ [sendSMS] Kavenegar - SMS sent successfully:', {
                 messageId: entries[0].messageid,
                 status: entries[0].status,
                 receptor: options.receptor,
@@ -119,13 +349,12 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                 message: 'SMS sent successfully',
                 messageId: entries[0].messageid.toString(),
                 status: entries[0].status,
+                provider: 'kavenegar',
               });
             } else {
-              // Check if it's the Kavenegar test account limitation
               const isTestAccountLimitation = status === 501 || 
                 (message && (message.includes('صاحب حساب') || message.includes('account owner')));
               
-              // Check if it's an account verification error
               const isAccountVerificationError = message && (
                 message.includes('احراز هویت نشده') ||
                 message.includes('احراز هویت نشده است') ||
@@ -135,7 +364,6 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                 message.includes('verification required')
               );
               
-              // Map common Kavenegar API error codes to user-friendly messages
               let errorMessage = message || 'Failed to send SMS';
               const errorDetails: Record<string, string | number | boolean | undefined> = {
                 status,
@@ -143,7 +371,6 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                 receptor: options.receptor,
               };
 
-              // Handle specific error codes for production
               switch (status) {
                 case 400:
                   errorMessage = 'Invalid request parameters. Please check phone number format and message content.';
@@ -157,7 +384,7 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                   break;
                 case 403:
                   if (isAccountVerificationError) {
-                    errorMessage = 'Account verification required. Please verify your Kavenegar account in the panel (https://console.kavenegar.com). Your account needs to be verified before sending SMS.';
+                    errorMessage = 'Account verification required. Please verify your Kavenegar account in the panel (https://console.kavenegar.com).';
                   } else {
                     errorMessage = 'Access forbidden. Please check your account permissions and sender number.';
                   }
@@ -172,24 +399,22 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                   errorMessage = 'Invalid phone number format. Use format: 09123456789';
                   break;
                 default:
-                  // Keep original message for unknown errors
                   break;
               }
               
               if (isTestAccountLimitation) {
-                console.warn('⚠️ [sendSMS] Kavenegar test account limitation:', {
+                console.warn('⚠️ [sendSMS] Kavenegar - Test account limitation:', {
                   ...errorDetails,
-                  note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
+                  note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number.',
                 });
               } else if (isAccountVerificationError) {
-                console.error('❌ [sendSMS] Account verification required:', {
+                console.error('❌ [sendSMS] Kavenegar - Account verification required:', {
                   ...errorDetails,
                   errorMessage,
                   action: 'Please verify your Kavenegar account at https://console.kavenegar.com',
-                  note: 'Your Kavenegar account needs to be verified before you can send SMS. Please complete account verification in the Kavenegar panel.',
                 });
               } else {
-                console.error('❌ [sendSMS] SMS sending failed:', {
+                console.error('❌ [sendSMS] Kavenegar - SMS sending failed:', {
                   ...errorDetails,
                   entries: entries,
                   errorMessage,
@@ -200,15 +425,11 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
                 success: false,
                 error: errorMessage,
                 status: status,
+                provider: 'kavenegar',
               };
               
               if (isTestAccountLimitation) {
                 response.isTestAccountLimitation = true;
-              }
-              
-              if (isAccountVerificationError) {
-                // Add account verification flag for frontend handling
-                response.error = errorMessage + ' Visit https://console.kavenegar.com to verify your account.';
               }
               
               resolve(response);
@@ -217,47 +438,48 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
         );
       } catch (apiError) {
         clearTimeout(timeout);
-        console.error('❌ [sendSMS] API call error:', apiError);
+        console.error('❌ [sendSMS] Kavenegar - API call error:', apiError);
         resolve({
           success: false,
           error: apiError instanceof Error ? apiError.message : 'Unknown API error',
           status: 500,
+          provider: 'kavenegar',
         });
       }
     });
   } catch (error) {
-    console.error('❌ [sendSMS] Error initializing SMS service:', error);
+    console.error('❌ [sendSMS] Kavenegar - Error initializing:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
+      provider: 'kavenegar',
     };
   }
 }
 
 /**
- * Send verification code using Lookup template
- * This is used for OTP, verification codes, etc.
+ * Send verification code using Kavenegar Lookup template
  */
-export async function sendVerificationCode(
+async function sendVerificationCodeViaKavenegar(
   options: VerifyLookupOptions
 ): Promise<SMSResponse> {
   try {
     const api = getKavenegarClient();
 
-    console.log('📱 [sendVerificationCode] Attempting to send verification code:', {
+    console.log('📱 [sendVerificationCode] Kavenegar - Attempting to send verification code:', {
       receptor: options.receptor,
       template: options.template,
       token: options.token,
     });
 
     return new Promise((resolve) => {
-      // Add timeout to prevent hanging forever (30 seconds)
       const timeout = setTimeout(() => {
-        console.error('📱 [sendVerificationCode] Timeout: No response from Kavenegar API after 30 seconds');
+        console.error('📱 [sendVerificationCode] Kavenegar - Timeout: No response after 30 seconds');
         resolve({
           success: false,
           error: 'SMS service timeout - please try again',
           status: 408,
+          provider: 'kavenegar',
         });
       }, 30000);
 
@@ -273,7 +495,7 @@ export async function sendVerificationCode(
           (entries: MessageEntry[] | null, status: number, message: string) => {
             clearTimeout(timeout);
             
-            console.log('📱 [sendVerificationCode] Kavenegar callback received:', {
+            console.log('📱 [sendVerificationCode] Kavenegar - Callback received:', {
               status,
               message,
               entriesCount: entries?.length || 0,
@@ -281,7 +503,7 @@ export async function sendVerificationCode(
             });
 
             if (status === 200 && entries && entries.length > 0 && entries[0]?.messageid) {
-              console.log('✅ [sendVerificationCode] SMS sent successfully:', {
+              console.log('✅ [sendVerificationCode] Kavenegar - SMS sent successfully:', {
                 messageId: entries[0].messageid,
                 status: entries[0].status,
                 receptor: options.receptor,
@@ -291,13 +513,12 @@ export async function sendVerificationCode(
                 message: 'Verification code sent successfully',
                 messageId: entries[0].messageid.toString(),
                 status: entries[0].status,
+                provider: 'kavenegar',
               });
             } else {
-              // Check if it's the Kavenegar test account limitation
               const isTestAccountLimitation = status === 501 || 
                 (message && (message.includes('صاحب حساب') || message.includes('account owner')));
               
-              // Check if it's an account verification error
               const isAccountVerificationError = message && (
                 message.includes('احراز هویت نشده') ||
                 message.includes('احراز هویت نشده است') ||
@@ -307,9 +528,6 @@ export async function sendVerificationCode(
                 message.includes('verification required')
               );
               
-              const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-              
-              // Map common Kavenegar API error codes to user-friendly messages
               let errorMessage = message || 'Failed to send verification code';
               const errorDetails: Record<string, string | number | boolean | undefined> = {
                 status,
@@ -318,7 +536,6 @@ export async function sendVerificationCode(
                 template: options.template,
               };
 
-              // Handle specific error codes for production
               switch (status) {
                 case 400:
                   errorMessage = 'Invalid request parameters or template not found. Please check template name and phone number format.';
@@ -332,7 +549,7 @@ export async function sendVerificationCode(
                   break;
                 case 403:
                   if (isAccountVerificationError) {
-                    errorMessage = 'Account verification required. Please verify your Kavenegar account in the panel (https://console.kavenegar.com). Your account needs to be verified before sending SMS.';
+                    errorMessage = 'Account verification required. Please verify your Kavenegar account in the panel (https://console.kavenegar.com).';
                   } else {
                     errorMessage = 'Access forbidden. Please check your account permissions and template access.';
                   }
@@ -347,25 +564,22 @@ export async function sendVerificationCode(
                   errorMessage = 'Invalid phone number format. Use format: 09123456789';
                   break;
                 default:
-                  // Keep original message for unknown errors
                   break;
               }
               
               if (isTestAccountLimitation) {
-                console.warn('⚠️ [sendVerificationCode] Kavenegar test account limitation:', {
+                console.warn('⚠️ [sendVerificationCode] Kavenegar - Test account limitation:', {
                   ...errorDetails,
-                  note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
-                  code: isDevelopment ? options.token : undefined, // Log code in dev mode only
+                  note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number.',
                 });
               } else if (isAccountVerificationError) {
-                console.error('❌ [sendVerificationCode] Account verification required:', {
+                console.error('❌ [sendVerificationCode] Kavenegar - Account verification required:', {
                   ...errorDetails,
                   errorMessage,
                   action: 'Please verify your Kavenegar account at https://console.kavenegar.com',
-                  note: 'Your Kavenegar account needs to be verified before you can send SMS. Please complete account verification in the Kavenegar panel.',
                 });
               } else {
-                console.error('❌ [sendVerificationCode] SMS sending failed:', {
+                console.error('❌ [sendVerificationCode] Kavenegar - SMS sending failed:', {
                   ...errorDetails,
                   entries: entries,
                   errorMessage,
@@ -376,15 +590,11 @@ export async function sendVerificationCode(
                 success: false,
                 error: errorMessage,
                 status: status,
+                provider: 'kavenegar',
               };
               
               if (isTestAccountLimitation) {
                 response.isTestAccountLimitation = true;
-              }
-              
-              if (isAccountVerificationError) {
-                // Add account verification flag for frontend handling
-                response.error = errorMessage + ' Visit https://console.kavenegar.com to verify your account.';
               }
               
               resolve(response);
@@ -393,112 +603,192 @@ export async function sendVerificationCode(
         );
       } catch (apiError) {
         clearTimeout(timeout);
-        console.error('❌ [sendVerificationCode] API call error:', apiError);
+        console.error('❌ [sendVerificationCode] Kavenegar - API call error:', apiError);
         resolve({
           success: false,
           error: apiError instanceof Error ? apiError.message : 'Unknown API error',
           status: 500,
+          provider: 'kavenegar',
         });
       }
     });
   } catch (error) {
-    console.error('❌ [sendVerificationCode] Error initializing SMS service:', error);
+    console.error('❌ [sendVerificationCode] Kavenegar - Error initializing:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
+      provider: 'kavenegar',
+    };
+  }
+}
+
+// ============================================================================
+// Unified Public API
+// ============================================================================
+
+/**
+ * Send a simple SMS message
+ * Automatically uses SMS.ir if configured, otherwise falls back to Kavenegar
+ */
+export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
+  const provider = detectSMSProvider();
+
+  if (provider === 'smsir') {
+    return sendSMSViaSMSIr(options);
+  } else if (provider === 'kavenegar') {
+    return sendSMSViaKavenegar(options);
+  } else {
+    const error = 'No SMS service configured. Please set SMSIR_API_KEY or KAVENEGAR_API_KEY.';
+    console.error('❌ [sendSMS]', error);
+    return {
+      success: false,
+      error,
+      provider: 'none',
+    };
+  }
+}
+
+/**
+ * Send verification code using template
+ * For SMS.ir: template should be Template ID (number)
+ * For Kavenegar: template should be template name (string)
+ */
+export async function sendVerificationCode(
+  options: VerifyLookupOptions
+): Promise<SMSResponse> {
+  const provider = detectSMSProvider();
+
+  if (provider === 'smsir') {
+    return sendVerificationCodeViaSMSIr(options);
+  } else if (provider === 'kavenegar') {
+    return sendVerificationCodeViaKavenegar(options);
+  } else {
+    const error = 'No SMS service configured. Please set SMSIR_API_KEY or KAVENEGAR_API_KEY.';
+    console.error('❌ [sendVerificationCode]', error);
+    return {
+      success: false,
+      error,
+      provider: 'none',
     };
   }
 }
 
 /**
  * Send SMS to multiple recipients
+ * Currently only supports Kavenegar (SMS.ir bulk send can be added later)
  */
 export async function sendBulkSMS(
   receptors: string[],
   message: string,
   sender?: string
 ): Promise<SMSResponse> {
-  try {
-    const api = getKavenegarClient();
-    // Use purchased sender number (2000660110) as default, fallback to env var or public number
-    const senderNumber = sender || process.env.KAVENEGAR_SENDER || '2000660110';
+  const provider = detectSMSProvider();
 
-    // For SendArray, we need arrays of equal length
-    // Note: According to Kavehnegar docs, SendArray requires:
-    // - receptor: string (comma-separated or array)
-    // - sender: string (comma-separated or array)
-    // - message: string (comma-separated or array)
-    const receptorString = receptors.join(',');
-    const senderString = Array(receptors.length).fill(senderNumber).join(',');
-    const messageString = Array(receptors.length).fill(message).join(',');
+  if (provider === 'kavenegar') {
+    try {
+      const api = getKavenegarClient();
+      const senderNumber = sender || process.env.KAVENEGAR_SENDER || '2000660110';
+      const receptorString = receptors.join(',');
+      const senderString = Array(receptors.length).fill(senderNumber).join(',');
+      const messageString = Array(receptors.length).fill(message).join(',');
 
-    return new Promise((resolve) => {
-      api.SendArray(
-        {
-          receptor: receptorString,
-          sender: senderString,
-          message: messageString,
-        },
-        (entries: MessageEntry[], status: number, message: string) => {
-          if (status === 200 && entries && entries.length > 0) {
-            resolve({
-              success: true,
-              message: `SMS sent to ${entries.length} recipients`,
-              status: entries[0]?.status,
-            });
-          } else {
-            resolve({
-              success: false,
-              error: message || 'Failed to send bulk SMS',
-              status: status,
-            });
+      return new Promise((resolve) => {
+        api.SendArray(
+          {
+            receptor: receptorString,
+            sender: senderString,
+            message: messageString,
+          },
+          (entries: MessageEntry[], status: number, message: string) => {
+            if (status === 200 && entries && entries.length > 0) {
+              resolve({
+                success: true,
+                message: `SMS sent to ${entries.length} recipients`,
+                status: entries[0]?.status,
+                provider: 'kavenegar',
+              });
+            } else {
+              resolve({
+                success: false,
+                error: message || 'Failed to send bulk SMS',
+                status: status,
+                provider: 'kavenegar',
+              });
+            }
           }
-        }
-      );
-    });
-  } catch (error) {
-    console.error('Bulk SMS sending error:', error);
+        );
+      });
+    } catch (error) {
+      console.error('Bulk SMS sending error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        provider: 'kavenegar',
+      };
+    }
+  } else {
+    // For SMS.ir, send individually (bulk API can be added later)
+    console.warn('⚠️ [sendBulkSMS] Bulk SMS via SMS.ir not yet implemented. Sending individually...');
+    const results = await Promise.all(
+      receptors.map(receptor => sendSMS({ receptor, message, sender }))
+    );
+    const successCount = results.filter(r => r.success).length;
     return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      success: successCount > 0,
+      message: `SMS sent to ${successCount} of ${receptors.length} recipients`,
+      provider: provider === 'smsir' ? 'smsir' : 'none',
     };
   }
 }
 
 /**
  * Get SMS delivery status
+ * Currently only supports Kavenegar (SMS.ir status API can be added later)
  */
 export async function getSMSStatus(messageId: string): Promise<SMSResponse> {
-  try {
-    const api = getKavenegarClient();
+  const provider = detectSMSProvider();
 
-    return new Promise((resolve) => {
-      api.Status(
-        {
-          messageid: messageId,
-        },
-        (entries: Array<{ messageid: number; status: number; statustext: string }>, status: number, message: string) => {
-          if (status === 200 && entries && entries.length > 0) {
-            resolve({
-              success: true,
-              message: 'Status retrieved successfully',
-              status: entries[0].status,
-            });
-          } else {
-            resolve({
-              success: false,
-              error: message || 'Failed to get SMS status',
-              status: status,
-            });
+  if (provider === 'kavenegar') {
+    try {
+      const api = getKavenegarClient();
+
+      return new Promise((resolve) => {
+        api.Status(
+          {
+            messageid: messageId,
+          },
+          (entries: Array<{ messageid: number; status: number; statustext: string }>, status: number, message: string) => {
+            if (status === 200 && entries && entries.length > 0) {
+              resolve({
+                success: true,
+                message: 'Status retrieved successfully',
+                status: entries[0].status,
+                provider: 'kavenegar',
+              });
+            } else {
+              resolve({
+                success: false,
+                error: message || 'Failed to get SMS status',
+                status: status,
+                provider: 'kavenegar',
+              });
+            }
           }
-        }
-      );
-    });
-  } catch (error) {
-    console.error('SMS status check error:', error);
+        );
+      });
+    } catch (error) {
+      console.error('SMS status check error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        provider: 'kavenegar',
+      };
+    }
+  } else {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: 'SMS status check is only available for Kavenegar. Check SMS.ir panel for status.',
+      provider: provider === 'smsir' ? 'smsir' : 'none',
     };
   }
 }
@@ -533,7 +823,6 @@ export const SMSTemplates = {
       message += `\nمحصولات: ${productsList}`;
     }
     if (totalAmount) {
-      // Convert Rials to Tomans for display
       const amountInTomans = Math.round(totalAmount / 10);
       const formattedAmount = new Intl.NumberFormat('fa-IR').format(amountInTomans);
       message += `\nمبلغ پرداخت شده: ${formattedAmount} تومان`;
@@ -584,7 +873,6 @@ export const SMSTemplates = {
   },
 
   ORDER_REFUNDED: (orderNumber: string, customerName: string, amount: number, refId?: string) => {
-    // Convert Rials to Tomans for display
     const amountInTomans = Math.round(amount / 10);
     const formattedAmount = new Intl.NumberFormat('fa-IR').format(amountInTomans);
     let message = `سلام ${customerName}، سفارش ${orderNumber} مرجوع شد.\nمبلغ ${formattedAmount} تومان طی 3-5 روز کاری به حساب شما بازگردانده می‌شود.`;
@@ -599,15 +887,12 @@ export const SMSTemplates = {
  * Helper function to send SMS safely (non-blocking)
  * This function catches errors and logs them without throwing
  * Use this when SMS failure shouldn't break the main flow
- * 
- * In development mode, SMS may be skipped or mocked based on environment variables
  */
 export async function sendSMSSafe(
   options: SendSMSOptions,
   errorContext?: string
 ): Promise<void> {
   try {
-    // Check if SMS is disabled in development
     const skipSMSInDev = process.env.SKIP_SMS_IN_DEV === 'true';
     const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
     
@@ -621,7 +906,6 @@ export async function sendSMSSafe(
       return;
     }
 
-    // Validate phone number format
     const phoneDigits = options.receptor.replace(/\D/g, '');
     if (phoneDigits.length !== 11 || !phoneDigits.startsWith('09')) {
       console.error(`[SMS] Invalid phone number format${errorContext ? ` (${errorContext})` : ''}:`, options.receptor);
@@ -633,20 +917,21 @@ export async function sendSMSSafe(
       messageLength: options.message.length,
       sender: options.sender || 'default',
       environment: isDevelopment ? 'development' : 'production',
+      provider: detectSMSProvider(),
     });
 
     const result = await sendSMS(options);
     if (!result.success) {
-      // Check if it's the Kavenegar test account limitation
       const isTestAccountLimitation = result.status === 501 && 
         result.error?.includes('صاحب حساب');
       
       if (isTestAccountLimitation && isDevelopment) {
-        console.warn(`⚠️ [SMS] Kavenegar test account limitation${errorContext ? ` (${errorContext})` : ''}:`, {
+        console.warn(`⚠️ [SMS] Test account limitation${errorContext ? ` (${errorContext})` : ''}:`, {
           error: result.error,
           status: result.status,
           receptor: options.receptor,
-          note: 'In Kavenegar test/sandbox mode, SMS can only be sent to the account owner\'s number. This will work in production.',
+          provider: result.provider,
+          note: 'In test/sandbox mode, SMS can only be sent to the account owner\'s number.',
           messagePreview: options.message.substring(0, 100) + '...',
         });
       } else {
@@ -654,6 +939,7 @@ export async function sendSMSSafe(
           error: result.error,
           status: result.status,
           receptor: options.receptor,
+          provider: result.provider,
         });
       }
     } else {
@@ -661,6 +947,7 @@ export async function sendSMSSafe(
         messageId: result.messageId,
         status: result.status,
         receptor: options.receptor,
+        provider: result.provider,
       });
     }
   } catch (error) {
@@ -668,13 +955,11 @@ export async function sendSMSSafe(
       error: error instanceof Error ? error.message : 'Unknown error',
       receptor: options.receptor,
     });
-    // Don't throw - SMS failures shouldn't break main flow
   }
 }
 
 /**
  * Send low stock alert to admin users
- * This function should be called when product stock goes below threshold
  */
 export async function sendLowStockAlert(
   productName: string,
@@ -689,7 +974,6 @@ export async function sendLowStockAlert(
 
   const message = `هشدار: موجودی محصول ${productName} به ${stockQuantity} عدد رسیده است (حد آستانه: ${lowStockThreshold}). لطفاً موجودی را بررسی کنید.`;
 
-  // Send to all admin phones (non-blocking)
   for (const phone of adminPhones) {
     sendSMSSafe(
       {

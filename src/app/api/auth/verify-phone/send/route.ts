@@ -11,14 +11,15 @@ import { VerificationType } from "@prisma/client";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check if SMS service is configured (accept multiple env names to avoid misconfig)
-    const smsApiKey =
+    // Check if SMS service is configured (SMS.ir takes priority, then Kavenegar)
+    const smsirApiKey = process.env.SMSIR_API_KEY;
+    const kavenegarApiKey =
       process.env.KAVENEGAR_API_KEY ||
       process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ||
       process.env.KAVENEGAR_API_TOKEN;
 
-    if (!smsApiKey) {
-      console.error('❌ SMS API key is not set (KAVENEGAR_API_KEY / NEXT_PUBLIC_KAVENEGAR_API_KEY / KAVENEGAR_API_TOKEN)');
+    if (!smsirApiKey && !kavenegarApiKey) {
+      console.error('❌ SMS API key is not set (SMSIR_API_KEY or KAVENEGAR_API_KEY)');
       return NextResponse.json(
         { 
           success: false, 
@@ -153,10 +154,16 @@ export async function POST(request: NextRequest) {
     console.log(`📱 [verify-phone/send] Generated code: ${verificationCode}`);
     console.log(`📱 [verify-phone/send] Code expires at: ${expiresAt.toISOString()}`);
     
+    // Determine template based on SMS provider
+    // SMS.ir uses Template ID (number), Kavenegar uses template name (string)
+    const template = smsirApiKey 
+      ? (process.env.SMSIR_VERIFY_TEMPLATE_ID || 'verify') // Use Template ID for SMS.ir
+      : 'verify'; // Template name for Kavenegar
+    
     const templateResult = await sendVerificationCode({
       receptor: phone,
       token: verificationCode,
-      template: 'verify', // Template name in Kavehnegar panel
+      template: template,
     });
 
     console.log(`📱 [verify-phone/send] Template SMS result:`, {
