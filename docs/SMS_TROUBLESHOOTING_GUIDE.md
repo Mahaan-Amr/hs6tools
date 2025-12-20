@@ -4,8 +4,9 @@
 
 ### Symptoms
 - User tries to register but no verification code is received
-- PM2 environment check shows "No SMS service API key found"
-- Application logs show SMS provider detection issues
+- Error message: "Failed to get SMS.ir token: SMS.ir token API returned null/undefined response"
+- PM2 environment check shows "No SMS service API key found" (may be false positive)
+- Application logs show SMS provider detection works but token retrieval fails
 
 ---
 
