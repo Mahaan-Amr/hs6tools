@@ -139,14 +139,36 @@ async function getSMSIrToken(): Promise<string> {
 
     let tokenResult;
     try {
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SMS.ir token API timeout after 15 seconds')), 15000)
+      );
+
       // Try with secretKey first (if provided)
       if (secretKey) {
         console.log('🔑 [getSMSIrToken] Attempting token request with secret key...');
-        tokenResult = await token.get(apiKey, secretKey);
+        tokenResult = await Promise.race([
+          token.get(apiKey, secretKey),
+          timeoutPromise,
+        ]) as any;
       } else {
         // Try without secretKey (new panels)
+        // Note: Some versions of sms-ir package might require passing null/undefined explicitly
         console.log('🔑 [getSMSIrToken] Attempting token request without secret key...');
-        tokenResult = await token.get(apiKey);
+        try {
+          // First try: call with just apiKey
+          tokenResult = await Promise.race([
+            token.get(apiKey),
+            timeoutPromise,
+          ]) as any;
+        } catch (firstError) {
+          // If that fails, try with null as second parameter
+          console.log('🔑 [getSMSIrToken] Retrying with null secretKey parameter...');
+          tokenResult = await Promise.race([
+            token.get(apiKey, null),
+            timeoutPromise,
+          ]) as any;
+        }
       }
     } catch (apiError) {
       // Catch any exceptions from the API call itself
@@ -156,7 +178,15 @@ async function getSMSIrToken(): Promise<string> {
         errorType: apiError instanceof Error ? apiError.constructor.name : typeof apiError,
         stack: apiError instanceof Error ? apiError.stack : undefined,
       });
-      throw new Error(`Failed to get SMS.ir token: API call failed - ${errorMessage}`);
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('timeout')) {
+        throw new Error(`Failed to get SMS.ir token: Request timeout - SMS.ir API is not responding. Check network connectivity.`);
+      } else if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
+        throw new Error(`Failed to get SMS.ir token: Network error - Cannot reach SMS.ir API. Check firewall and DNS settings.`);
+      } else {
+        throw new Error(`Failed to get SMS.ir token: API call failed - ${errorMessage}`);
+      }
     }
 
     console.log('🔑 [getSMSIrToken] Token API response:', {
