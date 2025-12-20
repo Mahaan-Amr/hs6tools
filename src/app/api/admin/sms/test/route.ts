@@ -86,6 +86,7 @@ export async function GET() {
         const startTime = Date.now();
         try {
           // Test client initialization (no API call yet)
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const smsir = new SMSIr(apiKey, lineNumber);
           const duration = Date.now() - startTime;
 
@@ -154,15 +155,15 @@ export async function GET() {
     diagnostics.summary = {
       envConfigured: !!process.env.SMSIR_API_KEY,
       packageAvailable: !!SMSIr,
-      tokenRetrievalSuccess:
-        diagnostics.tokenTest?.result?.success === true &&
-        diagnostics.tokenTest?.result?.isSuccessful === true,
+      clientInitialized:
+        diagnostics.clientTest?.result?.success === true &&
+        diagnostics.clientTest?.result?.clientInitialized === true,
       networkReachable: diagnostics.networkTest?.reachable === true,
       ready: !!(
         process.env.SMSIR_API_KEY &&
         SMSIr &&
-        diagnostics.tokenTest?.result?.success === true &&
-        diagnostics.tokenTest?.result?.isSuccessful === true
+        diagnostics.clientTest?.result?.success === true &&
+        diagnostics.clientTest?.result?.clientInitialized === true
       ),
     };
 
