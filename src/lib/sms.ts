@@ -102,8 +102,104 @@ export interface VerifyLookupOptions {
 // ============================================================================
 
 /**
+ * Get SMS.ir token via direct HTTP call (fallback when package fails)
+ * SMS.ir API endpoint: POST https://api.sms.ir/v1/auth/token
+ */
+async function getSMSIrTokenDirect(
+  apiKey: string,
+  secretKey: string | null
+): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const requestBody: { UserApiKey: string; SecretKey?: string } = {
+      UserApiKey: apiKey,
+    };
+
+    // Only include SecretKey if provided (new panels don't need it)
+    if (secretKey) {
+      requestBody.SecretKey = secretKey;
+    }
+
+    console.log('🌐 [getSMSIrTokenDirect] Making direct HTTP call to SMS.ir API...', {
+      url: 'https://api.sms.ir/v1/auth/token',
+      hasSecretKey: !!secretKey,
+    });
+
+    const response = await fetch('https://api.sms.ir/v1/auth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    const responseText = await response.text();
+    console.log('🌐 [getSMSIrTokenDirect] HTTP response:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      bodyPreview: responseText.substring(0, 200),
+    });
+
+    if (!response.ok) {
+      console.error('❌ [getSMSIrTokenDirect] HTTP error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText,
+      });
+      return null;
+    }
+
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('❌ [getSMSIrTokenDirect] Failed to parse JSON response:', {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+        body: responseText,
+      });
+      return null;
+    }
+
+    console.log('🌐 [getSMSIrTokenDirect] Parsed response:', {
+      isSuccessful: responseData.IsSuccessful,
+      message: responseData.Message,
+      statusCode: responseData.StatusCode,
+      hasTokenKey: !!responseData.TokenKey,
+    });
+
+    if (responseData.IsSuccessful && responseData.TokenKey) {
+      console.log('✅ [getSMSIrTokenDirect] Token obtained via direct HTTP call');
+      return responseData.TokenKey;
+    } else {
+      console.error('❌ [getSMSIrTokenDirect] API returned unsuccessful response:', {
+        message: responseData.Message,
+        statusCode: responseData.StatusCode,
+        fullResponse: responseData,
+      });
+      return null;
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('❌ [getSMSIrTokenDirect] Direct HTTP call failed:', {
+      error: errorMessage,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      isAbortError: error instanceof Error && error.name === 'AbortError',
+    });
+    return null;
+  }
+}
+
+/**
  * Initialize SMS.ir Token
  * Note: New SMS.ir panels only require API Key (no Secret Key needed)
+ * Falls back to direct HTTP call if package fails
  */
 async function getSMSIrToken(): Promise<string> {
   const apiKey = process.env.SMSIR_API_KEY;
