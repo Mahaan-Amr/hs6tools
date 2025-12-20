@@ -132,20 +132,50 @@ async function getSMSIrToken(): Promise<string> {
   try {
     const token = new SMSIr.Token();
     // For new panels, secretKey can be null or empty string
-    console.log('🔑 [getSMSIrToken] Calling SMS.ir Token API...');
-    const tokenResult = await token.get(apiKey, secretKey);
+    console.log('🔑 [getSMSIrToken] Calling SMS.ir Token API...', {
+      apiKeyPreview: apiKey.substring(0, 16) + '...',
+      secretKeyProvided: !!secretKey,
+    });
+
+    let tokenResult;
+    try {
+      // Try with secretKey first (if provided)
+      if (secretKey) {
+        console.log('🔑 [getSMSIrToken] Attempting token request with secret key...');
+        tokenResult = await token.get(apiKey, secretKey);
+      } else {
+        // Try without secretKey (new panels)
+        console.log('🔑 [getSMSIrToken] Attempting token request without secret key...');
+        tokenResult = await token.get(apiKey);
+      }
+    } catch (apiError) {
+      // Catch any exceptions from the API call itself
+      const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
+      console.error('❌ [getSMSIrToken] SMS.ir API call threw an exception:', {
+        error: errorMessage,
+        errorType: apiError instanceof Error ? apiError.constructor.name : typeof apiError,
+        stack: apiError instanceof Error ? apiError.stack : undefined,
+      });
+      throw new Error(`Failed to get SMS.ir token: API call failed - ${errorMessage}`);
+    }
 
     console.log('🔑 [getSMSIrToken] Token API response:', {
       hasResult: !!tokenResult,
+      resultType: tokenResult ? typeof tokenResult : 'null/undefined',
       isSuccessful: tokenResult?.IsSuccessful,
       message: tokenResult?.Message,
       statusCode: tokenResult?.StatusCode,
       hasTokenKey: !!tokenResult?.TokenKey,
+      fullResponse: tokenResult ? JSON.stringify(tokenResult) : 'null',
     });
 
     if (!tokenResult) {
-      const error = 'SMS.ir token API returned null/undefined response';
-      console.error('❌ [getSMSIrToken]', error);
+      const error = 'SMS.ir token API returned null/undefined response. This usually means: 1) Invalid API key, 2) Network connectivity issue, 3) SMS.ir service is down, or 4) IP address not whitelisted in SMS.ir panel.';
+      console.error('❌ [getSMSIrToken]', error, {
+        apiKeyLength: apiKey.length,
+        apiKeyPreview: apiKey.substring(0, 16) + '...',
+        secretKeyProvided: !!secretKey,
+      });
       throw new Error(`Failed to get SMS.ir token: ${error}`);
     }
 
