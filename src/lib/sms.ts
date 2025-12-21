@@ -253,10 +253,11 @@ async function sendVerificationCodeViaSMSIr(
       throw new Error(`SMS.ir client does not have 'SendVerifyCode' method. Available methods: ${availableMethods.join(', ')}`);
     }
     
-    // Parameters format: [{ name: "Code", value: "12345" }]
+    // Parameters format: [{ name: "OTP", value: "12345" }]
+    // Template uses #OTP# placeholder, so parameter name must be "OTP"
     const parameters = [
       {
-        name: 'Code',
+        name: 'OTP',
         value: options.token,
       },
     ];
