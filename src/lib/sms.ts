@@ -169,13 +169,17 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
       throw new Error(`SMS.ir client does not have 'SendBulk' method. Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(smsir)).join(', ')}`);
     }
     
-    // Use SendBulk with single number (lineNumber is optional, can be empty string)
+    // Use SendBulk with single number
+    // Note: lineNumber must be a valid number or undefined/null, not empty string
     let result;
     try {
+      // Only pass lineNumber if it's a valid non-empty string
+      const validLineNumber = lineNumber && lineNumber.trim() !== '' ? lineNumber : undefined;
+      
       result = await smsir.SendBulk(
         [options.receptor],  // mobileNumbers array
         options.message,     // message text
-        lineNumber || '',    // line number (optional)
+        validLineNumber,     // line number (undefined if not set, SMS.ir will use default)
         null                 // sendDate (null = send immediately)
       );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -365,35 +369,53 @@ async function sendVerificationCodeViaSMSIr(
       isSuccessful: result?.IsSuccessful,
       message: result?.Message,
       statusCode: result?.StatusCode,
+      status: result?.status,
       messageId: result?.MessageId,
+      data: result?.data,
       fullResponse: result ? safeStringify(result) : 'null',
     });
 
-    // SMS.ir API returns { IsSuccessful, Message, StatusCode, MessageId }
-    if (result && result.IsSuccessful) {
+    // SMS.ir API might return different response structures
+    // Check for success indicators: IsSuccessful, status === 200, or data.code === 200
+    const isSuccessful = result?.IsSuccessful === true || 
+                        result?.status === 200 || 
+                        (result?.data && (result?.data?.code === 200 || result?.data?.status === 200));
+    
+    if (isSuccessful) {
+      const messageId = result?.MessageId || result?.data?.messageId || result?.data?.batchKey;
       console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully:', {
-        messageId: result.MessageId?.toString(),
+        messageId: messageId?.toString(),
         receptor: options.receptor,
       });
       return {
         success: true,
         message: 'Verification code sent successfully',
-        messageId: result.MessageId?.toString(),
-        status: result.StatusCode || 200,
+        messageId: messageId?.toString(),
+        status: result?.StatusCode || result?.status || result?.data?.code || 200,
         provider: 'smsir',
       };
     } else {
-      const errorMessage = result?.Message || 'Failed to send verification code via SMS.ir';
+      // Extract error message from various possible response structures
+      const errorMessage = result?.Message || 
+                          result?.message || 
+                          result?.data?.message ||
+                          (result?.data?.code ? `SMS.ir error code: ${result.data.code}` : null) ||
+                          'Failed to send verification code via SMS.ir';
+      
+      const statusCode = result?.StatusCode || result?.status || result?.data?.code || 500;
+      
       console.error('❌ [sendVerificationCode] SMS.ir - Failed:', {
         error: errorMessage,
         receptor: options.receptor,
         templateId,
-        statusCode: result?.StatusCode,
+        statusCode,
+        fullResponse: safeStringify(result),
       });
+      
       return {
         success: false,
         error: errorMessage,
-        status: result?.StatusCode || 500,
+        status: statusCode,
         provider: 'smsir',
       };
     }
