@@ -696,10 +696,30 @@ export async function POST(request: NextRequest) {
     // Handle other Prisma errors
     if (error instanceof Prisma.PrismaClientValidationError) {
       console.error('❌ API: Prisma validation error:', error.message);
+      
+      // Safe JSON stringify to avoid circular reference errors
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const safeStringify = (obj: any): string => {
+        try {
+          const seen = new WeakSet();
+          return JSON.stringify(obj, (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+              if (seen.has(value)) {
+                return '[Circular]';
+              }
+              seen.add(value);
+            }
+            return value;
+          });
+        } catch {
+          return String(obj);
+        }
+      };
+      
       console.error('❌ API: Validation error details:', {
         message: error.message,
-        // Log the full error for debugging
-        error: JSON.stringify(error, Object.getOwnPropertyNames(error))
+        // Log the full error for debugging (safe stringify to avoid circular references)
+        error: safeStringify(error)
       });
       return NextResponse.json(
         { 
