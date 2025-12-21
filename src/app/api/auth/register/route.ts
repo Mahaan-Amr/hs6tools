@@ -121,6 +121,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle Prisma unique constraint violations
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        const field = error.meta?.target as string[] | undefined;
+        const fieldName = field?.[0] || 'field';
+        
+        console.error("Registration error: Unique constraint violation", {
+          field: fieldName,
+          code: error.code,
+        });
+        
+        if (fieldName === 'email') {
+          return NextResponse.json(
+            { error: "User with this email already exists" },
+            { status: 400 }
+          );
+        } else if (fieldName === 'phone') {
+          return NextResponse.json(
+            { error: "User with this phone number already exists" },
+            { status: 400 }
+          );
+        } else {
+          return NextResponse.json(
+            { error: `This ${fieldName} is already taken` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     console.error("Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
