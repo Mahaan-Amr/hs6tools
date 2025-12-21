@@ -170,19 +170,64 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
     }
     
     // Use SendBulk with single number (lineNumber is optional, can be empty string)
-    const result = await smsir.SendBulk(
-      [options.receptor],  // mobileNumbers array
-      options.message,     // message text
-      lineNumber || '',    // line number (optional)
-      null                 // sendDate (null = send immediately)
-    );
+    let result;
+    try {
+      result = await smsir.SendBulk(
+        [options.receptor],  // mobileNumbers array
+        options.message,     // message text
+        lineNumber || '',    // line number (optional)
+        null                 // sendDate (null = send immediately)
+      );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      // Extract error message from Axios error or other errors
+      const errorMessage = error?.response?.data?.Message || 
+                          error?.response?.data?.message ||
+                          error?.message || 
+                          String(error);
+      const statusCode = error?.response?.status || error?.statusCode || 500;
+      
+      console.error('❌ [sendSMS] SMS.ir - API call failed:', {
+        error: errorMessage,
+        statusCode,
+        receptor: options.receptor,
+        errorType: error?.constructor?.name,
+        responseData: error?.response?.data,
+      });
+      
+      return {
+        success: false,
+        error: errorMessage,
+        status: statusCode,
+        provider: 'smsir',
+      };
+    }
+
+    // Safe JSON stringify to avoid circular reference errors
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const safeStringify = (obj: any): string => {
+      try {
+        const seen = new WeakSet();
+        return JSON.stringify(obj, (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+              return '[Circular]';
+            }
+            seen.add(value);
+          }
+          return value;
+        });
+      } catch {
+        return String(obj);
+      }
+    };
 
     console.log('📱 [sendSMS] SMS.ir - API response:', {
       isSuccessful: result?.IsSuccessful,
       message: result?.Message,
       statusCode: result?.StatusCode,
       packId: result?.PackId,
-      fullResponse: result ? JSON.stringify(result) : 'null',
+      fullResponse: result ? safeStringify(result) : 'null',
     });
 
     // SMS.ir API returns { IsSuccessful, Message, StatusCode, PackId }
@@ -263,18 +308,64 @@ async function sendVerificationCodeViaSMSIr(
     ];
 
     // Call SendVerifyCode with mobile, templateId, and parameters
-    const result = await smsir.SendVerifyCode(
-      options.receptor,
-      templateId,
-      parameters
-    );
+    let result;
+    try {
+      result = await smsir.SendVerifyCode(
+        options.receptor,
+        templateId,
+        parameters
+      );
+    } catch (error: any) {
+      // Extract error message from Axios error or other errors
+      const errorMessage = error?.response?.data?.Message || 
+                          error?.response?.data?.message ||
+                          error?.message || 
+                          String(error);
+      const statusCode = error?.response?.status || error?.statusCode || 500;
+      
+      console.error('❌ [sendVerificationCode] SMS.ir - API call failed:', {
+        error: errorMessage,
+        statusCode,
+        receptor: options.receptor,
+        templateId,
+        parameters,
+        errorType: error?.constructor?.name,
+        responseData: error?.response?.data,
+      });
+      
+      return {
+        success: false,
+        error: errorMessage,
+        status: statusCode,
+        provider: 'smsir',
+      };
+    }
+
+    // Safe JSON stringify to avoid circular reference errors
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const safeStringify = (obj: any): string => {
+      try {
+        const seen = new WeakSet();
+        return JSON.stringify(obj, (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+              return '[Circular]';
+            }
+            seen.add(value);
+          }
+          return value;
+        });
+      } catch {
+        return String(obj);
+      }
+    };
 
     console.log('📱 [sendVerificationCode] SMS.ir - API response:', {
       isSuccessful: result?.IsSuccessful,
       message: result?.Message,
       statusCode: result?.StatusCode,
       messageId: result?.MessageId,
-      fullResponse: result ? JSON.stringify(result) : 'null',
+      fullResponse: result ? safeStringify(result) : 'null',
     });
 
     // SMS.ir API returns { IsSuccessful, Message, StatusCode, MessageId }
