@@ -178,35 +178,38 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
     );
 
     console.log('📱 [sendSMS] SMS.ir - API response:', {
-      success: result?.success,
-      messageId: result?.messageId,
-      status: result?.status,
-      error: result?.error,
+      isSuccessful: result?.IsSuccessful,
+      message: result?.Message,
+      statusCode: result?.StatusCode,
+      packId: result?.PackId,
+      fullResponse: result ? JSON.stringify(result) : 'null',
     });
 
-    if (result && result.success) {
+    // SMS.ir API returns { IsSuccessful, Message, StatusCode, PackId }
+    if (result && result.IsSuccessful) {
+      const packId = result.PackId;
       console.log('✅ [sendSMS] SMS.ir - SMS sent successfully:', {
-        messageId: result.messageId?.toString(),
+        packId: packId?.toString(),
         receptor: options.receptor,
       });
       return {
         success: true,
         message: 'SMS sent successfully',
-        messageId: result.messageId?.toString(),
-        status: result.status || 200,
+        messageId: packId?.toString(),
+        status: result.StatusCode || 200,
         provider: 'smsir',
       };
     } else {
-      const errorMessage = result?.error || result?.message || 'Failed to send SMS via SMS.ir';
+      const errorMessage = result?.Message || 'Failed to send SMS via SMS.ir';
       console.error('❌ [sendSMS] SMS.ir - SMS sending failed:', {
         error: errorMessage,
         receptor: options.receptor,
-        status: result?.status,
+        statusCode: result?.StatusCode,
       });
       return {
         success: false,
         error: errorMessage,
-        status: result?.status || 500,
+        status: result?.StatusCode || 500,
         provider: 'smsir',
       };
     }
