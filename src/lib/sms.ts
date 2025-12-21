@@ -120,8 +120,20 @@ function getSMSIrClient() {
     throw new Error('smsir-js package is not installed. Run: npm install smsir-js');
   }
 
-  // Official SMS.ir API: new Smsir(api_key, line_number)
-  return new SMSIr(apiKey, lineNumber);
+  const client = new SMSIr(apiKey, lineNumber);
+  
+  // Debug: Log available methods on the client
+  console.log('🔍 [getSMSIrClient] Client object structure:', {
+    hasSend: typeof client.send === 'function',
+    hasVerifySend: typeof client.verifySend === 'function',
+    hasSendVerify: typeof client.sendVerify === 'function',
+    hasVerify: typeof client.verify === 'function',
+    availableMethods: Object.getOwnPropertyNames(Object.getPrototypeOf(client)).filter(name => name !== 'constructor'),
+    clientType: typeof client,
+    clientConstructor: client.constructor?.name,
+  });
+
+  return client;
 }
 
 /**
