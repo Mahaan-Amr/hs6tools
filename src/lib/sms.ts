@@ -163,16 +163,19 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
 
     const smsir = getSMSIrClient();
     
-    // Check if send method exists
-    if (typeof smsir.send !== 'function') {
-      throw new Error(`SMS.ir client does not have 'send' method. Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(smsir)).join(', ')}`);
+    // SMS.ir API uses SendBulk for sending SMS (even to single number)
+    // Method signature: SendBulk(mobileNumbers, message, lineNumber, sendDate)
+    if (typeof smsir.SendBulk !== 'function') {
+      throw new Error(`SMS.ir client does not have 'SendBulk' method. Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(smsir)).join(', ')}`);
     }
     
-    // Official API: smsir.send({ message, mobileNumbers: [phone] })
-    const result = await smsir.send({
-      message: options.message,
-      mobileNumbers: [options.receptor],
-    });
+    // Use SendBulk with single number (lineNumber is optional, can be empty string)
+    const result = await smsir.SendBulk(
+      [options.receptor],  // mobileNumbers array
+      options.message,     // message text
+      lineNumber || '',    // line number (optional)
+      null                 // sendDate (null = send immediately)
+    );
 
     console.log('📱 [sendSMS] SMS.ir - API response:', {
       success: result?.success,
@@ -240,63 +243,61 @@ async function sendVerificationCodeViaSMSIr(
 
     const smsir = getSMSIrClient();
     
-    // Check available methods and try different possible method names
-    const availableMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(smsir));
-    console.log('🔍 [sendVerificationCode] Available methods on SMS.ir client:', availableMethods);
-    
-    // Try different possible method names
-    let result;
-    if (typeof smsir.verifySend === 'function') {
-      // Official API: smsir.verifySend(mobile, templateId, parameters)
-      const parameters = [
-        {
-          name: 'Code',
-          value: options.token,
-        },
-      ];
-      result = await smsir.verifySend(options.receptor, templateId, parameters);
-    } else if (typeof smsir.sendVerify === 'function') {
-      // Alternative method name
-      const parameters = [{ name: 'Code', value: options.token }];
-      result = await smsir.sendVerify(options.receptor, templateId, parameters);
-    } else if (typeof smsir.verify === 'function') {
-      // Another possible method name
-      result = await smsir.verify(options.receptor, templateId, [{ name: 'Code', value: options.token }]);
-    } else {
-      throw new Error(`SMS.ir client does not have verifySend/sendVerify/verify method. Available methods: ${availableMethods.join(', ')}`);
+    // SMS.ir API uses SendVerifyCode for verification codes
+    // Method signature: SendVerifyCode(mobile, templateId, parameters)
+    if (typeof smsir.SendVerifyCode !== 'function') {
+      const availableMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(smsir));
+      throw new Error(`SMS.ir client does not have 'SendVerifyCode' method. Available methods: ${availableMethods.join(', ')}`);
     }
+    
+    // Parameters format: [{ name: "Code", value: "12345" }]
+    const parameters = [
+      {
+        name: 'Code',
+        value: options.token,
+      },
+    ];
+
+    // Call SendVerifyCode with mobile, templateId, and parameters
+    const result = await smsir.SendVerifyCode(
+      options.receptor,
+      templateId,
+      parameters
+    );
 
     console.log('📱 [sendVerificationCode] SMS.ir - API response:', {
-      success: result?.success,
-      messageId: result?.messageId,
-      status: result?.status,
-      error: result?.error,
+      isSuccessful: result?.IsSuccessful,
+      message: result?.Message,
+      statusCode: result?.StatusCode,
+      messageId: result?.MessageId,
+      fullResponse: result ? JSON.stringify(result) : 'null',
     });
 
-    if (result && result.success) {
+    // SMS.ir API returns { IsSuccessful, Message, StatusCode, MessageId }
+    if (result && result.IsSuccessful) {
       console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully:', {
-        messageId: result.messageId?.toString(),
+        messageId: result.MessageId?.toString(),
         receptor: options.receptor,
       });
       return {
         success: true,
         message: 'Verification code sent successfully',
-        messageId: result.messageId?.toString(),
-        status: result.status || 200,
+        messageId: result.MessageId?.toString(),
+        status: result.StatusCode || 200,
         provider: 'smsir',
       };
     } else {
-      const errorMessage = result?.error || result?.message || 'Failed to send verification code via SMS.ir';
+      const errorMessage = result?.Message || 'Failed to send verification code via SMS.ir';
       console.error('❌ [sendVerificationCode] SMS.ir - Failed:', {
         error: errorMessage,
         receptor: options.receptor,
         templateId,
-        status: result?.status,
+        statusCode: result?.StatusCode,
       });
       return {
         success: false,
         error: errorMessage,
-        status: result?.status || 500,
+        status: result?.StatusCode || 500,
         provider: 'smsir',
       };
     }
