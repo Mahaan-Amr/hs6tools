@@ -139,6 +139,11 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
 
     const smsir = getSMSIrClient();
     
+    // Check if send method exists
+    if (typeof smsir.send !== 'function') {
+      throw new Error(`SMS.ir client does not have 'send' method. Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(smsir)).join(', ')}`);
+    }
+    
     // Official API: smsir.send({ message, mobileNumbers: [phone] })
     const result = await smsir.send({
       message: options.message,
@@ -211,20 +216,31 @@ async function sendVerificationCodeViaSMSIr(
 
     const smsir = getSMSIrClient();
     
-    // Official API: smsir.verifySend(mobile, templateId, parameters)
-    // Parameters format: [{ name: "Code", value: "12345" }]
-    const parameters = [
-      {
-        name: 'Code',
-        value: options.token,
-      },
-    ];
-
-    const result = await smsir.verifySend(
-      options.receptor,
-      templateId,
-      parameters
-    );
+    // Check available methods and try different possible method names
+    const availableMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(smsir));
+    console.log('🔍 [sendVerificationCode] Available methods on SMS.ir client:', availableMethods);
+    
+    // Try different possible method names
+    let result;
+    if (typeof smsir.verifySend === 'function') {
+      // Official API: smsir.verifySend(mobile, templateId, parameters)
+      const parameters = [
+        {
+          name: 'Code',
+          value: options.token,
+        },
+      ];
+      result = await smsir.verifySend(options.receptor, templateId, parameters);
+    } else if (typeof smsir.sendVerify === 'function') {
+      // Alternative method name
+      const parameters = [{ name: 'Code', value: options.token }];
+      result = await smsir.sendVerify(options.receptor, templateId, parameters);
+    } else if (typeof smsir.verify === 'function') {
+      // Another possible method name
+      result = await smsir.verify(options.receptor, templateId, [{ name: 'Code', value: options.token }]);
+    } else {
+      throw new Error(`SMS.ir client does not have verifySend/sendVerify/verify method. Available methods: ${availableMethods.join(', ')}`);
+    }
 
     console.log('📱 [sendVerificationCode] SMS.ir - API response:', {
       success: result?.success,
