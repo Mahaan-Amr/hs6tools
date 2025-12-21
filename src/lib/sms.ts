@@ -315,6 +315,7 @@ async function sendVerificationCodeViaSMSIr(
         templateId,
         parameters
       );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       // Extract error message from Axios error or other errors
       const errorMessage = error?.response?.data?.Message || 
