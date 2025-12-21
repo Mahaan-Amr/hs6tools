@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { restoreStockAndUpdateOrder } from "@/lib/inventory";
+import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 
 // GET /api/customer/orders/[id] - Get specific order details
 export async function GET(
@@ -250,7 +251,6 @@ export async function PATCH(
     // Send SMS notification to customer (non-blocking)
     const customerPhone = updatedOrder.user.phone || order.customerPhone;
     if (customerPhone) {
-      const { sendSMSSafe, SMSTemplates } = await import("@/lib/sms");
       const customerName = updatedOrder.user.firstName && updatedOrder.user.lastName
         ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
         : 'کاربر گرامی';
@@ -261,9 +261,7 @@ export async function PATCH(
           message: SMSTemplates.ORDER_CANCELLED(order.orderNumber, customerName)
         },
         `Order cancelled: ${order.orderNumber}`
-      ).catch(err => {
-        console.error('❌ [Order Cancellation] SMS error (non-blocking):', err);
-      });
+      );
     }
 
     // Transform order data (same as GET)

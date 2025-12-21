@@ -235,19 +235,37 @@ export async function PUT(
     });
 
     // Send SMS notifications based on status changes (non-blocking)
-    if (updatedOrder.customerPhone && body.status && body.status !== previousStatus) {
-      const customerName = updatedOrder.user 
-        ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}` 
+    const customerPhone = updatedOrder.user?.phone || updatedOrder.customerPhone;
+    if (customerPhone && body.status && body.status !== previousStatus) {
+      const customerName = updatedOrder.user?.firstName && updatedOrder.user?.lastName
+        ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
         : 'کاربر گرامی';
 
       // Order confirmed
       if (body.status === 'CONFIRMED' && previousStatus !== 'CONFIRMED') {
+        // Prepare product list for SMS from order items already fetched
+        const products = updatedOrder.orderItems.map(item => 
+          item.quantity > 1 ? `${item.name} (${item.quantity} عدد)` : item.name
+        );
+        const totalAmount = Number(updatedOrder.totalAmount);
+
         sendSMSSafe(
           {
-            receptor: updatedOrder.customerPhone,
-            message: SMSTemplates.ORDER_CONFIRMED(updatedOrder.orderNumber, customerName),
+            receptor: customerPhone,
+            message: SMSTemplates.ORDER_CONFIRMED(updatedOrder.orderNumber, customerName, products, totalAmount),
           },
           `Order confirmed: ${updatedOrder.orderNumber}`
+        );
+      }
+
+      // Order cancelled
+      if (body.status === 'CANCELLED' && previousStatus !== 'CANCELLED') {
+        sendSMSSafe(
+          {
+            receptor: customerPhone,
+            message: SMSTemplates.ORDER_CANCELLED(updatedOrder.orderNumber, customerName),
+          },
+          `Order cancelled: ${updatedOrder.orderNumber}`
         );
       }
 
@@ -256,7 +274,7 @@ export async function PUT(
         const trackingNumber = updatedOrder.trackingNumber || body.trackingNumber;
         sendSMSSafe(
           {
-            receptor: updatedOrder.customerPhone,
+            receptor: customerPhone,
             message: SMSTemplates.ORDER_SHIPPED(updatedOrder.orderNumber, trackingNumber),
           },
           `Order shipped: ${updatedOrder.orderNumber}`
@@ -267,7 +285,7 @@ export async function PUT(
       if (body.status === 'DELIVERED' && previousStatus !== 'DELIVERED') {
         sendSMSSafe(
           {
-            receptor: updatedOrder.customerPhone,
+            receptor: customerPhone,
             message: SMSTemplates.ORDER_DELIVERED(updatedOrder.orderNumber),
           },
           `Order delivered: ${updatedOrder.orderNumber}`

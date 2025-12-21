@@ -606,7 +606,13 @@ export async function POST(request: NextRequest) {
     console.log('🛒 API: Order created successfully:', order.id);
 
     // Send order confirmation SMS (non-blocking) with product details
-    const customerPhone = order.customerPhone;
+    // Fetch user and order items for SMS
+    const user = await prisma.user.findUnique({
+      where: { id: order.userId },
+      select: { firstName: true, lastName: true, phone: true }
+    });
+    const customerPhone = user?.phone || order.customerPhone;
+    
     if (customerPhone) {
       // Fetch order items for SMS
       const orderItems = await prisma.orderItem.findMany({
@@ -614,11 +620,9 @@ export async function POST(request: NextRequest) {
         select: { name: true, quantity: true }
       });
       
-      const user = await prisma.user.findUnique({
-        where: { id: order.userId },
-        select: { firstName: true, lastName: true, phone: true }
-      });
-      const customerName = user ? `${user.firstName} ${user.lastName}` : 'کاربر گرامی';
+      const customerName = user?.firstName && user?.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : 'کاربر گرامی';
       
       // Prepare product list for SMS
       const products = orderItems.map(item => 
@@ -645,6 +649,7 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️ [Order Creation] No phone number found for SMS:', {
         orderNumber: order.orderNumber,
         userId: order.userId,
+        userPhone: user?.phone,
         customerPhone: order.customerPhone,
       });
     }
