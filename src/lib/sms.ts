@@ -16,9 +16,21 @@ let SMSIr: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const smsirModule = require('smsir-js');
-  SMSIr = smsirModule.Smsir || smsirModule;
-} catch {
-  console.warn('⚠️ [SMS] smsir-js package not found. SMS.ir functionality will be disabled.');
+  console.log('📦 [SMS] smsir-js module loaded:', {
+    hasSmsir: !!smsirModule.Smsir,
+    hasDefault: !!smsirModule.default,
+    moduleKeys: Object.keys(smsirModule),
+    moduleType: typeof smsirModule,
+  });
+  // Try different possible export structures
+  SMSIr = smsirModule.Smsir || smsirModule.default || smsirModule;
+  console.log('📦 [SMS] SMSIr class:', {
+    isFunction: typeof SMSIr === 'function',
+    isObject: typeof SMSIr === 'object',
+    hasConstructor: !!SMSIr,
+  });
+} catch (error) {
+  console.warn('⚠️ [SMS] smsir-js package not found. SMS.ir functionality will be disabled.', error);
 }
 
 // Type definitions for Kavenegar responses
