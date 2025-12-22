@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // GET /api/admin/shipping-methods/[id] - Get single shipping method
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -31,8 +31,9 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
     const shippingMethod = await prisma.shippingMethodConfig.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!shippingMethod) {
@@ -55,7 +56,7 @@ export async function GET(
 // PUT /api/admin/shipping-methods/[id] - Update shipping method
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -80,12 +81,13 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { name, description, price, estimatedDays, isActive, sortOrder } = body;
 
     // Check if shipping method exists
     const existing = await prisma.shippingMethodConfig.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existing) {
@@ -135,7 +137,7 @@ export async function PUT(
     if (sortOrder !== undefined) updateData.sortOrder = Number(sortOrder);
 
     const shippingMethod = await prisma.shippingMethodConfig.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData
     });
 
@@ -152,7 +154,7 @@ export async function PUT(
 // DELETE /api/admin/shipping-methods/[id] - Delete shipping method
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -177,9 +179,10 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
     // Check if shipping method exists
     const existing = await prisma.shippingMethodConfig.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existing) {
@@ -190,7 +193,7 @@ export async function DELETE(
     }
 
     await prisma.shippingMethodConfig.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ success: true, message: "Shipping method deleted" });
