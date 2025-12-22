@@ -22,6 +22,19 @@ export async function GET() {
     return NextResponse.json({ success: true, data: shippingMethods });
   } catch (error) {
     console.error("Error fetching active shipping methods:", error);
+    
+    // Log full error details for debugging
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      
+      // Check if it's a Prisma error about missing table
+      if (error.message.includes("does not exist") || error.message.includes("P2021")) {
+        console.error("❌ CRITICAL: shipping_methods table does not exist in database!");
+        console.error("❌ Please run: npx prisma migrate deploy");
+      }
+    }
+    
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

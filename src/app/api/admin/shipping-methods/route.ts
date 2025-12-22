@@ -39,6 +39,27 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching shipping methods:", error);
     
+    // Log full error details for debugging
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      
+      // Check if it's a Prisma error about missing table
+      if (error.message.includes("does not exist") || error.message.includes("P2021")) {
+        console.error("❌ CRITICAL: shipping_methods table does not exist in database!");
+        console.error("❌ Please run: npx prisma migrate deploy");
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "Database table missing. Please run migrations: npx prisma migrate deploy",
+            details: process.env.NODE_ENV === "production" ? undefined : error.message
+          },
+          { status: 500 }
+        );
+      }
+    }
+    
     // Provide more detailed error information in development
     const errorMessage = process.env.NODE_ENV === "development" && error instanceof Error
       ? error.message
@@ -115,6 +136,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: shippingMethod });
   } catch (error) {
     console.error("Error creating shipping method:", error);
+    
+    // Log full error details for debugging
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      
+      // Check if it's a Prisma error about missing table
+      if (error.message.includes("does not exist") || error.message.includes("P2021")) {
+        console.error("❌ CRITICAL: shipping_methods table does not exist in database!");
+        console.error("❌ Please run: npx prisma migrate deploy");
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "Database table missing. Please run migrations: npx prisma migrate deploy",
+            details: process.env.NODE_ENV === "production" ? undefined : error.message
+          },
+          { status: 500 }
+        );
+      }
+    }
     
     // Provide more detailed error information in development
     const errorMessage = process.env.NODE_ENV === "development" && error instanceof Error

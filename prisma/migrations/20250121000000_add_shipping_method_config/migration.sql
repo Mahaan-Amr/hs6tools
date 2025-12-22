@@ -1,5 +1,5 @@
--- CreateTable
-CREATE TABLE "shipping_methods" (
+-- CreateTable (idempotent - only creates if doesn't exist)
+CREATE TABLE IF NOT EXISTS "shipping_methods" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
@@ -13,6 +13,6 @@ CREATE TABLE "shipping_methods" (
     CONSTRAINT "shipping_methods_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "shipping_methods_isActive_sortOrder_idx" ON "shipping_methods"("isActive", "sortOrder");
+-- CreateIndex (idempotent - only creates if doesn't exist)
+CREATE INDEX IF NOT EXISTS "shipping_methods_isActive_sortOrder_idx" ON "shipping_methods"("isActive", "sortOrder");
 
