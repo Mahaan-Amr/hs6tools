@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Messages } from "@/lib/i18n";
 
 interface FooterProps {
@@ -17,9 +18,13 @@ export default function Footer({ locale, messages }: FooterProps) {
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary-orange to-orange-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-xl">H</span>
-              </div>
+              <Image
+                src="/logo.png"
+                alt="HS6Tools"
+                width={40}
+                height={40}
+                className="w-10 h-10 object-contain"
+              />
               <span className="text-gray-900 dark:text-white font-bold text-2xl">HS6Tools</span>
             </div>
             <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md text-justify leading-relaxed">

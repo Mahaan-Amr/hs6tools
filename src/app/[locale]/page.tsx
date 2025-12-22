@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getMessages } from "@/lib/i18n";
 
 interface HomePageProps {
@@ -27,9 +28,19 @@ export default async function HomePage({ params }: HomePageProps) {
           <div className="relative z-10 text-center px-4 max-w-6xl mx-auto">
             {/* Logo/Brand */}
             <div className="mb-8">
-              <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-orange via-orange-400 to-yellow-400 mb-4 animate-fade-in">
-                HS6Tools
-              </h1>
+              <div className="flex flex-col items-center mb-4 animate-fade-in">
+                <Image
+                  src="/logo.png"
+                  alt="HS6Tools"
+                  width={200}
+                  height={200}
+                  className="w-32 h-32 md:w-48 md:h-48 object-contain mb-4"
+                  priority
+                />
+                <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-orange via-orange-400 to-yellow-400">
+                  HS6Tools
+                </h1>
+              </div>
               <div className="w-24 h-1 bg-gradient-to-r from-primary-orange to-yellow-400 mx-auto rounded-full" />
             </div>
             

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Messages } from "@/lib/i18n";
 import { useCartStore } from "@/contexts/CartContext";
 import { useSession, signOut } from "next-auth/react";
@@ -68,9 +69,14 @@ export default function Header({ locale, messages }: HeaderProps) {
           <div className="flex justify-between items-center h-16 gap-4">
             {/* Logo */}
             <Link href={`/${locale}`} className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary-orange to-orange-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-xl">H</span>
-              </div>
+              <Image
+                src="/logo.png"
+                alt="HS6Tools"
+                width={40}
+                height={40}
+                className="w-10 h-10 object-contain"
+                priority
+              />
               <span className="hidden sm:inline text-gray-900 dark:text-white font-bold text-xl">HS6Tools</span>
             </Link>
 

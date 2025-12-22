@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getMessages, Messages } from "@/lib/i18n";
@@ -171,6 +172,17 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
+              
+              {/* Logo */}
+              <Link href={`/${locale}`} className="flex items-center gap-2 flex-shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="HS6Tools"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                />
+              </Link>
               
               <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-white truncate">{String(messages?.admin?.crm?.adminLayout?.title || "پنل مدیریت")}</h1>
             </div>
