@@ -36,6 +36,7 @@ export default async function HomePage({ params }: HomePageProps) {
                   height={200}
                   className="w-32 h-32 md:w-48 md:h-48 object-contain mb-4"
                   priority
+                  unoptimized
                 />
                 <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-orange via-orange-400 to-yellow-400">
                   HS6Tools

@@ -76,6 +76,7 @@ export default function Header({ locale, messages }: HeaderProps) {
                 height={40}
                 className="w-10 h-10 object-contain"
                 priority
+                unoptimized
               />
               <span className="hidden sm:inline text-gray-900 dark:text-white font-bold text-xl">HS6Tools</span>
             </Link>

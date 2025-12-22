@@ -24,6 +24,7 @@ export default function Footer({ locale, messages }: FooterProps) {
                 width={40}
                 height={40}
                 className="w-10 h-10 object-contain"
+                unoptimized
               />
               <span className="text-gray-900 dark:text-white font-bold text-2xl">HS6Tools</span>
             </div>
