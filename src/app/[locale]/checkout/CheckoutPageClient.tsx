@@ -197,31 +197,55 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     }
   }, [searchParams, messages, locale, router]);
 
-  // Get shipping methods from translations
-  const getShippingMethods = (): ShippingMethod[] => {
-    if (!messages?.checkout?.shippingMethods) {
-      return [];
-    }
-    const shippingMethods = messages.checkout.shippingMethods;
-    return [
-      {
-        id: "post",
-        name: shippingMethods?.post?.name || "",
-        description: shippingMethods?.post?.description || "",
-        price: 50000,
-        estimatedDays: shippingMethods?.post?.estimatedDays || ""
-      },
-      {
-        id: "tipax",
-        name: shippingMethods?.tipax?.name || "",
-        description: shippingMethods?.tipax?.description || "",
-        price: 80000,
-        estimatedDays: shippingMethods?.tipax?.estimatedDays || ""
-      }
-    ];
-  };
+  // Fetch shipping methods from API
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
 
-  const SHIPPING_METHODS = getShippingMethods();
+  useEffect(() => {
+    const fetchShippingMethods = async () => {
+      try {
+        setShippingMethodsLoading(true);
+        const response = await fetch('/api/shipping-methods');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Transform API data to match ShippingMethod interface
+          interface ApiShippingMethod {
+            id: string;
+            name: string;
+            description: string | null;
+            price: number | string;
+            estimatedDays: string;
+          }
+          const transformed = (result.data as ApiShippingMethod[]).map((method) => ({
+            id: method.id,
+            name: method.name,
+            description: method.description || '',
+            price: Number(method.price),
+            estimatedDays: method.estimatedDays
+          }));
+          setShippingMethods(transformed);
+          
+          // Auto-select first method if available and no method is selected
+          if (transformed.length > 0 && !selectedShipping) {
+            setSelectedShipping(transformed[0].id);
+          }
+        } else {
+          console.error('Failed to fetch shipping methods:', result.error);
+          // Fallback to empty array
+          setShippingMethods([]);
+        }
+      } catch (error) {
+        console.error('Error fetching shipping methods:', error);
+        setShippingMethods([]);
+      } finally {
+        setShippingMethodsLoading(false);
+      }
+    };
+
+    fetchShippingMethods();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [currentStep, setCurrentStep] = useState(1);
   const [address, setAddress] = useState<Address>({
     firstName: "",
@@ -262,7 +286,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
       }))
     : items;
   
-  const selectedShippingMethod = SHIPPING_METHODS.find(m => m.id === selectedShipping);
+  const selectedShippingMethod = shippingMethods.find(m => m.id === selectedShipping);
   const shippingCost = isRetryMode ? failedOrder.shippingAmount : (selectedShippingMethod?.price || 0);
   const taxAmount = isRetryMode ? failedOrder.taxAmount : Math.round(totalPrice * 0.09);
   const discountAmount = isRetryMode ? failedOrder.discountAmount : (appliedCoupon?.discountAmount || 0);
@@ -691,10 +715,10 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                   <>
                     {/* Address Selection Toggle */}
                     <div className="mb-6">
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center gap-4 flex-wrap">
                         <button
                           onClick={() => setUseSavedAddresses(false)}
-                          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 whitespace-nowrap ${
                             !useSavedAddresses
                               ? "bg-primary-orange text-white"
                               : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -704,7 +728,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                         </button>
                         <button
                           onClick={() => setUseSavedAddresses(true)}
-                          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 whitespace-nowrap ${
                             useSavedAddresses
                               ? "bg-primary-orange text-white"
                               : "bg-gray-200 dark:bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -811,8 +835,17 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
               <div className="glass rounded-3xl p-8">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.selectShippingMethod)}</h2>
                 
-                <div className="space-y-4">
-                  {SHIPPING_METHODS.map((method) => (
+                {shippingMethodsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-orange"></div>
+                  </div>
+                ) : shippingMethods.length === 0 ? (
+                  <div className="text-center py-12 text-gray-600 dark:text-gray-400">
+                    {String(t.noShippingMethods || 'هیچ روش ارسالی در دسترس نیست')}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {shippingMethods.map((method) => (
                     <div
                       key={method.id}
                       className={`p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
@@ -848,8 +881,9 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -965,7 +999,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                     <label className="block text-sm font-medium text-gray-900 dark:text-white">
                       {String(t.couponCode)}
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 min-w-0">
                       <input
                         type="text"
                         value={couponCode}
@@ -974,7 +1008,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                           setCouponError(null);
                         }}
                         placeholder={String(t.couponPlaceholder)}
-                        className="flex-1 px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                        className="flex-1 min-w-0 px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
                             handleApplyCoupon();
@@ -984,7 +1018,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       <button
                         onClick={handleApplyCoupon}
                         disabled={isValidatingCoupon || !couponCode.trim()}
-                        className="px-6 py-2 bg-primary-orange text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-shrink-0 px-6 py-2 bg-primary-orange text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         {isValidatingCoupon ? "..." : String(t.apply)}
                       </button>
@@ -994,18 +1028,18 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-600 dark:text-green-400 font-medium">
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-green-600 dark:text-green-400 font-medium truncate">
                         {String(t.discountApplied)}: {appliedCoupon.code}
                       </span>
-                      <span className="text-green-600 dark:text-green-400">
+                      <span className="text-green-600 dark:text-green-400 whitespace-nowrap">
                         (-{formatPrice(appliedCoupon.discountAmount)})
                       </span>
                     </div>
                     <button
                       onClick={handleRemoveCoupon}
-                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm"
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm flex-shrink-0 whitespace-nowrap"
                     >
                       {String(t.remove)}
                     </button>

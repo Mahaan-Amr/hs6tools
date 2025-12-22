@@ -460,6 +460,21 @@ model Coupon {
   @@map("coupons")
 }
 
+model ShippingMethodConfig {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  estimatedDays String   // e.g., "3-5 business days"
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("shipping_methods")
+}
+
 // ============================================================================
 // ENUMS
 // ============================================================================

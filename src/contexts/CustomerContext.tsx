@@ -310,8 +310,13 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       const result = await response.json();
 
       if (result.success) {
-        setAddresses(result.data);
-        console.log('✅ fetchAddresses: Successfully fetched addresses:', result.data.length);
+        // Deduplicate addresses by ID to prevent duplicates
+        const addressesData = result.data as CustomerAddress[];
+        const uniqueAddresses = Array.from(
+          new Map(addressesData.map((addr) => [addr.id, addr])).values()
+        );
+        setAddresses(uniqueAddresses);
+        console.log('✅ fetchAddresses: Successfully fetched addresses:', uniqueAddresses.length, '(deduplicated from', addressesData.length, ')');
       } else {
         setAddressesError(result.error || 'Failed to fetch addresses');
         console.error('❌ fetchAddresses: API error:', result.error);

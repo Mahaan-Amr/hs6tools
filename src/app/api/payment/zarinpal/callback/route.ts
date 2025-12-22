@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPayment } from "@/lib/zarinpal";
 import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 import { restoreStockAndUpdateOrder } from "@/lib/inventory";
+import { getSiteOrigin } from "@/utils/domain";
 
 /**
  * GET /api/payment/zarinpal/callback
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Validate required parameters
     if (!authority) {
       console.error('❌ [Payment Callback] Missing Authority parameter');
-      const origin = request.nextUrl.origin;
+      const origin = getSiteOrigin(request);
       return NextResponse.redirect(
         new URL("/fa/checkout?error=missing_authority", origin)
       );
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     if (!order) {
       console.error('❌ [Payment Callback] Order not found for authority:', authority);
-      const origin = request.nextUrl.origin;
+      const origin = getSiteOrigin(request);
       return NextResponse.redirect(
         new URL("/fa/checkout?error=order_not_found", origin)
       );
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
       
       // Redirect to success page with existing payment info
       const locale = "fa"; // Default locale
-      const origin = request.nextUrl.origin;
+      const origin = getSiteOrigin(request);
       const successUrl = `${origin}/${locale}/checkout/success?orderNumber=${order.orderNumber}&refId=${order.paymentId}`;
       
       console.log('✅ [Payment Callback] Redirecting to success (already paid)');
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
         paymentSettings.zarinpalMerchantId = envMerchantId;
       } else {
         console.error('❌ [Payment Callback] Zarinpal Merchant ID is not configured');
-        const origin = request.nextUrl.origin;
+        const origin = getSiteOrigin(request);
         return NextResponse.redirect(
           new URL("/fa/checkout?error=payment_config_error", origin)
         );
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      const origin = request.nextUrl.origin;
+      const origin = getSiteOrigin(request);
       return NextResponse.redirect(
         new URL(`/fa/checkout?error=payment_cancelled&orderNumber=${order.orderNumber}`, origin)
       );
@@ -220,7 +221,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      const origin = request.nextUrl.origin;
+      const origin = getSiteOrigin(request);
       return NextResponse.redirect(
         new URL(`/fa/checkout?error=payment_failed&orderNumber=${order.orderNumber}&message=${encodeURIComponent(verifyResult.error || "پرداخت ناموفق بود")}`, origin)
       );
@@ -317,7 +318,7 @@ export async function GET(request: NextRequest) {
 
     // Redirect to success page
     const locale = "fa"; // Default locale, can be enhanced to detect from order
-    const origin = request.nextUrl.origin;
+    const origin = getSiteOrigin(request);
     const successUrl = `${origin}/${locale}/checkout/success?orderNumber=${updatedOrder.orderNumber}&refId=${verifyResult.refId}`;
     
     console.log('✅ [Payment Callback] ========== REDIRECTING TO SUCCESS ==========');
@@ -329,13 +330,15 @@ export async function GET(request: NextRequest) {
       successUrl,
       requestUrl: request.url,
       requestOrigin: request.nextUrl.origin,
+      forwardedHost: request.headers.get('x-forwarded-host'),
+      host: request.headers.get('host'),
     });
     
     return NextResponse.redirect(successUrl);
 
   } catch (error) {
     console.error("❌ [Payment Callback] Error:", error);
-    const origin = request.nextUrl.origin;
+    const origin = getSiteOrigin(request);
     return NextResponse.redirect(
       new URL("/fa/checkout?error=internal_error", origin)
     );

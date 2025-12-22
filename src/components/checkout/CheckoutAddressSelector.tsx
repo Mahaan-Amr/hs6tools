@@ -48,7 +48,12 @@ export default function CheckoutAddressSelector({
   }, [locale]);
 
   const getShippingAddresses = () => {
-    return addresses.filter(addr => addr.type === 'SHIPPING');
+    const shippingAddresses = addresses.filter(addr => addr.type === 'SHIPPING');
+    // Deduplicate by ID to prevent showing the same address multiple times
+    const uniqueAddresses = Array.from(
+      new Map(shippingAddresses.map(addr => [addr.id, addr])).values()
+    );
+    return uniqueAddresses;
   };
 
   const handleAddressSelect = (address: CustomerAddress) => {

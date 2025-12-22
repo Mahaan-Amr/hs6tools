@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requestPayment } from "@/lib/zarinpal";
+import { getSiteOrigin } from "@/utils/domain";
 
 /**
  * POST /api/payment/zarinpal/request
@@ -165,8 +166,8 @@ export async function POST(request: NextRequest) {
     }
     
     // Get callback URL based on locale
-    // Use request origin for callback URL - more secure than env var
-    const origin = request.headers.get("origin") || request.nextUrl.origin;
+    // Use getSiteOrigin helper to get proper domain (handles production vs development)
+    const origin = getSiteOrigin(request);
     const callbackUrl = `${origin}/api/payment/zarinpal/callback`;
     
     // Validate callback URL format

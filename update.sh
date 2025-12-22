@@ -114,14 +114,14 @@ check_pm2() {
 # Check and setup environment files
 check_env_files() {
     section "🔐 Checking Environment Files"
-    
+
     # Check if .env.production exists
     if [ ! -f ".env.production" ]; then
         error ".env.production file not found! This file is required for production deployment."
     fi
     
     # Backup existing .env if it exists
-    if [ -f ".env" ]; then
+        if [ -f ".env" ]; then
         BACKUP_FILE=".env.backup-$(date +'%Y%m%d-%H%M%S')"
         info ".env exists. Creating backup at ${BACKUP_FILE} before refresh..."
         cp .env "${BACKUP_FILE}"
@@ -129,9 +129,9 @@ check_env_files() {
     
     # Always refresh .env from .env.production to ensure consistency
     # This ensures all environment variables (including SMS.ir API keys) are loaded
-    info "Refreshing .env from .env.production..."
+        info "Refreshing .env from .env.production..."
     info "This will automatically load SMS.ir API keys and all other environment variables"
-    cp .env.production .env
+        cp .env.production .env
     log ".env updated from .env.production (all API keys and variables loaded)"
     
     # Verify .env file exists
@@ -139,10 +139,10 @@ check_env_files() {
         error ".env file not found after refresh!"
     fi
     
-    log ".env file found"
-    
+        log ".env file found"
+
     # Check required environment variables
-    info "Checking required environment variables in .env..."
+        info "Checking required environment variables in .env..."
     MISSING_VARS=()
     
     for VAR_PATTERN in "${REQUIRED_ENV_VARS[@]}"; do
@@ -163,9 +163,9 @@ check_env_files() {
             if ! grep -q "^${VAR_PATTERN}=" .env 2>/dev/null; then
                 MISSING_VARS+=("${VAR_PATTERN}")
             fi
-        fi
-    done
-    
+            fi
+        done
+
     if [ ${#MISSING_VARS[@]} -gt 0 ]; then
         warning "Missing or empty required environment variables:"
         for VAR in "${MISSING_VARS[@]}"; do
@@ -485,9 +485,9 @@ pull_changes() {
         warning "Local changes detected. These will be preserved."
         
         # Show untracked files
-        UNTRACKED=$(git ls-files --others --exclude-standard)
-        if [ -n "$UNTRACKED" ]; then
-            info "Untracked files detected (will be preserved):"
+    UNTRACKED=$(git ls-files --others --exclude-standard)
+    if [ -n "$UNTRACKED" ]; then
+        info "Untracked files detected (will be preserved):"
             echo "$UNTRACKED" | while read -r file; do
                 echo "  - $file"
             done
@@ -505,15 +505,15 @@ pull_changes() {
     else
         error "Failed to pull changes from remote repository. Please resolve conflicts manually."
     fi
-    
-    # Show recent commits
-    info "Recent commits:"
-    git log --oneline -5
-    
+        
+        # Show recent commits
+        info "Recent commits:"
+        git log --oneline -5
+        
     # Note about stashed changes
     if git stash list | grep -q "Auto-stash before update"; then
-        info "Note: Local changes were stashed. To restore them, run: git stash pop"
-    fi
+            info "Note: Local changes were stashed. To restore them, run: git stash pop"
+        fi
 }
 
 # Check node_modules integrity
@@ -652,7 +652,7 @@ install_dependencies() {
     if [ $INSTALL_EXIT_CODE -eq 0 ]; then
         # Verify critical packages are installed
         if [ -d "node_modules/next" ] && [ -d "node_modules/@prisma/client" ]; then
-            log "Dependencies installed successfully"
+        log "Dependencies installed successfully"
             rm -f /tmp/npm-update.log
             
             # Verify integrity after install
@@ -736,7 +736,7 @@ generate_prisma() {
         fi
         
         if [ $PRISMA_EXIT_CODE -eq 0 ]; then
-            log "Prisma client generated successfully"
+        log "Prisma client generated successfully"
             rm -f /tmp/prisma-gen.log
             return 0
         fi
@@ -957,7 +957,7 @@ if (fs.existsSync(envPath)) {
         }
         
         // Only set if value is not empty (unless it's explicitly empty string)
-        if (key && value !== undefined) {
+      if (key && value !== undefined) {
           envVars[key] = value;
         }
       }
@@ -1346,7 +1346,7 @@ main() {
     build_application
     
     # Restart application
-    restart_pm2
+        restart_pm2
     
     # Test connectivity
     test_connectivity
