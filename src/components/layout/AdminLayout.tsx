@@ -177,9 +177,9 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                 <img
                   src="/logo.svg"
                   alt="HS6Tools"
-                  width={192}
-                  height={192}
-                  className="w-48 h-48 object-contain"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 object-contain"
                 />
               </Link>
               

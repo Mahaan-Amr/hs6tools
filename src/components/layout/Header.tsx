@@ -71,9 +71,9 @@ export default function Header({ locale, messages }: HeaderProps) {
               <img
                 src="/logo.svg"
                 alt="HS6Tools"
-                width={224}
-                height={224}
-                className="w-56 h-56 object-contain"
+                width={56}
+                height={56}
+                className="w-14 h-14 object-contain"
               />
               <span className="hidden sm:inline text-gray-900 dark:text-white font-bold text-xl">HS6Tools</span>
             </Link>

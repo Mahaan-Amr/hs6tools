@@ -20,9 +20,9 @@ export default function Footer({ locale, messages }: FooterProps) {
               <img
                 src="/logo.svg"
                 alt="HS6Tools"
-                width={256}
-                height={256}
-                className="w-64 h-64 object-contain"
+                width={64}
+                height={64}
+                className="w-16 h-16 object-contain"
               />
               <span className="text-gray-900 dark:text-white font-bold text-2xl">HS6Tools</span>
             </div>

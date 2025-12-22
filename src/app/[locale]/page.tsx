@@ -31,9 +31,9 @@ export default async function HomePage({ params }: HomePageProps) {
                 <img
                   src="/logo.svg"
                   alt="HS6Tools"
-                  width={960}
-                  height={960}
-                  className="w-[640px] h-[640px] md:w-[896px] md:h-[896px] lg:w-[1024px] lg:h-[1024px] object-contain mb-6"
+                  width={240}
+                  height={240}
+                  className="w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 object-contain mb-6"
                 />
                 <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-orange via-orange-400 to-yellow-400">
                   HS6Tools
