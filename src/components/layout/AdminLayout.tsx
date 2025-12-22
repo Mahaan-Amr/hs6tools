@@ -176,7 +176,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               {/* Logo */}
               <Link href={`/${locale}`} className="flex items-center gap-2 flex-shrink-0">
                 <Image
-                  src="/logo.png"
+                  src="/logo.jpg"
                   alt="HS6Tools"
                   width={32}
                   height={32}

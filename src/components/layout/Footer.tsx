@@ -19,7 +19,7 @@ export default function Footer({ locale, messages }: FooterProps) {
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-6">
               <Image
-                src="/logo.png"
+                src="/logo.jpg"
                 alt="HS6Tools"
                 width={40}
                 height={40}

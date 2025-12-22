@@ -30,7 +30,7 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="mb-8">
               <div className="flex flex-col items-center mb-4 animate-fade-in">
                 <Image
-                  src="/logo.png"
+                  src="/logo.jpg"
                   alt="HS6Tools"
                   width={200}
                   height={200}

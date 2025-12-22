@@ -70,7 +70,7 @@ export default function Header({ locale, messages }: HeaderProps) {
             {/* Logo */}
             <Link href={`/${locale}`} className="flex items-center gap-2 flex-shrink-0">
               <Image
-                src="/logo.png"
+                src="/logo.jpg"
                 alt="HS6Tools"
                 width={40}
                 height={40}
