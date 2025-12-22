@@ -38,8 +38,9 @@ export function middleware(request: NextRequest) {
   
   // Skip middleware for static files (files with extensions)
   // This includes .txt, .jpg, .png, .svg, etc. from public folder
+  // Explicitly allow these files to pass through without any processing
   if (pathname.includes('.')) {
-    return;
+    return NextResponse.next();
   }
   
   // Check if the pathname has a locale
@@ -65,10 +66,11 @@ export const config = {
      * - _next/static (Next.js static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - Static files with extensions (.jpg, .png, .svg, .gif, .webp, .ico, etc.)
      * 
      * NOTE: We DO match 28569823.txt paths so middleware can rewrite them to API route
      * This prevents Next.js from treating them as locale routes
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)'
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|eot|pdf|txt|mp4|mov|avi)).*)'
   ]
 };
