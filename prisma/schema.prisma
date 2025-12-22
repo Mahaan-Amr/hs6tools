@@ -192,38 +192,41 @@ model ProductVariant {
 }
 
 model Order {
-  id                String         @id @default(cuid())
-  orderNumber       String         @unique
-  userId            String
-  status            OrderStatus    @default(PENDING)
-  totalAmount       Decimal        @db.Decimal(10, 2)
-  subtotal          Decimal        @db.Decimal(10, 2)
-  taxAmount         Decimal        @db.Decimal(10, 2)
-  shippingAmount    Decimal        @db.Decimal(10, 2)
-  discountAmount    Decimal        @db.Decimal(10, 2)
-  couponId          String?
-  couponCode        String?
-  customerEmail     String
-  customerPhone     String?
-  customerNote      String?
-  shippingAddressId String
-  paymentMethod     PaymentMethod
-  paymentStatus     PaymentStatus  @default(PENDING)
-  paymentId         String?
-  paymentDate       DateTime?
-  expiresAt         DateTime?      // Order expiry time for auto-cancellation of unpaid orders
-  shippingMethod    ShippingMethod
-  trackingNumber    String?
-  shippedAt         DateTime?
-  deliveredAt       DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  orderItems        OrderItem[]
-  shippingAddress   Address        @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
-  user              User           @relation(fields: [userId], references: [id])
-  coupon            Coupon?        @relation(fields: [couponId], references: [id])
+  id                   String                @id @default(cuid())
+  orderNumber          String                @unique
+  userId               String
+  status               OrderStatus           @default(PENDING)
+  totalAmount          Decimal               @db.Decimal(10, 2)
+  subtotal             Decimal               @db.Decimal(10, 2)
+  taxAmount            Decimal               @db.Decimal(10, 2)
+  shippingAmount       Decimal               @db.Decimal(10, 2)
+  discountAmount       Decimal               @db.Decimal(10, 2)
+  couponId             String?
+  couponCode           String?
+  customerEmail        String
+  customerPhone        String?
+  customerNote         String?
+  shippingAddressId    String
+  paymentMethod        PaymentMethod
+  paymentStatus        PaymentStatus         @default(PENDING)
+  paymentId            String?
+  paymentDate          DateTime?
+  expiresAt            DateTime? // Order expiry time for auto-cancellation of unpaid orders
+  shippingMethod       ShippingMethod        @default(POST) // Kept for backward compatibility
+  shippingMethodId     String? // Reference to ShippingMethodConfig (new dynamic shipping methods)
+  trackingNumber       String?
+  shippedAt            DateTime?
+  deliveredAt          DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  orderItems           OrderItem[]
+  shippingAddress      Address               @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  shippingMethodConfig ShippingMethodConfig? @relation(fields: [shippingMethodId], references: [id])
+  user                 User                  @relation(fields: [userId], references: [id])
+  coupon               Coupon?               @relation(fields: [couponId], references: [id])
 
   @@index([expiresAt, paymentStatus]) // Index for efficient expiry queries
+  @@index([shippingMethodId])
   @@map("orders")
 }
 
@@ -465,11 +468,12 @@ model ShippingMethodConfig {
   name          String
   description   String?
   price         Decimal  @db.Decimal(10, 2)
-  estimatedDays String   // e.g., "3-5 business days"
+  estimatedDays String // e.g., "3-5 business days"
   isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  orders        Order[] // Orders using this shipping method
 
   @@index([isActive, sortOrder])
   @@map("shipping_methods")

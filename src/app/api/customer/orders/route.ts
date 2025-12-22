@@ -256,13 +256,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Normalize enum values to uppercase (Prisma enums are case-sensitive)
-    const normalizedShippingMethod = shippingMethod.toUpperCase();
+    // Normalize payment method enum values to uppercase (Prisma enums are case-sensitive)
     const normalizedPaymentMethod = paymentMethod.toUpperCase();
 
-    // Validate enum values
+    // Validate payment method enum values
     const validPaymentMethods = ['ZARINPAL', 'BANK_TRANSFER', 'CASH_ON_DELIVERY'];
-    const validShippingMethods = ['POST', 'TIPAX', 'EXPRESS'];
     
     if (!validPaymentMethods.includes(normalizedPaymentMethod)) {
       console.error('❌ API: Invalid payment method:', paymentMethod, 'Normalized:', normalizedPaymentMethod);
@@ -274,16 +272,68 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Handle shipping method - can be either an ID (from ShippingMethodConfig) or enum value (for backward compatibility)
+    let shippingMethodId: string | null = null;
+    let normalizedShippingMethod: "POST" | "TIPAX" | "EXPRESS" = "POST"; // Default for backward compatibility
     
-    if (!validShippingMethods.includes(normalizedShippingMethod)) {
-      console.error('❌ API: Invalid shipping method:', shippingMethod, 'Normalized:', normalizedShippingMethod);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: `Invalid shipping method: ${shippingMethod}. Must be one of: ${validShippingMethods.join(', ')}` 
-        },
-        { status: 400 }
-      );
+    // Check if shippingMethod is an ID (CUID format - typically starts with 'c' and is 25 chars)
+    const isShippingMethodId = typeof shippingMethod === 'string' && 
+                                shippingMethod.length > 20 && 
+                                /^[a-z]/.test(shippingMethod);
+    
+    if (isShippingMethodId) {
+      // Look up shipping method from database
+      console.log('🛒 API: Shipping method is an ID, looking up in database:', shippingMethod);
+      const shippingMethodConfig = await prisma.shippingMethodConfig.findUnique({
+        where: { id: shippingMethod },
+        select: { id: true, name: true, price: true, isActive: true }
+      });
+      
+      if (!shippingMethodConfig) {
+        console.error('❌ API: Shipping method not found:', shippingMethod);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Shipping method not found: ${shippingMethod}` 
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (!shippingMethodConfig.isActive) {
+        console.error('❌ API: Shipping method is not active:', shippingMethod);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Shipping method "${shippingMethodConfig.name}" is not available` 
+          },
+          { status: 400 }
+        );
+      }
+      
+      shippingMethodId = shippingMethodConfig.id;
+      // Map to enum for backward compatibility (use POST as default)
+      normalizedShippingMethod = "POST";
+      console.log('✅ API: Shipping method found:', shippingMethodConfig.name, 'ID:', shippingMethodId);
+    } else {
+      // Legacy enum value - normalize to uppercase
+      const validShippingMethods = ['POST', 'TIPAX', 'EXPRESS'];
+      const normalized = shippingMethod.toUpperCase();
+      
+      if (!validShippingMethods.includes(normalized)) {
+        console.error('❌ API: Invalid shipping method:', shippingMethod, 'Normalized:', normalized);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Invalid shipping method: ${shippingMethod}. Must be one of: ${validShippingMethods.join(', ')} or a valid shipping method ID` 
+          },
+          { status: 400 }
+        );
+      }
+      
+      normalizedShippingMethod = normalized as "POST" | "TIPAX" | "EXPRESS";
+      console.log('🛒 API: Using legacy shipping method enum:', normalizedShippingMethod);
     }
 
     // Generate order number
@@ -440,7 +490,7 @@ export async function POST(request: NextRequest) {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
-      // Create order (using normalized enum values)
+      // Create order (using normalized enum values and shipping method ID if available)
       // Note: billingAddressId has been removed from schema, using type assertion
       const orderData = {
           orderNumber,
@@ -448,7 +498,8 @@ export async function POST(request: NextRequest) {
           status: "PENDING",
           paymentStatus: "PENDING",
           paymentMethod: normalizedPaymentMethod as "ZARINPAL" | "BANK_TRANSFER" | "CASH_ON_DELIVERY",
-          shippingMethod: normalizedShippingMethod as "POST" | "TIPAX" | "EXPRESS",
+          shippingMethod: normalizedShippingMethod, // Keep enum for backward compatibility
+          shippingMethodId: shippingMethodId, // New dynamic shipping method reference
           subtotal: subtotalDecimal,
           taxAmount: taxAmountDecimal,
           shippingAmount: shippingAmountDecimal,
