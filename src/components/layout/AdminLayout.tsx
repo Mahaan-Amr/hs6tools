@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getMessages, Messages } from "@/lib/i18n";
@@ -175,13 +174,12 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               
               {/* Logo */}
               <Link href={`/${locale}`} className="flex items-center gap-2 flex-shrink-0">
-                <Image
+                <img
                   src="/logo.jpg"
                   alt="HS6Tools"
                   width={32}
                   height={32}
                   className="w-8 h-8 object-contain"
-                  unoptimized
                 />
               </Link>
               
