@@ -29,11 +29,11 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="mb-8">
               <div className="flex flex-col items-center mb-4 animate-fade-in">
                 <img
-                  src="/logo.jpg"
+                  src="/logo.svg"
                   alt="HS6Tools"
-                  width={200}
-                  height={200}
-                  className="w-32 h-32 md:w-48 md:h-48 object-contain mb-4"
+                  width={240}
+                  height={240}
+                  className="w-40 h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 object-contain mb-6"
                 />
                 <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-orange via-orange-400 to-yellow-400">
                   HS6Tools

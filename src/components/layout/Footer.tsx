@@ -16,13 +16,13 @@ export default function Footer({ locale, messages }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="lg:col-span-2">
-            <div className="flex items-center space-x-2 mb-6">
+            <div className="flex items-center space-x-3 mb-6">
               <img
-                src="/logo.jpg"
+                src="/logo.svg"
                 alt="HS6Tools"
-                width={40}
-                height={40}
-                className="w-10 h-10 object-contain"
+                width={64}
+                height={64}
+                className="w-16 h-16 object-contain"
               />
               <span className="text-gray-900 dark:text-white font-bold text-2xl">HS6Tools</span>
             </div>

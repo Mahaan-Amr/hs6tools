@@ -67,13 +67,13 @@ export default function Header({ locale, messages }: HeaderProps) {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-4">
             {/* Logo */}
-            <Link href={`/${locale}`} className="flex items-center gap-2 flex-shrink-0">
+            <Link href={`/${locale}`} className="flex items-center gap-3 flex-shrink-0">
               <img
-                src="/logo.jpg"
+                src="/logo.svg"
                 alt="HS6Tools"
-                width={40}
-                height={40}
-                className="w-10 h-10 object-contain"
+                width={56}
+                height={56}
+                className="w-14 h-14 object-contain"
               />
               <span className="hidden sm:inline text-gray-900 dark:text-white font-bold text-xl">HS6Tools</span>
             </Link>

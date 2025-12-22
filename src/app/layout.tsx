@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/logo.jpg",
+        url: "/logo.svg",
         width: 1200,
         height: 630,
         alt: "HS6Tools Logo",
@@ -38,12 +38,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "HS6Tools - Industrial E-Commerce Platform",
     description: "Premium industrial and woodworking tools manufacturer",
-    images: ["/logo.jpg"],
+    images: ["/logo.svg"],
   },
   icons: {
-    icon: "/logo.jpg",
-    shortcut: "/logo.jpg",
-    apple: "/logo.jpg",
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
   },
   robots: {
     index: true,

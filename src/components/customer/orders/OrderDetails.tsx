@@ -285,7 +285,7 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
       </head>
       <body>
         <div class="header">
-          <img src="${window.location.origin}/logo.jpg" alt="HS6Tools" style="max-width: 150px; height: auto; margin-bottom: 20px;" />
+          <img src="${window.location.origin}/logo.svg" alt="HS6Tools" style="max-width: 150px; height: auto; margin-bottom: 20px;" />
           <h1>HS6Tools</h1>
           <h2>${invoiceTitle} #${order.orderNumber}</h2>
           <p>${invoiceDate}: ${formatDate(order.createdAt)}</p>

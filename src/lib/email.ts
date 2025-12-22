@@ -90,7 +90,7 @@ export async function sendQuoteEmail(
     <body>
       <div class="container">
         <div class="header">
-          <img src="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://hs6tools.com'}/logo.jpg" alt="HS6Tools" style="max-width: 150px; height: auto; margin-bottom: 20px;" />
+          <img src="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://hs6tools.com'}/logo.svg" alt="HS6Tools" style="max-width: 150px; height: auto; margin-bottom: 20px;" />
           <h1>HS6Tools</h1>
         </div>
         <div class="content">
