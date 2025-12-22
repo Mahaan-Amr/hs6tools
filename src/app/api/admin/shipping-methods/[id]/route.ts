@@ -46,8 +46,14 @@ export async function GET(
     return NextResponse.json({ success: true, data: shippingMethod });
   } catch (error) {
     console.error("Error fetching shipping method:", error);
+    
+    // Provide more detailed error information in development
+    const errorMessage = process.env.NODE_ENV === "development" && error instanceof Error
+      ? error.message
+      : "Internal server error";
+    
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -144,8 +150,14 @@ export async function PUT(
     return NextResponse.json({ success: true, data: shippingMethod });
   } catch (error) {
     console.error("Error updating shipping method:", error);
+    
+    // Provide more detailed error information in development
+    const errorMessage = process.env.NODE_ENV === "development" && error instanceof Error
+      ? error.message
+      : "Internal server error";
+    
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -199,8 +211,14 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: "Shipping method deleted" });
   } catch (error) {
     console.error("Error deleting shipping method:", error);
+    
+    // Provide more detailed error information in development
+    const errorMessage = process.env.NODE_ENV === "development" && error instanceof Error
+      ? error.message
+      : "Internal server error";
+    
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
