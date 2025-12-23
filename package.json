@@ -40,7 +40,7 @@
     "prisma": "^6.14.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "react-hook-form": "^7.62.0",
+    "react-hook-form": "^7.69.0",
     "sharp": "^0.34.3",
     "smsir-js": "^1.0.0",
     "zod": "^4.0.17",
