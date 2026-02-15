@@ -42,7 +42,7 @@
     "react-dom": "^19.2.1",
     "react-hook-form": "^7.62.0",
     "sharp": "^0.34.3",
-    "smsir-js": "^1.0.0",
+    "smsir-js": "^1.3.3",
     "zod": "^4.0.17",
     "zustand": "^5.0.7"
   },
