@@ -359,6 +359,20 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
             </Link>
 
             <Link
+              href={`/${locale}/admin/support`}
+              className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="text-white/60 group-hover:text-primary-orange transition-colors duration-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8m-8 4h5m8-2a9 9 0 11-4.219-7.628L21 3v5h-5" />
+                  </svg>
+                </div>
+                <span className="font-medium">پشتیبانی</span>
+              </div>
+            </Link>
+
+            <Link
               href={`/${locale}/admin/content`}
               className="flex items-center justify-between px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
             >

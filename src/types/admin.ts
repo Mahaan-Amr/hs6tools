@@ -311,6 +311,7 @@ export interface AdminUser {
   updatedAt: string;
   lastLoginAt?: string;
   deletedAt?: string;
+  addresses?: AdminAddress[];
   _count: {
     orders: number;
     addresses: number;
@@ -334,10 +335,12 @@ export interface UpdateUserData {
   id: string;
   firstName?: string;
   lastName?: string;
+  phone?: string;
   role?: UserRole;
   isActive?: boolean;
   company?: string;
   position?: string;
+  address?: Partial<AdminAddress>;
 }
 
 // ============================================================================

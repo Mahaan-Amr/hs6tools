@@ -1,5 +1,7 @@
 import FAQView from "@/components/faq/FAQView";
-import { FAQ_CONTENT, FAQContent } from "./content";
+import { getMessages } from "@/lib/i18n";
+import { getPageContent } from "@/lib/page-cms";
+import { FAQPageContentPayload } from "@/types/page-cms";
 
 interface FAQPageProps {
   params: Promise<{ locale: string }>;
@@ -7,14 +9,9 @@ interface FAQPageProps {
 
 export default async function FAQPage({ params }: FAQPageProps) {
   const { locale } = await params;
-  const localeKey = Object.prototype.hasOwnProperty.call(
-    FAQ_CONTENT,
-    locale
-  )
-    ? locale
-    : "en";
-  const content: FAQContent = FAQ_CONTENT[localeKey];
+  const messages = await getMessages(locale);
+  const page = (await getPageContent("faq", locale, messages)) as FAQPageContentPayload;
 
-  return <FAQView locale={locale} content={content} />;
+  return <FAQView locale={locale} content={{ title: page.title, subtitle: page.subtitle, ...page.content }} />;
 }
 

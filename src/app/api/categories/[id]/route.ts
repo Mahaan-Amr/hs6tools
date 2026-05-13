@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { normalizeUploadUrl } from "@/utils/image-url";
 
 export async function GET(
   request: NextRequest,
@@ -38,8 +39,7 @@ export async function GET(
               select: { reviews: true }
             }
           },
-          orderBy: { sortOrder: "asc" },
-          take: 10
+          orderBy: { sortOrder: "asc" }
         },
         _count: {
           select: { products: true, children: true }
@@ -61,9 +61,18 @@ export async function GET(
       );
     }
 
+    const normalizedCategory = {
+      ...category,
+      image: normalizeUploadUrl(category.image),
+      products: category.products.map((product) => ({
+        ...product,
+        images: product.images.map((image) => ({ ...image, url: normalizeUploadUrl(image.url) })),
+      })),
+    };
+
     return NextResponse.json({
       success: true,
-      data: category
+      data: normalizedCategory
     });
 
   } catch (error) {

@@ -67,14 +67,9 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     // This callback runs to create the JWT token
-    async jwt({ token, user, account }) {
-      console.log("🔐 JWT Callback - Token:", token);
-      console.log("🔐 JWT Callback - User:", user);
-      console.log("🔐 JWT Callback - Account:", account);
-      
+    async jwt({ token, user }) {
       // Initial sign in - user data is available here for CredentialsProvider
       if (user) {
-        console.log("🔐 JWT Callback - Initial sign in, setting user data");
         token.id = user.id;
         token.role = user.role;
         token.firstName = user.firstName;
@@ -86,8 +81,6 @@ export const authOptions: NextAuthOptions = {
         token.company = user.company;
         token.position = user.position;
         token.lastLoginAt = user.lastLoginAt;
-        
-        console.log("🔐 JWT Callback - Updated token:", token);
       }
       
       // Return the token
@@ -96,11 +89,7 @@ export const authOptions: NextAuthOptions = {
     
     // This callback runs to create the session
     async session({ session, token }) {
-      console.log("📱 Session Callback - Session:", session);
-      console.log("📱 Session Callback - Token:", token);
-      
       if (token) {
-        console.log("📱 Session Callback - Setting token data in session");
         // Set NextAuth default fields (required by NextAuth)
         session.user.name = token.firstName && token.lastName 
           ? `${token.firstName} ${token.lastName}`.trim()
@@ -119,8 +108,6 @@ export const authOptions: NextAuthOptions = {
         session.user.company = token.company as string | null | undefined;
         session.user.position = token.position as string | null | undefined;
         session.user.lastLoginAt = token.lastLoginAt as string | null | undefined;
-        
-        console.log("📱 Session Callback - Updated session:", session);
       }
       return session;
     }

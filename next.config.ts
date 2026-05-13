@@ -21,8 +21,29 @@ const cspDirectives = [
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client"],
   images: {
-    // Keep this list tight; add domains explicitly as needed.
-    domains: ["localhost", "hs6tools.com", "www.hs6tools.com", "trustseal.enamad.ir"],
+    // Keep this list tight; add remote hosts explicitly as needed.
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
+      {
+        protocol: "https",
+        hostname: "hs6tools.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.hs6tools.com",
+      },
+      {
+        protocol: "https",
+        hostname: "trustseal.enamad.ir",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
     formats: ["image/webp", "image/avif"],
     unoptimized: false,
   },
@@ -56,6 +77,10 @@ const nextConfig: NextConfig = {
       {
         source: '/ar/28569823.txt',
         destination: '/api/verify/28569823',
+      },
+      {
+        source: '/uploads/:path*',
+        destination: '/api/uploads/:path*',
       },
     ];
   },

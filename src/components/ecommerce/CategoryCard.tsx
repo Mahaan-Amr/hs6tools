@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getMessages, Messages } from "@/lib/i18n";
+import IconRenderer from "@/components/shared/IconRenderer";
+import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
 
 interface CategoryCardProps {
   id: string;
@@ -63,13 +65,15 @@ export default function CategoryCard({
             />
           ) : icon ? (
             <div className="w-full h-full bg-gradient-to-br from-primary-orange/20 to-orange-500/20 flex items-center justify-center">
-              <div className="text-6xl">{icon}</div>
+              <IconRenderer
+                name={icon}
+                className="h-16 w-16 text-white"
+                fallback={<CategoryFallbackIcon className="h-16 w-16 text-white/70" />}
+              />
             </div>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-              <svg className="w-16 h-16 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
+              <CategoryFallbackIcon />
             </div>
           )}
           

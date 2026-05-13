@@ -122,11 +122,49 @@ export default function OrderForm({
 
 
 
-  if (!messages || !messages.admin?.ordersForm) {
-    return null;
-  }
-
-  const t = messages.admin.ordersForm;
+  const t = messages?.admin?.ordersForm || {
+    trackingRequired: "شماره پیگیری برای سفارش ارسال‌شده الزامی است",
+    shippedFirst: "ابتدا تاریخ ارسال را وارد کنید",
+    deliveredBeforeShipped: "تاریخ تحویل نمی‌تواند قبل از تاریخ ارسال باشد",
+    editOrder: "مشاهده و ویرایش سفارش",
+    orderInfo: "اطلاعات سفارش",
+    orderNumber: "شماره سفارش",
+    createdAt: "تاریخ ثبت",
+    totalAmount: "مبلغ کل",
+    itemCount: "تعداد آیتم",
+    items: "آیتم",
+    customerInfo: "اطلاعات مشتری",
+    fullName: "نام کامل",
+    email: "ایمیل",
+    phone: "تلفن",
+    customerNote: "یادداشت مشتری",
+    orderItems: "محصولات سفارش",
+    variant: "تنوع",
+    quantity: "تعداد",
+    unitPrice: "قیمت واحد",
+    orderManagement: "مدیریت سفارش",
+    orderStatus: "وضعیت سفارش",
+    paymentStatus: "وضعیت پرداخت",
+    trackingNumber: "شماره پیگیری ارسال",
+    trackingPlaceholder: "شماره پیگیری مرسوله را وارد کنید",
+    shippedAt: "تاریخ ارسال",
+    deliveredAt: "تاریخ تحویل",
+    cancel: "بستن",
+    saving: "در حال ذخیره...",
+    update: "ذخیره تغییرات",
+    statusPending: "در انتظار",
+    statusConfirmed: "تایید شده",
+    statusProcessing: "در حال پردازش",
+    statusShipped: "ارسال شده",
+    statusDelivered: "تحویل شده",
+    statusCancelled: "لغو شده",
+    statusRefunded: "بازپرداخت شده",
+    paymentPending: "در انتظار پرداخت",
+    paymentPaid: "پرداخت شده",
+    paymentFailed: "ناموفق",
+    paymentRefunded: "بازپرداخت شده",
+    paymentPartiallyRefunded: "بازپرداخت جزئی",
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -228,6 +266,54 @@ export default function OrderForm({
                   <div className="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">{order.customerNote}</div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Shipping Address */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">آدرس ارسال</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تحویل‌گیرنده</label>
+                <div className="text-gray-700 dark:text-gray-300">
+                  {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+                </div>
+              </div>
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تلفن</label>
+                <div className="text-gray-700 dark:text-gray-300">{order.shippingAddress.phone}</div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">آدرس کامل</label>
+                <div className="rounded-lg border border-gray-200 bg-gray-100 p-4 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                  {[order.shippingAddress.state, order.shippingAddress.city, order.shippingAddress.addressLine1, order.shippingAddress.addressLine2]
+                    .filter(Boolean)
+                    .join("، ")}
+                </div>
+              </div>
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">کد پستی</label>
+                <div className="text-gray-700 dark:text-gray-300">{order.shippingAddress.postalCode}</div>
+              </div>
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">کشور</label>
+                <div className="text-gray-700 dark:text-gray-300">{order.shippingAddress.country}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Information */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">اطلاعات پرداخت و پیگیری</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">شماره پیگیری پرداخت</label>
+                <div className="text-gray-700 dark:text-gray-300">{order.paymentId || "نامشخص"}</div>
+              </div>
+              <div>
+                <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">شماره پیگیری ارسال</label>
+                <div className="text-gray-700 dark:text-gray-300">{formData.trackingNumber || "نامشخص"}</div>
+              </div>
             </div>
           </div>
 

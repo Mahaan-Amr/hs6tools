@@ -3,6 +3,7 @@ import { isValidLocale, getMessages } from "@/lib/i18n";
 import Header from "@/components/layout/Header";
 import ScrollEffects from "@/components/layout/ScrollEffects";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
+import SupportTicketWidget from "@/components/support/SupportTicketWidget";
 
 export default async function LocaleLayout({
   children,
@@ -29,6 +30,7 @@ export default async function LocaleLayout({
       <main className="min-h-screen">
         {children}
       </main>
+      <SupportTicketWidget locale={locale} />
       {/* Use ConditionalFooter to avoid rendering Footer on admin pages */}
       <ConditionalFooter locale={locale} messages={messages} />
     </>

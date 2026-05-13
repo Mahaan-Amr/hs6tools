@@ -1,28 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { hasRole } from "@/lib/authz";
+import { normalizeUploadUrl } from "@/utils/image-url";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
     // Query parameters
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "12");
+    const session = await getServerSession(authOptions);
+    const isAdminRequest = searchParams.get("admin") === "true";
+    const canSeeAdminData = Boolean(
+      session?.user && hasRole(session.user.role, ["ADMIN", "SUPER_ADMIN"])
+    );
+    const page = Math.max(parseInt(searchParams.get("page") || "1"), 1);
+    const requestedLimit = searchParams.get("limit") || "12";
+    const limit =
+      requestedLimit === "all"
+        ? undefined
+        : Math.min(Math.max(parseInt(requestedLimit || "12") || 12, 1), 200);
     const search = searchParams.get("search") || "";
     const categoryId = searchParams.get("categoryId") || "";
+    const includeChildren = searchParams.get("includeChildren") === "true";
     const minPrice = searchParams.get("minPrice") || "";
     const maxPrice = searchParams.get("maxPrice") || "";
     const inStock = searchParams.get("inStock") || "";
     const featured = searchParams.get("featured") || "";
+    const exclude = searchParams.get("exclude") || "";
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
     // Build where clause
-    const where: Prisma.ProductWhereInput = {
-      isActive: true,
-      deletedAt: null
-    };
+    const where: Prisma.ProductWhereInput = canSeeAdminData && isAdminRequest
+      ? { deletedAt: null }
+      : { isActive: true, deletedAt: null };
 
     // Search filter
     if (search) {
@@ -36,7 +50,15 @@ export async function GET(request: NextRequest) {
 
     // Category filter
     if (categoryId) {
-      where.categoryId = categoryId;
+      if (includeChildren) {
+        const childCategories = await prisma.category.findMany({
+          where: { parentId: categoryId, isActive: true, deletedAt: null },
+          select: { id: true },
+        });
+        where.categoryId = { in: [categoryId, ...childCategories.map((category) => category.id)] };
+      } else {
+        where.categoryId = categoryId;
+      }
     }
 
     // Price filters
@@ -63,6 +85,10 @@ export async function GET(request: NextRequest) {
       where.isFeatured = true;
     }
 
+    if (exclude) {
+      where.id = { not: exclude };
+    }
+
     // Build order by
     const orderBy: Prisma.ProductOrderByWithRelationInput = {};
     if (sortBy === "price") {
@@ -76,7 +102,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate pagination
-    const skip = (page - 1) * limit;
+    const skip = limit ? (page - 1) * limit : undefined;
 
     // Get products with pagination
     const [products, totalCount] = await Promise.all([
@@ -116,16 +142,20 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Calculate pagination info
-    const totalPages = Math.ceil(totalCount / limit);
+    const totalPages = limit ? Math.ceil(totalCount / limit) : 1;
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
+    const normalizedProducts = products.map((product) => ({
+      ...product,
+      images: product.images.map((image) => ({ ...image, url: normalizeUploadUrl(image.url) })),
+    }));
 
     return NextResponse.json({
       success: true,
-      data: products,
+      data: normalizedProducts,
       pagination: {
         page,
-        limit,
+        limit: limit || totalCount,
         totalCount,
         totalPages,
         hasNextPage,

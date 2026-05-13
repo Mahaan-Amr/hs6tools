@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { normalizeUploadUrl } from "@/utils/image-url";
 
 export async function GET(request: NextRequest) {
   try {
@@ -306,7 +307,10 @@ async function performAdvancedSearch(searchParams: URLSearchParams) {
   const hasPrevPage = page > 1;
 
   return {
-    products,
+    products: products.map((product) => ({
+      ...product,
+      images: product.images.map((image) => ({ ...image, url: normalizeUploadUrl(image.url) })),
+    })),
     pagination: {
       page,
       limit,

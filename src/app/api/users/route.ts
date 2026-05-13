@@ -73,6 +73,9 @@ export async function GET(request: NextRequest) {
       prisma.user.findMany({
         where,
         include: {
+          addresses: {
+            orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }]
+          },
           _count: {
             select: {
               orders: true,
@@ -104,6 +107,25 @@ export async function GET(request: NextRequest) {
       gender: user.gender,
       company: user.company,
       position: user.position,
+      addresses: user.addresses.map((address) => ({
+        id: address.id,
+        userId: address.userId,
+        type: address.type,
+        title: address.title,
+        firstName: address.firstName,
+        lastName: address.lastName,
+        company: address.company,
+        addressLine1: address.addressLine1,
+        addressLine2: address.addressLine2,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country,
+        phone: address.phone,
+        isDefault: address.isDefault,
+        createdAt: address.createdAt.toISOString(),
+        updatedAt: address.updatedAt.toISOString()
+      })),
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
       lastLoginAt: user.lastLoginAt?.toISOString(),

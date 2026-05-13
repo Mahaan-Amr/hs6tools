@@ -2,6 +2,8 @@ import { getMessages } from "@/lib/i18n";
 import Link from "next/link";
 import ProductGrid from "@/components/ecommerce/ProductGrid";
 import AdvancedSearch from "@/components/ecommerce/AdvancedSearch";
+import IconRenderer from "@/components/shared/IconRenderer";
+import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
 
 interface ShopPageProps {
   params: Promise<{ locale: string }>;
@@ -102,11 +104,13 @@ export default async function ShopPage({ params }: ShopPageProps) {
               <div key={category.id} className="glass rounded-3xl p-8 text-center" data-scroll-reveal style={{ transitionDelay: `${index * 0.1}s` }}>
                 <div className="w-24 h-24 bg-gradient-to-r from-primary-orange to-orange-500 rounded-2xl mx-auto mb-6 flex items-center justify-center">
                   {category.icon ? (
-                    <div className="text-5xl">{category.icon}</div>
+                    <IconRenderer
+                      name={category.icon}
+                      className="h-12 w-12 text-white"
+                      fallback={<CategoryFallbackIcon className="h-12 w-12 text-white" />}
+                    />
                   ) : (
-                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
+                    <CategoryFallbackIcon className="h-12 w-12 text-white" />
                   )}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">

@@ -20,7 +20,7 @@ export class FileStorage {
   constructor() {
     // For development, store files in public/uploads directory
     this.uploadDir = join(process.cwd(), 'public', 'uploads');
-    this.baseUrl = '/uploads';
+    this.baseUrl = '/api/uploads';
   }
 
   async ensureUploadDirectory(): Promise<void> {

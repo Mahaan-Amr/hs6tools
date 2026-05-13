@@ -9,6 +9,9 @@ async function main() {
   try {
     // Clear existing data (only existing tables)
     console.log('🧹 Clearing existing data...');
+    await prisma.homepageFeaturedCategory.deleteMany();
+    await prisma.homepageSlide.deleteMany();
+    await prisma.homepageContent.deleteMany();
     await prisma.wishlistItem.deleteMany();
     await prisma.review.deleteMany();
     await prisma.orderItem.deleteMany();
@@ -83,7 +86,7 @@ async function main() {
         descriptionEn: 'Professional tools for cutting various materials',
         descriptionAr: 'أدوات متخصصة لقطع المواد المختلفة',
         icon: '🔪',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
         children: [
           {
             name: 'دیسک‌های الماسه',
@@ -94,7 +97,7 @@ async function main() {
             descriptionEn: 'Diamond discs for cutting the hardest materials',
             descriptionAr: 'أقراص الماس لقطع أصعب المواد',
             icon: '💎',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
           },
           {
             name: 'تیغه‌های اره',
@@ -105,7 +108,7 @@ async function main() {
             descriptionEn: 'Saw blades for cutting wood and metal',
             descriptionAr: 'شفرات المنشار لقطع الخشب والمعادن',
             icon: '🪚',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
           }
         ]
       },
@@ -118,7 +121,7 @@ async function main() {
         descriptionEn: 'Professional woodworking tools',
         descriptionAr: 'أدوات النجارة المتخصصة',
         icon: '🪵',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
         children: [
           {
             name: 'اره‌های دستی',
@@ -129,7 +132,7 @@ async function main() {
             descriptionEn: 'Hand saws for precise wood cutting',
             descriptionAr: 'مناشير يدوية للقطع الدقيق للخشب',
             icon: '🪚',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
           }
         ]
       },
@@ -142,7 +145,7 @@ async function main() {
         descriptionEn: 'Precise measuring and drawing tools',
         descriptionAr: 'أدوات قياس ورسم دقيقة',
         icon: '📏',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
         children: [
           {
             name: 'کولیس‌ها',
@@ -153,7 +156,7 @@ async function main() {
             descriptionEn: 'Digital and analog calipers',
             descriptionAr: 'فرجار رقمي وتناظري',
             icon: '📐',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
           }
         ]
       }
@@ -182,6 +185,274 @@ async function main() {
 
     console.log('✅ Product categories created:', createdCategories.length);
 
+    // Create Homepage CMS demo content
+    console.log('🏠 Creating homepage CMS demo content...');
+
+    const homepageCategory1 = createdCategories.find((category) => category.slug === 'diamond-discs');
+    const homepageCategory2 = createdCategories.find((category) => category.slug === 'hand-saws');
+    const homepageCategory3 = createdCategories.find((category) => category.slug === 'calipers');
+
+    if (!homepageCategory1 || !homepageCategory2 || !homepageCategory3) {
+      throw new Error('Required homepage categories were not created successfully.');
+    }
+
+    const homepageLocales = [
+      {
+        locale: 'fa',
+        heroTagline: 'ابزار حرفه‌ای برای برش، نجاری و اندازه‌گیری دقیق',
+        heroDescription: 'صفحه اصلی چندزبانه حالا از طریق پنل مدیریت کنترل می‌شود. این داده آزمایشی برای بررسی هیرو، اسلایدر و دسته‌بندی‌های منتخب ساخته شده تا بتوانید رفتار کامل CMS را در عمل ببینید.',
+        heroPrimaryCtaLabel: 'مشاهده محصولات',
+        heroPrimaryCtaHref: '/fa/shop',
+        heroSecondaryCtaLabel: 'درباره ما',
+        heroSecondaryCtaHref: '/fa/about',
+        categorySectionTitle: 'دسته‌بندی‌های منتخب صفحه اصلی',
+        categorySectionSubtitle: 'سه دسته نمونه زیر از دسته‌بندی‌های واقعی فروشگاه می‌آیند و متن هر کارت در صورت نیاز از اینجا قابل بازنویسی است.',
+        categoryViewAllLabel: 'مشاهده همه محصولات',
+        featuredCategory1Id: homepageCategory1.id,
+        featuredCategory2Id: homepageCategory2.id,
+        featuredCategory3Id: homepageCategory3.id,
+        featuredCategory1Title: 'دیسک‌های الماسه پرفروش',
+        featuredCategory1Description: 'برای برش بتن، سنگ و سرامیک با تمرکز روی سرعت، دوام و دقت.',
+        featuredCategory2Title: 'اره‌های دستی نجاری',
+        featuredCategory2Description: 'برای برش‌های دقیق چوب با حس حرفه‌ای در کارگاه و پروژه‌های سفارشی.',
+        featuredCategory3Title: 'کولیس‌های دقیق',
+        featuredCategory3Description: 'برای اندازه‌گیری مطمئن قطعات صنعتی و کنترل کیفیت روزانه.',
+        slides: [
+          {
+            title: 'دیسک الماسه برای برش‌های سنگین',
+            subtitle: 'نمونه اسلاید فقط با تصویر و متن برای تست حالت اطلاع‌رسانی ساده.',
+            desktopImage: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1600&h=900&fit=crop',
+            mobileImage: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=900&h=1200&fit=crop',
+            bannerHref: null,
+            buttonLabel: null,
+            buttonHref: null,
+            isActive: true,
+            sortOrder: 0,
+          },
+          {
+            title: 'ورود مستقیم به دسته دیسک الماسه',
+            subtitle: 'این اسلاید کل بنر را به صفحه دسته‌بندی متصل می‌کند.',
+            desktopImage: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: '/fa/categories/diamond-discs',
+            buttonLabel: null,
+            buttonHref: null,
+            isActive: true,
+            sortOrder: 1,
+          },
+          {
+            title: 'اره دستی برای برش‌های تمیز',
+            subtitle: 'نمونه اسلاید با دکمه مستقل برای بررسی CTA.',
+            desktopImage: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=1600&h=900&fit=crop',
+            mobileImage: 'https://images.unsplash.com/photo-1513467535987-fd81bc7d62f8?w=900&h=1200&fit=crop',
+            bannerHref: null,
+            buttonLabel: 'مشاهده اره‌ها',
+            buttonHref: '/fa/categories/hand-saws',
+            isActive: true,
+            sortOrder: 2,
+          },
+          {
+            title: 'کولیس دیجیتال برای کنترل کیفیت',
+            subtitle: 'این اسلاید هم لینک کامل بنر دارد و هم دکمه جداگانه.',
+            desktopImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: '/fa/shop',
+            buttonLabel: 'رفتن به فروشگاه',
+            buttonHref: '/fa/shop',
+            isActive: true,
+            sortOrder: 3,
+          },
+          {
+            title: 'اسلاید غیرفعال برای تست فیلتر',
+            subtitle: 'این مورد باید فقط در پنل مدیریت دیده شود و در صفحه اصلی نمایش داده نشود.',
+            desktopImage: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: '/fa/about',
+            buttonLabel: 'درباره شرکت',
+            buttonHref: '/fa/about',
+            isActive: false,
+            sortOrder: 4,
+          },
+        ],
+      },
+      {
+        locale: 'en',
+        heroTagline: 'Professional tools for precise cutting, woodworking, and measurement',
+        heroDescription: 'This demo homepage content is seeded to help you review the new CMS workflow. Use the admin panel to switch locale, edit hero copy, manage banners, and test category overrides independently.',
+        heroPrimaryCtaLabel: 'View Products',
+        heroPrimaryCtaHref: '/en/shop',
+        heroSecondaryCtaLabel: 'About Us',
+        heroSecondaryCtaHref: '/en/about',
+        categorySectionTitle: 'Featured Homepage Categories',
+        categorySectionSubtitle: 'These cards are connected to real seeded categories so you can verify localized storefront links and optional override copy.',
+        categoryViewAllLabel: 'Browse All Products',
+        featuredCategory1Id: homepageCategory1.id,
+        featuredCategory2Id: homepageCategory2.id,
+        featuredCategory3Id: homepageCategory3.id,
+        featuredCategory1Title: 'Diamond Discs for Heavy Cutting',
+        featuredCategory1Description: 'A strong homepage category sample for concrete, stone, and ceramic cutting.',
+        featuredCategory2Title: null,
+        featuredCategory2Description: null,
+        featuredCategory3Title: 'Precision Calipers',
+        featuredCategory3Description: 'Ideal for showing category text overrides next to direct category-backed data.',
+        slides: [
+          {
+            title: 'Homepage CMS demo for English',
+            subtitle: 'Image-only banner to verify informational rendering with no links.',
+            desktopImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1600&h=900&fit=crop',
+            mobileImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&h=1200&fit=crop',
+            bannerHref: null,
+            buttonLabel: null,
+            buttonHref: null,
+            isActive: true,
+            sortOrder: 0,
+          },
+          {
+            title: 'Jump straight into Diamond Discs',
+            subtitle: 'Full banner link example for the localized category page.',
+            desktopImage: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: '/en/categories/diamond-discs',
+            buttonLabel: null,
+            buttonHref: null,
+            isActive: true,
+            sortOrder: 1,
+          },
+          {
+            title: 'Measure with confidence',
+            subtitle: 'CTA button example pointing visitors into the shop flow.',
+            desktopImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: null,
+            buttonLabel: 'Shop Now',
+            buttonHref: '/en/shop',
+            isActive: true,
+            sortOrder: 2,
+          },
+          {
+            title: 'Hand saws for cleaner cuts',
+            subtitle: 'Combined banner link and CTA button example for storefront review.',
+            desktopImage: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1600&h=900&fit=crop',
+            mobileImage: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=900&h=1200&fit=crop',
+            bannerHref: '/en/categories/hand-saws',
+            buttonLabel: 'Explore Category',
+            buttonHref: '/en/categories/hand-saws',
+            isActive: true,
+            sortOrder: 3,
+          },
+          {
+            title: 'Inactive review banner',
+            subtitle: 'Seeded to confirm inactive banners stay visible in admin only.',
+            desktopImage: 'https://images.unsplash.com/photo-1497366412874-3415097a27e7?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: '/en/about',
+            buttonLabel: null,
+            buttonHref: null,
+            isActive: false,
+            sortOrder: 4,
+          },
+        ],
+      },
+      {
+        locale: 'ar',
+        heroTagline: 'أدوات احترافية للقطع والنجارة والقياس الدقيق',
+        heroDescription: 'تمت إضافة هذه البيانات التجريبية حتى تتمكن من مراجعة نظام إدارة الصفحة الرئيسية الجديد بسرعة، مع محتوى مستقل لكل لغة في الهيرو والسلايدر وبطاقات الفئات.',
+        heroPrimaryCtaLabel: 'عرض المنتجات',
+        heroPrimaryCtaHref: '/ar/shop',
+        heroSecondaryCtaLabel: 'من نحن',
+        heroSecondaryCtaHref: '/ar/about',
+        categorySectionTitle: 'فئات مختارة للصفحة الرئيسية',
+        categorySectionSubtitle: 'البطاقات التالية مرتبطة بفئات حقيقية من قاعدة البيانات ويمكن تعديل نصوصها من لوحة التحكم بشكل مستقل لكل لغة.',
+        categoryViewAllLabel: 'عرض جميع المنتجات',
+        featuredCategory1Id: homepageCategory1.id,
+        featuredCategory2Id: homepageCategory2.id,
+        featuredCategory3Id: homepageCategory3.id,
+        featuredCategory1Title: null,
+        featuredCategory1Description: null,
+        featuredCategory2Title: 'مناشير يدوية للأعمال الدقيقة',
+        featuredCategory2Description: 'مثال جيد لاختبار نص تسويقي مخصص فوق بيانات الفئة الحقيقية.',
+        featuredCategory3Title: null,
+        featuredCategory3Description: null,
+        slides: [
+          {
+            title: 'واجهة عربية جاهزة للمراجعة',
+            subtitle: 'بانر بصري فقط لاختبار العرض بدون روابط أو أزرار.',
+            desktopImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&h=900&fit=crop',
+            mobileImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&h=1200&fit=crop',
+            bannerHref: null,
+            buttonLabel: null,
+            buttonHref: null,
+            isActive: true,
+            sortOrder: 0,
+          },
+          {
+            title: 'الانتقال إلى فئة أدوات القياس',
+            subtitle: 'مثال على بانر قابل للنقر بالكامل.',
+            desktopImage: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: '/ar/categories/calipers',
+            buttonLabel: null,
+            buttonHref: null,
+            isActive: true,
+            sortOrder: 1,
+          },
+          {
+            title: 'حلول النجارة لورش العمل',
+            subtitle: 'مثال على زر دعوة لاتخاذ إجراء داخل السلايدر.',
+            desktopImage: 'https://images.unsplash.com/photo-1460317442991-0ec209397118?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: null,
+            buttonLabel: 'تصفح الفئة',
+            buttonHref: '/ar/categories/hand-saws',
+            isActive: true,
+            sortOrder: 2,
+          },
+          {
+            title: 'الدخول إلى المتجر مباشرة',
+            subtitle: 'مثال يجمع بين رابط كامل للبانر وزر مستقل.',
+            desktopImage: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=1600&h=900&fit=crop',
+            mobileImage: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=900&h=1200&fit=crop',
+            bannerHref: '/ar/shop',
+            buttonLabel: 'ابدأ التسوق',
+            buttonHref: '/ar/shop',
+            isActive: true,
+            sortOrder: 3,
+          },
+          {
+            title: 'شريحة غير مفعلة للمراجعة',
+            subtitle: 'يجب ألا تظهر هذه الشريحة في الصفحة الرئيسية.',
+            desktopImage: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1600&h=900&fit=crop',
+            mobileImage: null,
+            bannerHref: '/ar/about',
+            buttonLabel: 'تعرف علينا',
+            buttonHref: '/ar/about',
+            isActive: false,
+            sortOrder: 4,
+          },
+        ],
+      },
+    ];
+
+    for (const homepageLocale of homepageLocales) {
+      const { slides, ...homepageContentData } = homepageLocale;
+
+      const homepageContent = await prisma.homepageContent.create({
+        data: homepageContentData,
+      });
+
+      for (const slide of slides) {
+        await prisma.homepageSlide.create({
+          data: {
+            ...slide,
+            locale: homepageLocale.locale,
+            homepageContentId: homepageContent.id,
+          },
+        });
+      }
+    }
+
+    console.log('✅ Homepage CMS demo content created:', homepageLocales.length);
+
     // Create Content Categories for Blog
     console.log('📝 Creating content categories...');
     
@@ -190,19 +461,19 @@ async function main() {
         name: 'آموزش ابزارها',
         slug: 'tool-tutorials',
         description: 'آموزش استفاده صحیح از ابزارهای صنعتی',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
       },
       {
         name: 'تکنیک‌های نجاری',
         slug: 'woodworking-techniques',
         description: 'تکنیک‌های پیشرفته نجاری و کار با چوب',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
       },
       {
         name: 'ایمنی کار',
         slug: 'workplace-safety',
         description: 'راهنمای ایمنی در محیط کار',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
       }
     ];
 
@@ -243,8 +514,8 @@ async function main() {
         categorySlug: 'diamond-discs',
         isFeatured: true,
         images: [
-          'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=400&fit=crop',
-          'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=400&fit=crop',
+          '/api/uploads/products/1755653481076-1brpzye0ztpg.jpg',
+          '/api/uploads/products/1755653481076-1brpzye0ztpg.jpg',
         ],
         variants: [
           {
@@ -288,8 +559,8 @@ async function main() {
         categorySlug: 'hand-saws',
         isFeatured: true,
         images: [
-          'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=400&fit=crop',
-          'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=400&fit=crop',
+          '/api/uploads/products/1755653481076-1brpzye0ztpg.jpg',
+          '/api/uploads/products/1755653481076-1brpzye0ztpg.jpg',
         ],
         variants: [
           {
@@ -333,8 +604,8 @@ async function main() {
         categorySlug: 'calipers',
         isFeatured: true,
         images: [
-          'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=400&fit=crop',
-          'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=400&fit=crop',
+          '/api/uploads/products/1755653481076-1brpzye0ztpg.jpg',
+          '/api/uploads/products/1755653481076-1brpzye0ztpg.jpg',
         ],
         variants: [
           {
@@ -428,7 +699,7 @@ async function main() {
           </ul>
         `,
         categorySlug: 'tool-tutorials',
-        featuredImage: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=400&fit=crop',
+        featuredImage: '/api/uploads/products/1755654786294-6bwy3jmz85g.jpg',
         status: 'PUBLISHED' as const,
         publishedAt: new Date(),
         isFeatured: true,
@@ -449,7 +720,7 @@ async function main() {
           <p>همیشه از تجهیزات ایمنی مناسب استفاده کنید. کلاه ایمنی، دستکش و عینک محافظ از ضروریات هستند.</p>
         `,
         categorySlug: 'woodworking-techniques',
-        featuredImage: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=400&fit=crop',
+        featuredImage: '/api/uploads/products/1755654786294-6bwy3jmz85g.jpg',
         status: 'PUBLISHED' as const,
         publishedAt: new Date(),
         isFeatured: true,
@@ -482,7 +753,7 @@ async function main() {
         slug: 'cutting-tools-education',
         description: 'آموزش‌های تخصصی برای استفاده صحیح از ابزارهای برش',
         icon: '🔪',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
         sortOrder: 1,
         children: [
           {
@@ -490,7 +761,7 @@ async function main() {
             slug: 'diamond-discs-education',
             description: 'آموزش استفاده از دیسک‌های الماسه برای برش مواد سخت',
             icon: '💎',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
             sortOrder: 1,
           },
           {
@@ -498,7 +769,7 @@ async function main() {
             slug: 'saw-blades-education',
             description: 'آموزش انتخاب و استفاده از تیغه‌های اره',
             icon: '🪚',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
             sortOrder: 2,
           }
         ]
@@ -508,7 +779,7 @@ async function main() {
         slug: 'woodworking-education',
         description: 'آموزش تکنیک‌های نجاری و کار با چوب',
         icon: '🪵',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
         sortOrder: 2,
         children: [
           {
@@ -516,7 +787,7 @@ async function main() {
             slug: 'joinery-techniques',
             description: 'آموزش روش‌های مختلف اتصال در نجاری',
             icon: '🔗',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
             sortOrder: 1,
           },
           {
@@ -524,7 +795,7 @@ async function main() {
             slug: 'finishing-techniques',
             description: 'آموزش پرداخت و رنگ‌آمیزی چوب',
             icon: '🎨',
-            image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+            image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
             sortOrder: 2,
           }
         ]
@@ -534,7 +805,7 @@ async function main() {
         slug: 'safety-maintenance',
         description: 'آموزش ایمنی در کار و نگهداری ابزارها',
         icon: '🛡️',
-        image: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=400&h=300&fit=crop',
+        image: '/api/uploads/products/1755653459043-ttnhnv7cwxi.jpg',
         sortOrder: 3,
         children: []
       }
@@ -618,7 +889,7 @@ async function main() {
         isFeatured: true,
         sortOrder: 1,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       {
         title: 'تکنیک‌های پیشرفته اتصال در نجاری',
@@ -661,7 +932,7 @@ async function main() {
         isFeatured: true,
         sortOrder: 1,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       // VIDEO-based lessons
       {
@@ -680,7 +951,7 @@ async function main() {
         isFeatured: false,
         sortOrder: 1,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       {
         title: 'ویدیو: تکنیک‌های برش با دیسک الماسه',
@@ -698,7 +969,7 @@ async function main() {
         isFeatured: true,
         sortOrder: 2,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       // MIXED content lessons
       {
@@ -746,7 +1017,7 @@ async function main() {
         isFeatured: true,
         sortOrder: 1,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       {
         title: 'ایمنی در کارگاه نجاری',
@@ -798,7 +1069,7 @@ async function main() {
         isFeatured: false,
         sortOrder: 1,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       {
         title: 'نگهداری و تعمیر ابزارهای برش',
@@ -842,7 +1113,7 @@ async function main() {
         isFeatured: false,
         sortOrder: 2,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       {
         title: 'ویدیو: تکنیک‌های پیشرفته برش زاویه‌دار',
@@ -860,7 +1131,7 @@ async function main() {
         isFeatured: false,
         sortOrder: 2,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       {
         title: 'راهنمای انتخاب تیغه اره مناسب',
@@ -905,7 +1176,7 @@ async function main() {
         isFeatured: false,
         sortOrder: 1,
         authorId: adminUser.id,
-        thumbnail: 'https://images.unsplash.com/photo-1581147036324-c1c89c2c8b5c?w=800&h=450&fit=crop',
+        thumbnail: '/api/uploads/products/1765013721128-e0h57wtwvvv.jpg',
       },
       // Draft lesson (not published)
       {

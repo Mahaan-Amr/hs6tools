@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { normalizeUploadUrl } from "@/utils/image-url";
 
 export async function GET(
   request: NextRequest,
@@ -69,7 +70,10 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: product
+      data: {
+        ...product,
+        images: product.images.map((image) => ({ ...image, url: normalizeUploadUrl(image.url) })),
+      }
     });
 
   } catch (error) {

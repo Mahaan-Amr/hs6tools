@@ -11,6 +11,7 @@ import AddressesTab from '@/components/customer/addresses/AddressesTab';
 import WishlistTab from '@/components/customer/wishlist/WishlistTab';
 import SecurityTab from '@/components/customer/security/SecurityTab';
 import SettingsTab from '@/components/customer/settings/SettingsTab';
+import TicketsTab from '@/components/customer/support/TicketsTab';
 import { getMessages, Messages } from '@/lib/i18n';
 
 interface AccountPageProps {
@@ -132,6 +133,15 @@ function AccountPageContent({ params }: AccountPageProps) {
             <SettingsTab locale={locale} />
           </div>
         );
+      case 'support':
+        return (
+          <div className="glass rounded-xl p-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+              پشتیبانی و تیکت‌ها
+            </h2>
+            <TicketsTab />
+          </div>
+        );
       case 'security':
         return (
           <div className="glass rounded-xl p-6">
@@ -229,6 +239,17 @@ function AccountPageContent({ params }: AccountPageProps) {
                   {String(messages?.customer?.account?.settings)}
                 </button>
                 
+                <button
+                  onClick={() => handleTabChange('support')}
+                  className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${
+                    activeTab === 'support'
+                      ? 'bg-primary-orange/20 text-primary-orange border border-primary-orange/30'
+                      : 'text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white hover:bg-white/10'
+                  }`}
+                >
+                  پشتیبانی
+                </button>
+
                 <button
                   onClick={() => handleTabChange('security')}
                   className={`w-full text-right px-4 py-3 rounded-xl transition-all duration-200 ${

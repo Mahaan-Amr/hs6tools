@@ -46,9 +46,23 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
+        phone: user.phone || "",
         role: user.role,
         company: user.company || "",
-        position: user.position || ""
+        position: user.position || "",
+        address: user.addresses?.[0] || {
+          title: "آدرس اصلی",
+          firstName: user.firstName,
+          lastName: user.lastName,
+          company: user.company || "",
+          addressLine1: "",
+          addressLine2: "",
+          city: "",
+          state: "",
+          postalCode: "",
+          country: "Iran",
+          phone: user.phone || "",
+        }
       });
     }
   }, [user]);
@@ -80,6 +94,16 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
+  };
+
+  const handleAddressChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...((prev as UpdateUserData).address || {}),
+        [field]: value,
+      },
+    }));
   };
 
   // Don't render until mounted (client-side only)
@@ -268,6 +292,20 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
                 </div>
               )}
 
+              {isEditing && (
+                <div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
+                    {String(t.email)}
+                  </label>
+                  <input
+                    type="email"
+                    value={user?.email || ""}
+                    disabled
+                    className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">
                   {String(t.phone)}
@@ -291,6 +329,77 @@ export default function UserForm({ user, onSave, onCancel, isSaving, locale }: U
               </div>
             </div>
           </div>
+
+          {isEditing && (
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">آدرس کاربر</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">عنوان آدرس</label>
+                  <input
+                    type="text"
+                    value={(formData as UpdateUserData).address?.title || ""}
+                    onChange={(e) => handleAddressChange("title", e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">تلفن گیرنده</label>
+                  <input
+                    type="tel"
+                    value={(formData as UpdateUserData).address?.phone || ""}
+                    onChange={(e) => handleAddressChange("phone", e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">استان</label>
+                  <input
+                    type="text"
+                    value={(formData as UpdateUserData).address?.state || ""}
+                    onChange={(e) => handleAddressChange("state", e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">شهر</label>
+                  <input
+                    type="text"
+                    value={(formData as UpdateUserData).address?.city || ""}
+                    onChange={(e) => handleAddressChange("city", e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">آدرس کامل</label>
+                  <textarea
+                    rows={3}
+                    value={(formData as UpdateUserData).address?.addressLine1 || ""}
+                    onChange={(e) => handleAddressChange("addressLine1", e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">ادامه آدرس</label>
+                  <input
+                    type="text"
+                    value={(formData as UpdateUserData).address?.addressLine2 || ""}
+                    onChange={(e) => handleAddressChange("addressLine2", e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-900 dark:text-white font-semibold mb-3 text-sm">کد پستی</label>
+                  <input
+                    type="text"
+                    value={(formData as UpdateUserData).address?.postalCode || ""}
+                    onChange={(e) => handleAddressChange("postalCode", e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Account Settings */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">

@@ -53,7 +53,7 @@ export default function ProductsTab() {
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/products");
+      const response = await fetch("/api/products?admin=true&limit=all");
       if (response.ok) {
         const data = await response.json();
         setProducts(data.data || []);

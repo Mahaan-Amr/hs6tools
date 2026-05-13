@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getMessages, Messages } from "@/lib/i18n";
-import type { FAQContent } from "@/app/[locale]/faq/content";
+import type { FAQPageContentData } from "@/types/page-cms";
 
 interface FAQViewProps {
   locale: string;
-  content: FAQContent;
+  content: FAQPageContentData & { title: string; subtitle: string };
 }
 
 export default function FAQView({ locale, content }: FAQViewProps) {

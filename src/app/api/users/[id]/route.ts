@@ -19,6 +19,9 @@ export async function GET(
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
+        addresses: {
+          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }]
+        },
         _count: {
           select: {
             orders: true,
@@ -49,6 +52,25 @@ export async function GET(
       gender: user.gender,
       company: user.company,
       position: user.position,
+      addresses: user.addresses.map((address) => ({
+        id: address.id,
+        userId: address.userId,
+        type: address.type,
+        title: address.title,
+        firstName: address.firstName,
+        lastName: address.lastName,
+        company: address.company,
+        addressLine1: address.addressLine1,
+        addressLine2: address.addressLine2,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country,
+        phone: address.phone,
+        isDefault: address.isDefault,
+        createdAt: address.createdAt.toISOString(),
+        updatedAt: address.updatedAt.toISOString()
+      })),
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
       lastLoginAt: user.lastLoginAt?.toISOString(),
@@ -114,6 +136,7 @@ export async function PUT(
     
     if (body.firstName !== undefined) { updateData.firstName = body.firstName; }
     if (body.lastName !== undefined) { updateData.lastName = body.lastName; }
+    if (body.phone !== undefined) { updateData.phone = body.phone || null; }
     if (body.role !== undefined) { updateData.role = body.role; }
     if (body.isActive !== undefined) { updateData.isActive = body.isActive; }
     if (body.company !== undefined) { updateData.company = body.company; }
@@ -123,6 +146,74 @@ export async function PUT(
       where: { id },
       data: updateData,
       include: {
+        addresses: {
+          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }]
+        },
+        _count: {
+          select: {
+            orders: true,
+            addresses: true,
+            reviews: true,
+            articles: true
+          }
+        }
+      }
+    });
+
+    if (body.address) {
+      const address = body.address;
+      const hasAddressData = [
+        address.addressLine1,
+        address.city,
+        address.state,
+        address.postalCode,
+        address.phone,
+      ].some((value) => typeof value === "string" && value.trim());
+
+      if (hasAddressData) {
+        const existingAddress = await prisma.address.findFirst({
+          where: { userId: id },
+          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+        });
+
+        const addressData = {
+          type: "SHIPPING" as const,
+          title: address.title || "آدرس اصلی",
+          firstName: address.firstName || updatedUser.firstName,
+          lastName: address.lastName || updatedUser.lastName,
+          company: address.company || null,
+          addressLine1: address.addressLine1 || "",
+          addressLine2: address.addressLine2 || null,
+          city: address.city || "",
+          state: address.state || "",
+          postalCode: address.postalCode || "",
+          country: address.country || "Iran",
+          phone: address.phone || updatedUser.phone || "",
+          isDefault: true,
+        };
+
+        if (existingAddress) {
+          await prisma.address.update({
+            where: { id: existingAddress.id },
+            data: addressData,
+          });
+        } else {
+          await prisma.address.create({
+            data: {
+              ...addressData,
+              userId: id,
+            },
+          });
+        }
+      }
+    }
+
+    const userWithAddress = await prisma.user.findUniqueOrThrow({
+      where: { id },
+      include: {
+        addresses: {
+          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }]
+        },
         _count: {
           select: {
             orders: true,
@@ -135,25 +226,44 @@ export async function PUT(
     });
 
     const transformedUser = {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      phone: updatedUser.phone,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
-      role: updatedUser.role,
-      isActive: updatedUser.isActive,
-      emailVerified: updatedUser.emailVerified,
-      phoneVerified: updatedUser.phoneVerified,
-      avatar: updatedUser.avatar,
-      dateOfBirth: updatedUser.dateOfBirth?.toISOString(),
-      gender: updatedUser.gender,
-      company: updatedUser.company,
-      position: updatedUser.position,
-      createdAt: updatedUser.createdAt.toISOString(),
-      updatedAt: updatedUser.updatedAt.toISOString(),
-      lastLoginAt: updatedUser.lastLoginAt?.toISOString(),
-      deletedAt: updatedUser.deletedAt?.toISOString(),
-      _count: updatedUser._count
+      id: userWithAddress.id,
+      email: userWithAddress.email,
+      phone: userWithAddress.phone,
+      firstName: userWithAddress.firstName,
+      lastName: userWithAddress.lastName,
+      role: userWithAddress.role,
+      isActive: userWithAddress.isActive,
+      emailVerified: userWithAddress.emailVerified,
+      phoneVerified: userWithAddress.phoneVerified,
+      avatar: userWithAddress.avatar,
+      dateOfBirth: userWithAddress.dateOfBirth?.toISOString(),
+      gender: userWithAddress.gender,
+      company: userWithAddress.company,
+      position: userWithAddress.position,
+      addresses: userWithAddress.addresses.map((address) => ({
+        id: address.id,
+        userId: address.userId,
+        type: address.type,
+        title: address.title,
+        firstName: address.firstName,
+        lastName: address.lastName,
+        company: address.company,
+        addressLine1: address.addressLine1,
+        addressLine2: address.addressLine2,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country,
+        phone: address.phone,
+        isDefault: address.isDefault,
+        createdAt: address.createdAt.toISOString(),
+        updatedAt: address.updatedAt.toISOString()
+      })),
+      createdAt: userWithAddress.createdAt.toISOString(),
+      updatedAt: userWithAddress.updatedAt.toISOString(),
+      lastLoginAt: userWithAddress.lastLoginAt?.toISOString(),
+      deletedAt: userWithAddress.deletedAt?.toISOString(),
+      _count: userWithAddress._count
     };
 
     return NextResponse.json({ 

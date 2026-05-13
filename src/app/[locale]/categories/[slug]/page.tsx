@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import ProductGrid from "@/components/ecommerce/ProductGrid";
 import { notFound } from "next/navigation";
+import IconRenderer from "@/components/shared/IconRenderer";
+import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
 
 interface CategoryPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -87,10 +89,10 @@ async function getCategory(slug: string): Promise<Category | null> {
   }
 }
 
-async function getCategoryProducts(categoryId: string, limit: number = 24) {
+async function getCategoryProducts(categoryId: string) {
   try {
     const response = await fetch(
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/products?categoryId=${categoryId}&limit=${limit}&sortBy=sortOrder&sortOrder=asc`,
+      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/products?categoryId=${categoryId}&includeChildren=true&limit=all&sortBy=sortOrder&sortOrder=asc`,
       { cache: 'no-store' }
     );
     
@@ -117,7 +119,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
 
   // Get all products for this category (including subcategories if needed)
-  const products = await getCategoryProducts(category.id, 50);
+  const products = await getCategoryProducts(category.id);
 
   // Get localized category name
   const getCategoryName = () => {
@@ -184,13 +186,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                   </div>
                 ) : category.icon ? (
                   <div className="w-32 h-32 md:w-48 md:h-48 bg-gradient-to-r from-primary-orange to-orange-500 rounded-2xl flex items-center justify-center">
-                    <div className="text-6xl md:text-8xl">{category.icon}</div>
+                    <IconRenderer
+                      name={category.icon}
+                      className="h-16 w-16 text-white md:h-24 md:w-24"
+                      fallback={<CategoryFallbackIcon className="h-16 w-16 text-white md:h-24 md:w-24" />}
+                    />
                   </div>
                 ) : (
                   <div className="w-32 h-32 md:w-48 md:h-48 bg-gradient-to-r from-primary-orange to-orange-500 rounded-2xl flex items-center justify-center">
-                    <svg className="w-16 h-16 md:w-24 md:h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
+                    <CategoryFallbackIcon className="h-16 w-16 text-white md:h-24 md:w-24" />
                   </div>
                 )}
               </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { normalizeUploadUrl } from "@/utils/image-url";
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,7 +8,7 @@ export async function GET(request: NextRequest) {
     const includeProducts = searchParams.get("includeProducts") === "true";
     const onlyActive = searchParams.get("onlyActive") !== "false";
 
-    const whereClause = onlyActive ? { isActive: true } : {};
+    const whereClause = onlyActive ? { isActive: true, deletedAt: null } : { deletedAt: null };
 
     const categories = await prisma.category.findMany({
       where: whereClause,
@@ -31,10 +32,19 @@ export async function GET(request: NextRequest) {
       ]
     });
 
+    const normalizedCategories = categories.map((category) => ({
+      ...category,
+      image: normalizeUploadUrl(category.image),
+      children: category.children?.map((child) => ({
+        ...child,
+        image: normalizeUploadUrl(child.image),
+      })),
+    }));
+
     return NextResponse.json({
       success: true,
-      data: categories,
-      count: categories.length
+      data: normalizedCategories,
+      count: normalizedCategories.length
     });
 
   } catch (error) {
