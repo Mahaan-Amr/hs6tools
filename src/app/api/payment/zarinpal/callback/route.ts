@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPayment } from "@/lib/zarinpal";
-import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
+import { SMSIRFastSendTemplates, sendSMSSafe, SMSTemplates, sendTemplateSMSSafe } from "@/lib/sms";
 import { restoreStockAndUpdateOrder } from "@/lib/inventory";
 import { getSiteOrigin } from "@/utils/domain";
 
@@ -278,13 +278,7 @@ export async function GET(request: NextRequest) {
       );
       const totalAmount = Number(updatedOrder.totalAmount);
       
-      const smsMessage = SMSTemplates.ORDER_PAYMENT_SUCCESS(
-        updatedOrder.orderNumber,
-        customerName,
-        products,
-        totalAmount,
-        verifyResult.refId ? String(verifyResult.refId) : undefined
-      );
+      const smsMessage = SMSIRFastSendTemplates.INVOICE(updatedOrder.orderNumber, totalAmount);
       
       console.log('📱 [Payment Callback] Sending payment success SMS:', {
         orderNumber: updatedOrder.orderNumber,
@@ -298,11 +292,16 @@ export async function GET(request: NextRequest) {
       });
       
       // Send SMS (non-blocking - don't await, but log result)
-      sendSMSSafe(
+      sendTemplateSMSSafe(
         {
           receptor: customerPhone,
-          message: smsMessage,
+          templateEnvKey: 'SMSIR_INVOICE_TEMPLATE_ID',
+          parameters: {
+            INVOICE: updatedOrder.orderNumber,
+            AMOUNT: totalAmount,
+          },
         },
+        smsMessage,
         `Payment success: ${updatedOrder.orderNumber}`
       ).catch((err) => {
         console.error('❌ [Payment Callback] SMS sending error (non-blocking):', err);

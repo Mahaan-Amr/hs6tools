@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationCode, sendSMS } from "@/lib/sms";
+import { SMSIRFastSendTemplates, sendSMS, sendVerificationCode } from "@/lib/sms";
 import { rateLimitByIp } from "@/lib/rateLimit";
 import { isAllowedOrigin } from "@/utils/origin";
 import { VerificationType } from "@prisma/client";
@@ -172,13 +172,16 @@ export async function POST(request: NextRequest) {
     // Determine template based on SMS provider
     // SMS.ir uses Template ID (number), Kavenegar uses template name (string)
     const template = smsirApiKey 
-      ? (process.env.SMSIR_VERIFY_TEMPLATE_ID || 'verify') // Use Template ID for SMS.ir
+      ? (process.env.SMSIR_SIGNUP_VERIFY_TEMPLATE_ID || process.env.SMSIR_VERIFY_TEMPLATE_ID || 'verify') // Use Template ID for SMS.ir
       : 'verify'; // Template name for Kavenegar
     
     const templateResult = await sendVerificationCode({
       receptor: phone,
       token: verificationCode,
       template: template,
+      parameters: {
+        OTP: verificationCode,
+      },
     });
 
     console.log(`📱 [verify-phone/send] Template SMS result:`, {
@@ -197,7 +200,7 @@ export async function POST(request: NextRequest) {
       
       const fallbackResult = await sendSMS({
         receptor: phone,
-        message: `کد تأیید شما: ${verificationCode} - این کد 5 دقیقه اعتبار دارد.`,
+        message: SMSIRFastSendTemplates.SIGNUP_VERIFY(verificationCode),
       });
 
       console.log(`📱 [verify-phone/send] Fallback SMS result:`, {
@@ -280,4 +283,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

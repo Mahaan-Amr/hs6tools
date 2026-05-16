@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
+import { SMSIRFastSendTemplates, sendTemplateSMSSafe } from "@/lib/sms";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 const registerSchema = z.object({
@@ -97,11 +97,15 @@ export async function POST(request: NextRequest) {
     // Send welcome SMS if phone is provided (non-blocking)
     if (user.phone) {
       const customerName = `${user.firstName} ${user.lastName}`;
-      sendSMSSafe(
+      sendTemplateSMSSafe(
         {
           receptor: user.phone,
-          message: SMSTemplates.WELCOME(customerName),
+          templateEnvKey: 'SMSIR_WELCOME_SIMPLE_TEMPLATE_ID',
+          parameters: {
+            CUSTOMER: customerName,
+          },
         },
+        SMSIRFastSendTemplates.WELCOME_SIMPLE(customerName),
         `User registration: ${user.email}`
       );
     }

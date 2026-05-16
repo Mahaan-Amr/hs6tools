@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { UpdateOrderData } from "@/types/admin";
-import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
+import { formatShippingAddressForSMS, SMSIRFastSendTemplates, sendSMSSafe, SMSTemplates, sendTemplateSMSSafe } from "@/lib/sms";
 
 export async function GET(
   request: NextRequest,
@@ -269,16 +269,49 @@ export async function PUT(
         );
       }
 
+      // Order processing
+      if (body.status === 'PROCESSING' && previousStatus !== 'PROCESSING') {
+        sendTemplateSMSSafe(
+          {
+            receptor: customerPhone,
+            templateEnvKey: 'SMSIR_ORDER_PROCESSING_TEMPLATE_ID',
+            parameters: {
+              ORDER: updatedOrder.orderNumber,
+            },
+          },
+          SMSIRFastSendTemplates.ORDER_PROCESSING(updatedOrder.orderNumber),
+          `Order processing: ${updatedOrder.orderNumber}`
+        );
+      }
+
       // Order shipped
       if (body.status === 'SHIPPED' && previousStatus !== 'SHIPPED') {
         const trackingNumber = updatedOrder.trackingNumber || body.trackingNumber;
-        sendSMSSafe(
-          {
-            receptor: customerPhone,
-            message: SMSTemplates.ORDER_SHIPPED(updatedOrder.orderNumber, trackingNumber),
-          },
-          `Order shipped: ${updatedOrder.orderNumber}`
-        );
+        if (trackingNumber) {
+          const address = formatShippingAddressForSMS(updatedOrder.shippingAddress);
+          sendTemplateSMSSafe(
+            {
+              receptor: customerPhone,
+              templateEnvKey: 'SMSIR_POST_TRACKING_TEMPLATE_ID',
+              parameters: {
+                CUSTOMER: customerName,
+                ORDER: updatedOrder.orderNumber,
+                ADDRESS: address,
+                TRACKING: trackingNumber,
+              },
+            },
+            SMSIRFastSendTemplates.POST_TRACKING(customerName, updatedOrder.orderNumber, address, trackingNumber),
+            `Order shipped: ${updatedOrder.orderNumber}`
+          );
+        } else {
+          sendSMSSafe(
+            {
+              receptor: customerPhone,
+              message: SMSTemplates.ORDER_SHIPPED(updatedOrder.orderNumber, trackingNumber),
+            },
+            `Order shipped: ${updatedOrder.orderNumber}`
+          );
+        }
       }
 
       // Order delivered

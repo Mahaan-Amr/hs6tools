@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import { sendSMSSafe, SMSTemplates, sendLowStockAlert } from "@/lib/sms";
+import { SMSIRFastSendTemplates, sendLowStockAlert, sendTemplateSMSSafe } from "@/lib/sms";
 
 // GET /api/customer/orders - Get customer order history with pagination and filtering
 export async function GET(request: NextRequest) {
@@ -689,11 +689,15 @@ export async function POST(request: NextRequest) {
         totalAmount,
       });
       
-      sendSMSSafe(
+      sendTemplateSMSSafe(
         {
           receptor: customerPhone,
-          message: SMSTemplates.ORDER_CONFIRMED(order.orderNumber, customerName, products, totalAmount),
+          templateEnvKey: 'SMSIR_PURCHASE_CONFIRMED_TEMPLATE_ID',
+          parameters: {
+            ORDER: order.orderNumber,
+          },
         },
+        SMSIRFastSendTemplates.PURCHASE_CONFIRMED(order.orderNumber),
         `Order created: ${order.orderNumber}`
       );
     } else {

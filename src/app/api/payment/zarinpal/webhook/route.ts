@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPayment } from "@/lib/zarinpal";
-import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
+import { SMSIRFastSendTemplates, sendTemplateSMSSafe } from "@/lib/sms";
 import crypto from "crypto";
 
 /**
@@ -322,21 +322,26 @@ export async function POST(request: NextRequest) {
         item.quantity > 1 ? `${item.name} (${item.quantity} عدد)` : item.name
       );
 
-      const smsMessage = SMSTemplates.ORDER_PAYMENT_SUCCESS(
+      void customerName;
+      void products;
+
+      const smsMessage = SMSIRFastSendTemplates.INVOICE(
         updatedOrder.orderNumber,
-        customerName,
-        products,
-        Number(updatedOrder.totalAmount),
-        verifyResult.refId ? String(verifyResult.refId) : undefined
+        Number(updatedOrder.totalAmount)
       );
 
       console.log('📱 [Webhook] Sending payment success SMS');
 
-      sendSMSSafe(
+      sendTemplateSMSSafe(
         {
           receptor: customerPhone,
-          message: smsMessage,
+          templateEnvKey: 'SMSIR_INVOICE_TEMPLATE_ID',
+          parameters: {
+            INVOICE: updatedOrder.orderNumber,
+            AMOUNT: Number(updatedOrder.totalAmount),
+          },
         },
+        smsMessage,
         `Webhook payment success: ${updatedOrder.orderNumber}`
       ).catch((err) => {
         console.error('❌ [Webhook] SMS error (non-blocking):', err);

@@ -97,11 +97,166 @@ export interface VerifyLookupOptions {
   token2?: string; // Optional second token
   token3?: string; // Optional third token
   template: string; // Template name (Kavenegar) or Template ID (SMS.ir)
+  parameters?: Record<string, string | number>; // SMS.ir named template parameters
 }
+
+export type SMSTemplateEnvKey =
+  | 'SMSIR_SIGNUP_VERIFY_TEMPLATE_ID'
+  | 'SMSIR_WELCOME_SIMPLE_TEMPLATE_ID'
+  | 'SMSIR_WELCOME_INFO_TEMPLATE_ID'
+  | 'SMSIR_LOGIN_OTP_TEMPLATE_ID'
+  | 'SMSIR_PASSWORD_RESET_TEMPLATE_ID'
+  | 'SMSIR_PURCHASE_CONFIRMED_TEMPLATE_ID'
+  | 'SMSIR_INVOICE_TEMPLATE_ID'
+  | 'SMSIR_POST_TRACKING_TEMPLATE_ID'
+  | 'SMSIR_ORDER_PROCESSING_TEMPLATE_ID'
+  | 'SMSIR_VERIFY_TEMPLATE_ID';
+
+export interface TemplateSMSOptions {
+  receptor: string;
+  templateEnvKey: SMSTemplateEnvKey;
+  parameters?: Record<string, string | number>;
+}
+
+const DEFAULT_SMSIR_TEMPLATE_IDS: Partial<Record<SMSTemplateEnvKey, string>> = {
+  SMSIR_VERIFY_TEMPLATE_ID: '285627',
+  SMSIR_SIGNUP_VERIFY_TEMPLATE_ID: '285627',
+  SMSIR_WELCOME_SIMPLE_TEMPLATE_ID: '393070',
+  SMSIR_WELCOME_INFO_TEMPLATE_ID: '393070',
+  SMSIR_LOGIN_OTP_TEMPLATE_ID: '619622',
+  SMSIR_PASSWORD_RESET_TEMPLATE_ID: '846716',
+  SMSIR_PURCHASE_CONFIRMED_TEMPLATE_ID: '476629',
+  SMSIR_INVOICE_TEMPLATE_ID: '314539',
+  SMSIR_POST_TRACKING_TEMPLATE_ID: '412202',
+};
 
 // ============================================================================
 // SMS.ir Implementation (Official smsir-js package)
 // ============================================================================
+
+const safeStringify = (obj: unknown): string => {
+  try {
+    const seen = new WeakSet();
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    });
+  } catch {
+    return String(obj);
+  }
+};
+
+interface SMSIrPayload {
+  IsSuccessful?: boolean;
+  Message?: string;
+  message?: string;
+  StatusCode?: number;
+  status?: number;
+  PackId?: string | number;
+  MessageId?: string | number;
+  messageId?: string | number;
+  error?: string;
+  data?: {
+    status?: number;
+    code?: number;
+    message?: string;
+    messageId?: string | number;
+    batchKey?: string | number;
+    packId?: string | number;
+  };
+}
+
+interface SMSIrRawResponse {
+  status?: number;
+  data?: SMSIrPayload;
+}
+
+interface SMSIrErrorResponse {
+  response?: {
+    status?: number;
+    data?: {
+      Message?: string;
+      message?: string;
+    };
+  };
+}
+
+function unwrapSMSIrResponse(result: unknown): SMSIrPayload {
+  const response = result as SMSIrRawResponse;
+  return response?.data && typeof response.data === 'object' ? response.data : (result as SMSIrPayload);
+}
+
+function isSMSIrSuccess(payload: SMSIrPayload, rawResult?: unknown): boolean {
+  const raw = rawResult as SMSIrRawResponse;
+  return payload?.IsSuccessful === true ||
+    payload?.status === 1 ||
+    payload?.status === 200 ||
+    payload?.StatusCode === 200 ||
+    payload?.data?.status === 1 ||
+    payload?.data?.status === 200 ||
+    payload?.data?.code === 200 ||
+    (!payload?.Message && !payload?.message && raw?.status === 200);
+}
+
+function getSMSIrMessageId(payload: SMSIrPayload): string | undefined {
+  const messageId =
+    payload?.MessageId ||
+    payload?.messageId ||
+    payload?.PackId ||
+    payload?.data?.messageId ||
+    payload?.data?.batchKey ||
+    payload?.data?.packId;
+
+  return messageId ? messageId.toString() : undefined;
+}
+
+function getSMSIrErrorMessage(payload: SMSIrPayload, fallback: string): string {
+  return payload?.Message ||
+    payload?.message ||
+    payload?.data?.message ||
+    payload?.error ||
+    fallback;
+}
+
+function toSMSIrParameters(parameters: Record<string, string | number>) {
+  return Object.entries(parameters).map(([name, value]) => ({
+    name,
+    value: String(value),
+  }));
+}
+
+export function getSMSStoreName(): string {
+  return process.env.NEXT_PUBLIC_APP_NAME || 'HS6Tools';
+}
+
+export function getSMSSiteUrl(): string {
+  return 'https://hs6tools.com/fa';
+}
+
+export function formatSMSAmountInRials(amount: number): string {
+  return new Intl.NumberFormat('fa-IR').format(amount);
+}
+
+export function formatShippingAddressForSMS(address?: {
+  addressLine1?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+} | null): string {
+  if (!address) return 'آدرس ثبت‌شده';
+
+  return [
+    address.state,
+    address.city,
+    address.addressLine1,
+    address.postalCode ? `کدپستی ${address.postalCode}` : null,
+  ].filter(Boolean).join('، ');
+}
 
 /**
  * Initialize SMS.ir client
@@ -153,7 +308,7 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
     const smsir = getSMSIrClient();
     
     // SMS.ir API uses SendBulk for sending SMS (even to single number)
-    // Method signature: SendBulk(mobileNumbers, message, lineNumber, sendDate)
+    // Method signature in smsir-js: SendBulk(message, mobiles, sendDate, lineNumber)
     if (typeof smsir.SendBulk !== 'function') {
       throw new Error(`SMS.ir client does not have 'SendBulk' method. Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(smsir)).join(', ')}`);
     }
@@ -166,10 +321,10 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
       const validLineNumber = lineNumber && lineNumber.trim() !== '' ? lineNumber : undefined;
       
       result = await smsir.SendBulk(
-        [options.receptor],  // mobileNumbers array
         options.message,     // message text
-        validLineNumber,     // line number (undefined if not set, SMS.ir will use default)
-        null                 // sendDate (null = send immediately)
+        [options.receptor],  // mobileNumbers array
+        null,                // sendDate (null = send immediately)
+        validLineNumber      // line number (undefined if not set, SMS.ir will use default)
       );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -215,39 +370,40 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
       }
     };
 
+    const payload = unwrapSMSIrResponse(result);
+
     console.log('📱 [sendSMS] SMS.ir - API response:', {
-      isSuccessful: result?.IsSuccessful,
-      message: result?.Message,
-      statusCode: result?.StatusCode,
-      packId: result?.PackId,
+      isSuccessful: payload?.IsSuccessful,
+      message: payload?.Message || payload?.message,
+      statusCode: payload?.StatusCode || payload?.status,
+      packId: payload?.PackId || payload?.data?.packId,
       fullResponse: result ? safeStringify(result) : 'null',
     });
 
-    // SMS.ir API returns { IsSuccessful, Message, StatusCode, PackId }
-    if (result && result.IsSuccessful) {
-      const packId = result.PackId;
+    if (isSMSIrSuccess(payload, result)) {
+      const packId = getSMSIrMessageId(payload);
       console.log('✅ [sendSMS] SMS.ir - SMS sent successfully:', {
-        packId: packId?.toString(),
+        packId,
         receptor: options.receptor,
       });
       return {
         success: true,
         message: 'SMS sent successfully',
-        messageId: packId?.toString(),
-        status: result.StatusCode || 200,
+        messageId: packId,
+        status: payload?.StatusCode || payload?.status || 200,
         provider: 'smsir',
       };
     } else {
-      const errorMessage = result?.Message || 'Failed to send SMS via SMS.ir';
+      const errorMessage = getSMSIrErrorMessage(payload, 'Failed to send SMS via SMS.ir');
       console.error('❌ [sendSMS] SMS.ir - SMS sending failed:', {
         error: errorMessage,
         receptor: options.receptor,
-        statusCode: result?.StatusCode,
+        statusCode: payload?.StatusCode || payload?.status,
       });
       return {
         success: false,
         error: errorMessage,
-        status: result?.StatusCode || 500,
+        status: payload?.StatusCode || payload?.status || 500,
         provider: 'smsir',
       };
     }
@@ -291,14 +447,7 @@ async function sendVerificationCodeViaSMSIr(
       throw new Error(`SMS.ir client does not have 'SendVerifyCode' method. Available methods: ${availableMethods.join(', ')}`);
     }
     
-    // Parameters format: [{ name: "OTP", value: "12345" }]
-    // Template uses #OTP# placeholder, so parameter name must be "OTP"
-    const parameters = [
-      {
-        name: 'OTP',
-        value: options.token,
-      },
-    ];
+    const parameters = toSMSIrParameters(options.parameters || { OTP: options.token });
 
     // Call SendVerifyCode with mobile, templateId, and parameters
     let result;
@@ -354,44 +503,37 @@ async function sendVerificationCodeViaSMSIr(
       }
     };
 
+    const payload = unwrapSMSIrResponse(result);
+
     console.log('📱 [sendVerificationCode] SMS.ir - API response:', {
-      isSuccessful: result?.IsSuccessful,
-      message: result?.Message,
-      statusCode: result?.StatusCode,
-      status: result?.status,
-      messageId: result?.MessageId,
-      data: result?.data,
+      isSuccessful: payload?.IsSuccessful,
+      message: payload?.Message || payload?.message,
+      statusCode: payload?.StatusCode,
+      status: payload?.status,
+      messageId: getSMSIrMessageId(payload),
+      data: payload?.data,
       fullResponse: result ? safeStringify(result) : 'null',
     });
 
-    // SMS.ir API might return different response structures
-    // Check for success indicators: IsSuccessful, status === 200, or data.code === 200
-    const isSuccessful = result?.IsSuccessful === true || 
-                        result?.status === 200 || 
-                        (result?.data && (result?.data?.code === 200 || result?.data?.status === 200));
-    
-    if (isSuccessful) {
-      const messageId = result?.MessageId || result?.data?.messageId || result?.data?.batchKey;
+    if (isSMSIrSuccess(payload, result)) {
+      const messageId = getSMSIrMessageId(payload);
       console.log('✅ [sendVerificationCode] SMS.ir - Verification code sent successfully:', {
-        messageId: messageId?.toString(),
+        messageId,
         receptor: options.receptor,
       });
       return {
         success: true,
         message: 'Verification code sent successfully',
-        messageId: messageId?.toString(),
-        status: result?.StatusCode || result?.status || result?.data?.code || 200,
+        messageId,
+        status: payload?.StatusCode || payload?.status || payload?.data?.code || 200,
         provider: 'smsir',
       };
     } else {
-      // Extract error message from various possible response structures
-      const errorMessage = result?.Message || 
-                          result?.message || 
-                          result?.data?.message ||
-                          (result?.data?.code ? `SMS.ir error code: ${result.data.code}` : null) ||
-                          'Failed to send verification code via SMS.ir';
-      
-      const statusCode = result?.StatusCode || result?.status || result?.data?.code || 500;
+      const errorMessage = getSMSIrErrorMessage(
+        payload,
+        payload?.data?.code ? `SMS.ir error code: ${payload.data.code}` : 'Failed to send verification code via SMS.ir'
+      );
+      const statusCode = payload?.StatusCode || payload?.status || payload?.data?.code || 500;
       
       console.error('❌ [sendVerificationCode] SMS.ir - Failed:', {
         error: errorMessage,
@@ -819,6 +961,111 @@ export async function sendVerificationCode(
 }
 
 /**
+ * Send an SMS.ir fast-send template by environment variable name.
+ * This intentionally targets SMS.ir only because template ids are provider-specific.
+ */
+export async function sendTemplateSMS(options: TemplateSMSOptions): Promise<SMSResponse> {
+  const provider = detectSMSProvider();
+
+  if (provider !== 'smsir') {
+    return {
+      success: false,
+      error: 'SMS.ir is not configured. Template SMS requires SMSIR_API_KEY and smsir-js.',
+      provider,
+    };
+  }
+
+  const templateValue = process.env[options.templateEnvKey] || DEFAULT_SMSIR_TEMPLATE_IDS[options.templateEnvKey];
+  if (!templateValue) {
+    return {
+      success: false,
+      error: `${options.templateEnvKey} is not set`,
+      provider: 'smsir',
+    };
+  }
+
+  const templateId = parseInt(templateValue, 10);
+  if (isNaN(templateId)) {
+    return {
+      success: false,
+      error: `${options.templateEnvKey} must be a numeric SMS.ir Template ID`,
+      provider: 'smsir',
+    };
+  }
+
+  try {
+    const smsir = getSMSIrClient();
+    if (typeof smsir.SendVerifyCode !== 'function') {
+      const availableMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(smsir));
+      throw new Error(`SMS.ir client does not have 'SendVerifyCode' method. Available methods: ${availableMethods.join(', ')}`);
+    }
+
+    const parameters = toSMSIrParameters(options.parameters || {});
+
+    console.log('📱 [sendTemplateSMS] SMS.ir - Attempting template SMS:', {
+      receptor: options.receptor,
+      templateEnvKey: options.templateEnvKey,
+      templateId,
+      parameterNames: parameters.map(parameter => parameter.name),
+    });
+
+    const result = await smsir.SendVerifyCode(
+      options.receptor,
+      templateId,
+      parameters
+    );
+    const payload = unwrapSMSIrResponse(result);
+
+    console.log('📱 [sendTemplateSMS] SMS.ir - API response:', {
+      templateEnvKey: options.templateEnvKey,
+      templateId,
+      isSuccessful: payload?.IsSuccessful,
+      message: payload?.Message || payload?.message,
+      statusCode: payload?.StatusCode || payload?.status,
+      messageId: getSMSIrMessageId(payload),
+      fullResponse: safeStringify(result),
+    });
+
+    if (isSMSIrSuccess(payload, result)) {
+      return {
+        success: true,
+        message: 'Template SMS sent successfully',
+        messageId: getSMSIrMessageId(payload),
+        status: payload?.StatusCode || payload?.status || payload?.data?.code || 200,
+        provider: 'smsir',
+      };
+    }
+
+    return {
+      success: false,
+      error: getSMSIrErrorMessage(payload, 'Failed to send template SMS via SMS.ir'),
+      status: payload?.StatusCode || payload?.status || payload?.data?.code || 500,
+      provider: 'smsir',
+    };
+  } catch (error) {
+    const smsIrError = error as SMSIrErrorResponse;
+    const errorMessage =
+      smsIrError.response?.data?.Message ||
+      smsIrError.response?.data?.message ||
+      (error instanceof Error ? error.message : 'Unknown SMS.ir template error');
+
+    console.error('❌ [sendTemplateSMS] SMS.ir - Error:', {
+      error: errorMessage,
+      templateEnvKey: options.templateEnvKey,
+      receptor: options.receptor,
+      responseData: smsIrError.response?.data,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+      status: smsIrError.response?.status || 500,
+      provider: 'smsir',
+    };
+  }
+}
+
+/**
  * Send SMS to multiple recipients
  * Currently only supports Kavenegar (SMS.ir bulk send can be added later)
  */
@@ -1028,6 +1275,37 @@ export const SMSTemplates = {
   },
 } as const;
 
+export const SMSIRFastSendTemplates = {
+  SIGNUP_VERIFY: (code: string) =>
+    `کد تایید شما ${code} می‌باشد. این کد ۵ دقیقه اعتبار دارد.\n${getSMSSiteUrl()}`,
+
+  WELCOME_SIMPLE: (customerName: string) =>
+    `${customerName} عزیز، به فروشگاه HS6Tools خوش آمدید. از همراهی شما بسیار خوشحالیم.\n${getSMSSiteUrl()}`,
+
+  WELCOME_INFO: (customerName: string) =>
+    `${customerName} جان، خوش اومدی!\nثبت‌نام شما در HS6Tools با موفقیت انجام شد. همیشه با جدیدترین تخفیف‌ها و پیشنهادات ویژه در جریان باشید. ممنون که به ما اعتماد کردید!\n${getSMSSiteUrl()}`,
+
+  LOGIN_OTP: (code: string) =>
+    `کد ورود شما به HS6Tools: ${code}\nاین کد تا ۲ دقیقه اعتبار دارد.\n${getSMSSiteUrl()}`,
+
+  PASSWORD_RESET: (code: string) =>
+    `کد بازیابی رمز عبور شما: ${code}\nلطفا این کد را در صفحه بازیابی HS6Tools وارد کنید.\n${getSMSSiteUrl()}`,
+
+  PURCHASE_CONFIRMED: (orderNumber: string) =>
+    `خرید شما با موفقیت ثبت شد. سفارش شماره ${orderNumber} در حال پردازش است. به‌زودی مراحل بعدی از طریق پیامک اطلاع‌رسانی می‌شود. از اعتماد شما سپاسگزاریم.\n${getSMSSiteUrl()}`,
+
+  INVOICE: (invoiceNumber: string, amount: number) =>
+    `فاکتور شماره ${invoiceNumber} به مبلغ ${formatSMSAmountInRials(amount)} ریال صادر شد.\n${getSMSSiteUrl()}`,
+
+  POST_TRACKING: (customerName: string, orderNumber: string, address: string, trackingNumber: string) =>
+    `${customerName} عزیز، سفارش شما با شماره ${orderNumber} از طریق پست به آدرس ${address} ارسال شد.\nکد رهگیری پستی: ${trackingNumber}\n${getSMSSiteUrl()}`,
+
+  ORDER_PROCESSING: (orderNumber?: string) =>
+    orderNumber
+      ? `وضعیت سفارش ${orderNumber} به "در حال پردازش" تغییر کرد. به محض ارسال، کد رهگیری برایتان پیامک خواهد شد.\n${getSMSSiteUrl()}`
+      : `وضعیت سفارش شما به "در حال پردازش" تغییر کرد. به محض ارسال، کد رهگیری برایتان پیامک خواهد شد.\n${getSMSSiteUrl()}`,
+} as const;
+
 /**
  * Helper function to send SMS safely (non-blocking)
  * This function catches errors and logs them without throwing
@@ -1100,6 +1378,74 @@ export async function sendSMSSafe(
       error: error instanceof Error ? error.message : 'Unknown error',
       receptor: options.receptor,
     });
+  }
+}
+
+export async function sendTemplateSMSSafe(
+  options: TemplateSMSOptions,
+  fallbackMessage: string,
+  errorContext?: string
+): Promise<void> {
+  try {
+    const skipSMSInDev = process.env.SKIP_SMS_IN_DEV === 'true';
+    const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+
+    if (skipSMSInDev && isDevelopment) {
+      console.log(`📱 [SMS Template] SMS skipped in development mode${errorContext ? ` (${errorContext})` : ''}:`, {
+        receptor: options.receptor,
+        templateEnvKey: options.templateEnvKey,
+        parameterNames: Object.keys(options.parameters || {}),
+        fallbackPreview: fallbackMessage.substring(0, 100) + '...',
+        note: 'Set SKIP_SMS_IN_DEV=false to enable SMS in development',
+      });
+      return;
+    }
+
+    const phoneDigits = options.receptor.replace(/\D/g, '');
+    if (phoneDigits.length !== 11 || !phoneDigits.startsWith('09')) {
+      console.error(`[SMS Template] Invalid phone number format${errorContext ? ` (${errorContext})` : ''}:`, options.receptor);
+      return;
+    }
+
+    const result = await sendTemplateSMS(options);
+    if (result.success) {
+      console.log(`✅ [SMS Template] Template SMS sent successfully${errorContext ? ` (${errorContext})` : ''}:`, {
+        receptor: options.receptor,
+        templateEnvKey: options.templateEnvKey,
+        messageId: result.messageId,
+        status: result.status,
+      });
+      return;
+    }
+
+    console.warn(`⚠️ [SMS Template] Template SMS failed, using plain SMS fallback${errorContext ? ` (${errorContext})` : ''}:`, {
+      receptor: options.receptor,
+      templateEnvKey: options.templateEnvKey,
+      error: result.error,
+      status: result.status,
+    });
+
+    await sendSMSSafe(
+      {
+        receptor: options.receptor,
+        message: fallbackMessage,
+      },
+      errorContext ? `${errorContext} (template fallback)` : 'Template SMS fallback'
+    );
+  } catch (error) {
+    console.error(`❌ [SMS Template] Error sending template SMS${errorContext ? ` (${errorContext})` : ''}:`, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      receptor: options.receptor,
+      templateEnvKey: options.templateEnvKey,
+    });
+
+    await sendSMSSafe(
+      {
+        receptor: options.receptor,
+        message: fallbackMessage,
+      },
+      errorContext ? `${errorContext} (template error fallback)` : 'Template SMS error fallback'
+    );
   }
 }
 

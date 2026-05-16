@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationCode, sendSMSSafe } from "@/lib/sms";
+import { SMSIRFastSendTemplates, sendSMSSafe, sendVerificationCode } from "@/lib/sms";
 import { VerificationType } from "@prisma/client";
 import { rateLimitByIp } from "@/lib/rateLimit";
 import { isAllowedOrigin } from "@/utils/origin";
@@ -105,6 +105,9 @@ export async function POST(request: NextRequest) {
       receptor: phone,
       token: code,
       template: template,
+      parameters: {
+        OTP: code,
+      },
     });
 
     // Fallback to simple SMS if template fails
@@ -115,7 +118,7 @@ export async function POST(request: NextRequest) {
       });
       await sendSMSSafe({
         receptor: phone,
-        message: `کد بازیابی رمز عبور شما: ${code} - این کد 10 دقیقه اعتبار دارد.`,
+        message: SMSIRFastSendTemplates.PASSWORD_RESET(code),
       }, `Password reset: ${phone}`);
     }
 

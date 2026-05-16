@@ -293,6 +293,33 @@ validate_smsir_config() {
     else
         info "SMSIR_PASSWORD_RESET_TEMPLATE_ID not set (optional - will use SMSIR_VERIFY_TEMPLATE_ID for password reset)"
     fi
+
+    OPTIONAL_SMSIR_TEMPLATE_IDS=(
+        "SMSIR_SIGNUP_VERIFY_TEMPLATE_ID"
+        "SMSIR_WELCOME_SIMPLE_TEMPLATE_ID"
+        "SMSIR_WELCOME_INFO_TEMPLATE_ID"
+        "SMSIR_LOGIN_OTP_TEMPLATE_ID"
+        "SMSIR_PURCHASE_CONFIRMED_TEMPLATE_ID"
+        "SMSIR_INVOICE_TEMPLATE_ID"
+        "SMSIR_POST_TRACKING_TEMPLATE_ID"
+        "SMSIR_ORDER_PROCESSING_TEMPLATE_ID"
+    )
+
+    for TEMPLATE_VAR in "${OPTIONAL_SMSIR_TEMPLATE_IDS[@]}"; do
+        TEMPLATE_VALUE=""
+        if grep -q "^${TEMPLATE_VAR}=" .env 2>/dev/null; then
+            TEMPLATE_VALUE=$(grep "^${TEMPLATE_VAR}=" .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+            if [ -n "$TEMPLATE_VALUE" ]; then
+                if [[ ! "$TEMPLATE_VALUE" =~ ^[0-9]+$ ]]; then
+                    warning "${TEMPLATE_VAR} should be a number. Plain SMS fallback will be used if the template cannot be sent."
+                else
+                    log "${TEMPLATE_VAR} validated: ${TEMPLATE_VALUE}"
+                fi
+            fi
+        else
+            info "${TEMPLATE_VAR} not set (optional - plain SMS fallback will be used)"
+        fi
+    done
     
     # Summary
     info "SMS.ir Configuration Summary:"
@@ -1120,6 +1147,17 @@ restart_pm2() {
                         info "ℹ️  SMSIR_PASSWORD_RESET_TEMPLATE_ID not found in PM2 (optional - will use SMSIR_VERIFY_TEMPLATE_ID)"
                     fi
                     
+                    for TEMPLATE_VAR in SMSIR_SIGNUP_VERIFY_TEMPLATE_ID SMSIR_WELCOME_SIMPLE_TEMPLATE_ID SMSIR_WELCOME_INFO_TEMPLATE_ID SMSIR_LOGIN_OTP_TEMPLATE_ID SMSIR_PURCHASE_CONFIRMED_TEMPLATE_ID SMSIR_INVOICE_TEMPLATE_ID SMSIR_POST_TRACKING_TEMPLATE_ID SMSIR_ORDER_PROCESSING_TEMPLATE_ID; do
+                        if echo "$PM2_ENV" | grep -q "$TEMPLATE_VAR"; then
+                            TEMPLATE_VALUE_PM2=$(echo "$PM2_ENV" | grep "$TEMPLATE_VAR" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+                            if [ -n "$TEMPLATE_VALUE_PM2" ]; then
+                                log "âœ… ${TEMPLATE_VAR} is loaded in PM2: ${TEMPLATE_VALUE_PM2}"
+                            fi
+                        else
+                            info "â„¹ï¸  ${TEMPLATE_VAR} not found in PM2 (optional - plain SMS fallback will be used)"
+                        fi
+                    done
+
                     # Check SMS.ir line number (optional)
                     if echo "$PM2_ENV" | grep -q "SMSIR_LINE_NUMBER"; then
                         SMSIR_LINE_PM2=$(echo "$PM2_ENV" | grep "SMSIR_LINE_NUMBER" | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
