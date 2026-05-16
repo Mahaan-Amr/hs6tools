@@ -33,6 +33,20 @@ REQUIRED_ENV_VARS=(
   "NEXT_PUBLIC_APP_URL"
 )
 
+# SMS.ir fast-send template IDs approved/created in the SMS.ir panel.
+# These are only inserted into env files when the variable is missing.
+SMSIR_TEMPLATE_DEFAULTS=(
+  "SMSIR_VERIFY_TEMPLATE_ID=285627"
+  "SMSIR_SIGNUP_VERIFY_TEMPLATE_ID=285627"
+  "SMSIR_WELCOME_SIMPLE_TEMPLATE_ID=393070"
+  "SMSIR_WELCOME_INFO_TEMPLATE_ID=393070"
+  "SMSIR_LOGIN_OTP_TEMPLATE_ID=619622"
+  "SMSIR_PASSWORD_RESET_TEMPLATE_ID=846716"
+  "SMSIR_PURCHASE_CONFIRMED_TEMPLATE_ID=476629"
+  "SMSIR_INVOICE_TEMPLATE_ID=314539"
+  "SMSIR_POST_TRACKING_TEMPLATE_ID=412202"
+)
+
 # Logging functions
 log() {
     echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1${NC}"
@@ -111,6 +125,45 @@ check_pm2() {
     return 0
 }
 
+ensure_env_var() {
+    local ENV_FILE="$1"
+    local KEY="$2"
+    local VALUE="$3"
+
+    if [ ! -f "$ENV_FILE" ]; then
+        return 0
+    fi
+
+    if grep -q "^${KEY}=" "$ENV_FILE" 2>/dev/null; then
+        local CURRENT_VALUE
+        CURRENT_VALUE=$(grep "^${KEY}=" "$ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)
+        if [ -n "$CURRENT_VALUE" ]; then
+            info "${KEY} already set in ${ENV_FILE}: ${CURRENT_VALUE}"
+            return 0
+        fi
+
+        info "${KEY} is empty in ${ENV_FILE}; setting default ${VALUE}"
+        sed -i "s|^${KEY}=.*|${KEY}=\"${VALUE}\"|" "$ENV_FILE"
+    else
+        info "Adding ${KEY}=${VALUE} to ${ENV_FILE}"
+        printf '\n%s="%s"\n' "$KEY" "$VALUE" >> "$ENV_FILE"
+    fi
+}
+
+ensure_smsir_template_defaults() {
+    section "📱 Ensuring SMS.ir Template IDs"
+
+    for ENTRY in "${SMSIR_TEMPLATE_DEFAULTS[@]}"; do
+        local KEY="${ENTRY%%=*}"
+        local VALUE="${ENTRY#*=}"
+        ensure_env_var ".env.production" "$KEY" "$VALUE"
+        ensure_env_var ".env" "$KEY" "$VALUE"
+    done
+
+    info "SMSIR_ORDER_PROCESSING_TEMPLATE_ID is intentionally not auto-filled because its approved template ID was not visible in the SMS.ir screenshot."
+    info "Create that template later and add SMSIR_ORDER_PROCESSING_TEMPLATE_ID to .env.production if you want template SMS for processing status."
+}
+
 # Check and setup environment files
 check_env_files() {
     section "🔐 Checking Environment Files"
@@ -133,6 +186,8 @@ check_env_files() {
     info "This will automatically load SMS.ir API keys and all other environment variables"
         cp .env.production .env
     log ".env updated from .env.production (all API keys and variables loaded)"
+
+    ensure_smsir_template_defaults
     
     # Verify .env file exists
     if [ ! -f ".env" ]; then
