@@ -5,6 +5,12 @@ import { SMSIRFastSendTemplates, sendSMSSafe, SMSTemplates, sendTemplateSMSSafe 
 import { restoreStockAndUpdateOrder } from "@/lib/inventory";
 import { getSiteOrigin } from "@/utils/domain";
 
+function parseZarinpalSandbox(value: string | undefined): boolean {
+  if (value === "false") return false;
+  if (value === "true") return true;
+  return true;
+}
+
 /**
  * GET /api/payment/zarinpal/callback
  * 
@@ -96,7 +102,7 @@ export async function GET(request: NextRequest) {
         data: {
           zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || "",
           zarinpalApiKey: process.env.ZARINPAL_API_KEY || "",
-          zarinpalSandbox: process.env.ZARINPAL_SANDBOX === "true" || true,
+          zarinpalSandbox: parseZarinpalSandbox(process.env.ZARINPAL_SANDBOX),
           allowBankTransfer: true,
           allowCashOnDelivery: true,
         }
@@ -234,14 +240,20 @@ export async function GET(request: NextRequest) {
       refId: verifyResult.refId,
     });
 
-    // Update order status
-    const updatedOrder = await prisma.order.update({
-      where: { id: order.id },
+    const paidUpdate = await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        paymentStatus: { not: "PAID" },
+      },
       data: {
         paymentStatus: "PAID",
         paymentDate: new Date(),
-        status: "CONFIRMED", // Update order status to confirmed
+        status: "CONFIRMED",
       },
+    });
+
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: order.id },
       select: {
         id: true,
         orderNumber: true,
@@ -257,6 +269,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    if (!updatedOrder) {
+      const origin = getSiteOrigin(request);
+      return NextResponse.redirect(
+        new URL("/fa/checkout?error=order_not_found", origin)
+      );
+    }
+
     // Send payment success SMS (non-blocking) with product details
     const customerPhone = updatedOrder.user.phone || updatedOrder.customerPhone;
     console.log('📱 [Payment Callback] SMS sending check:', {
@@ -267,7 +286,7 @@ export async function GET(request: NextRequest) {
       hasPhone: !!customerPhone,
     });
     
-    if (customerPhone) {
+    if (customerPhone && paidUpdate.count === 1) {
       const customerName = updatedOrder.user.firstName && updatedOrder.user.lastName
         ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
         : 'کاربر گرامی';
@@ -306,12 +325,16 @@ export async function GET(request: NextRequest) {
       ).catch((err) => {
         console.error('❌ [Payment Callback] SMS sending error (non-blocking):', err);
       });
-    } else {
+    } else if (!customerPhone) {
       console.warn('⚠️ [Payment Callback] No phone number found for SMS:', {
         orderNumber: updatedOrder.orderNumber,
         userId: updatedOrder.userId,
         userPhone: updatedOrder.user.phone,
         customerPhone: updatedOrder.customerPhone,
+      });
+    } else {
+      console.log('⚠️ [Payment Callback] Paid update already processed; skipping invoice SMS:', {
+        orderNumber: updatedOrder.orderNumber,
       });
     }
 

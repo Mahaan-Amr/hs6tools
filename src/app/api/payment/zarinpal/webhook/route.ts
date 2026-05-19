@@ -280,13 +280,20 @@ export async function POST(request: NextRequest) {
       refId: verifyResult.refId,
     });
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: order.id },
+    const paidUpdate = await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        paymentStatus: { not: "PAID" },
+      },
       data: {
         paymentStatus: "PAID",
         paymentDate: new Date(),
         status: "CONFIRMED",
       },
+    });
+
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: order.id },
       select: {
         id: true,
         orderNumber: true,
@@ -308,12 +315,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (!updatedOrder) {
+      return NextResponse.json(
+        { success: false, error: "Order not found after payment update" },
+        { status: 404 }
+      );
+    }
+
     // ============================================
     // 8. SEND SMS NOTIFICATION (NON-BLOCKING)
     // ============================================
     const customerPhone = updatedOrder.user.phone || updatedOrder.customerPhone;
     
-    if (customerPhone) {
+    if (customerPhone && paidUpdate.count === 1) {
       const customerName = updatedOrder.user.firstName && updatedOrder.user.lastName
         ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
         : 'کاربر گرامی';

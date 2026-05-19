@@ -5,6 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { requestPayment } from "@/lib/zarinpal";
 import { getSiteOrigin } from "@/utils/domain";
 
+function parseZarinpalSandbox(value: string | undefined): boolean {
+  if (value === "false") return false;
+  if (value === "true") return true;
+  return true;
+}
+
 /**
  * POST /api/payment/zarinpal/request
  * 
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
         data: {
           zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || "",
           zarinpalApiKey: process.env.ZARINPAL_API_KEY || "",
-          zarinpalSandbox: process.env.ZARINPAL_SANDBOX === "true" || true,
+          zarinpalSandbox: parseZarinpalSandbox(process.env.ZARINPAL_SANDBOX),
           allowBankTransfer: true,
           allowCashOnDelivery: true,
         }

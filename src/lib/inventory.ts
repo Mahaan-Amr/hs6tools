@@ -49,48 +49,8 @@ export async function restoreOrderStock(
 
     // Restore stock for each item
     for (const item of orderItems) {
-      if (item.productId) {
-        // Check if product exists
-        const product = await client.product.findUnique({
-          where: { id: item.productId },
-          select: { 
-            id: true, 
-            name: true,
-            stockQuantity: true,
-            lowStockThreshold: true
-          }
-        });
-
-        if (!product) {
-          console.warn(`⚠️ [Inventory] Product not found: ${item.productId} (${item.name})`);
-          continue;
-        }
-
-        const oldStock = product.stockQuantity;
-        const newStock = oldStock + item.quantity;
-
-        // Increment stock quantity
-        await client.product.update({
-          where: { id: item.productId },
-          data: {
-            stockQuantity: {
-              increment: item.quantity
-            },
-            // Update isInStock flag if stock is now available
-            isInStock: true
-          }
-        });
-
-        console.log(`✅ [Inventory] Restored stock for "${product.name}" (SKU: ${item.sku}):`, {
-          productId: item.productId,
-          quantityRestored: item.quantity,
-          oldStock,
-          newStock,
-          wasLowStock: oldStock <= product.lowStockThreshold,
-          nowLowStock: newStock <= product.lowStockThreshold
-        });
-      } else if (item.variantId) {
-        // Handle variant stock restoration
+      if (item.variantId) {
+        // Variant order items also keep productId, so restore variants first.
         const variant = await client.productVariant.findUnique({
           where: { id: item.variantId },
           select: {
@@ -101,7 +61,7 @@ export async function restoreOrderStock(
         });
 
         if (!variant) {
-          console.warn(`⚠️ [Inventory] Variant not found: ${item.variantId} (${item.name})`);
+          console.warn(`[Inventory] Variant not found: ${item.variantId} (${item.name})`);
           continue;
         }
 
@@ -118,14 +78,51 @@ export async function restoreOrderStock(
           }
         });
 
-        console.log(`✅ [Inventory] Restored variant stock for "${variant.name}" (SKU: ${item.sku}):`, {
+        console.log(`[Inventory] Restored variant stock for "${variant.name}" (SKU: ${item.sku}):`, {
           variantId: item.variantId,
           quantityRestored: item.quantity,
           oldStock,
           newStock
         });
+      } else if (item.productId) {
+        const product = await client.product.findUnique({
+          where: { id: item.productId },
+          select: { 
+            id: true, 
+            name: true,
+            stockQuantity: true,
+            lowStockThreshold: true
+          }
+        });
+
+        if (!product) {
+          console.warn(`[Inventory] Product not found: ${item.productId} (${item.name})`);
+          continue;
+        }
+
+        const oldStock = product.stockQuantity;
+        const newStock = oldStock + item.quantity;
+
+        await client.product.update({
+          where: { id: item.productId },
+          data: {
+            stockQuantity: {
+              increment: item.quantity
+            },
+            isInStock: true
+          }
+        });
+
+        console.log(`[Inventory] Restored stock for "${product.name}" (SKU: ${item.sku}):`, {
+          productId: item.productId,
+          quantityRestored: item.quantity,
+          oldStock,
+          newStock,
+          wasLowStock: oldStock <= product.lowStockThreshold,
+          nowLowStock: newStock <= product.lowStockThreshold
+        });
       } else {
-        console.warn(`⚠️ [Inventory] Order item has no productId or variantId:`, {
+        console.warn(`[Inventory] Order item has no productId or variantId:`, {
           itemId: item.id,
           sku: item.sku,
           name: item.name
@@ -307,4 +304,3 @@ export async function getStockRestorationSummary(orderId: string): Promise<{
     }))
   };
 }
-

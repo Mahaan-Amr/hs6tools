@@ -6,6 +6,80 @@ import { Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { SMSIRFastSendTemplates, sendLowStockAlert, sendTemplateSMSSafe } from "@/lib/sms";
 
+class OrderCreationError extends Error {
+  constructor(message: string, public status = 400) {
+    super(message);
+    this.name = "OrderCreationError";
+  }
+}
+
+type ValidatedOrderItem = {
+  productId: string;
+  variantId: string | null;
+  sku: string;
+  name: string;
+  description: string | null;
+  image: string | null;
+  unitPrice: Decimal;
+  quantity: number;
+  totalPrice: Decimal;
+  attributes: Prisma.InputJsonValue;
+  productName: string;
+};
+
+type LowStockAlert = {
+  productName: string;
+  stockQuantity: number;
+  lowStockThreshold: number;
+};
+
+type CreatedOrderResult = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: Decimal;
+  userId: string;
+  customerPhone: string | null;
+  lowStockAlerts: LowStockAlert[];
+};
+
+function calculateCouponDiscount(coupon: {
+  discountType: string;
+  discountValue: Decimal;
+  maximumDiscount: Decimal | null;
+}, subtotal: Decimal): Decimal {
+  let discount = coupon.discountType === "PERCENTAGE"
+    ? subtotal.mul(coupon.discountValue).div(100)
+    : coupon.discountValue;
+
+  if (coupon.maximumDiscount && discount.gt(coupon.maximumDiscount)) {
+    discount = coupon.maximumDiscount;
+  }
+
+  if (discount.gt(subtotal)) {
+    return subtotal;
+  }
+
+  return discount;
+}
+
+function isShippingMethodConfigId(shippingMethod: unknown): shippingMethod is string {
+  return typeof shippingMethod === "string" && shippingMethod.length > 20 && /^[a-z]/.test(shippingMethod);
+}
+
+function toPositiveInteger(value: unknown): number | null {
+  const quantity = Number(value);
+  return Number.isInteger(quantity) && quantity > 0 ? quantity : null;
+}
+
+function normalizeAttributes(value: unknown): Prisma.InputJsonValue {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Prisma.InputJsonValue;
+  }
+
+  return {};
+}
+
 // GET /api/customer/orders - Get customer order history with pagination and filtering
 export async function GET(request: NextRequest) {
   try {
@@ -190,12 +264,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('🛒 API: /api/customer/orders POST - Creating new order');
-    
+
     const session = await getServerSession(authOptions);
-    
-    // Check if user is authenticated
+
     if (!session?.user?.id) {
-      console.log('❌ API: No session or user ID');
       return NextResponse.json(
         { success: false, error: "Authentication required" },
         { status: 401 }
@@ -203,38 +275,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log('🛒 API: Order data received:', JSON.stringify(body, null, 2));
-    
     const {
       items,
       shippingAddress,
       shippingMethod,
       paymentMethod,
       customerNote,
-      subtotal,
       shippingAmount,
-      taxAmount,
-      discountAmount,
-      totalAmount,
-      couponCode
+      couponCode,
     } = body;
 
-    // Detailed validation logging
-    console.log('🛒 API: Validating order data:', {
-      itemsCount: items?.length,
-      hasShippingAddress: !!shippingAddress,
-      shippingMethod,
-      paymentMethod,
-      subtotal,
-      shippingAmount,
-      taxAmount,
-      discountAmount,
-      totalAmount,
-      customerEmail: session.user.email,
-      customerPhone: shippingAddress?.phone
-    });
-
-    // Validation
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { success: false, error: "Order items are required" },
@@ -256,122 +306,225 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Normalize payment method enum values to uppercase (Prisma enums are case-sensitive)
-    const normalizedPaymentMethod = paymentMethod.toUpperCase();
+    const normalizedPaymentMethod = String(paymentMethod).toUpperCase();
+    const validPaymentMethods = ["ZARINPAL", "BANK_TRANSFER", "CASH_ON_DELIVERY"];
 
-    // Validate payment method enum values
-    const validPaymentMethods = ['ZARINPAL', 'BANK_TRANSFER', 'CASH_ON_DELIVERY'];
-    
     if (!validPaymentMethods.includes(normalizedPaymentMethod)) {
-      console.error('❌ API: Invalid payment method:', paymentMethod, 'Normalized:', normalizedPaymentMethod);
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Invalid payment method: ${paymentMethod}. Must be one of: ${validPaymentMethods.join(', ')}` 
+        {
+          success: false,
+          error: `Invalid payment method: ${paymentMethod}. Must be one of: ${validPaymentMethods.join(", ")}`,
         },
         { status: 400 }
       );
     }
 
-    // Handle shipping method - can be either an ID (from ShippingMethodConfig) or enum value (for backward compatibility)
     let shippingMethodId: string | null = null;
-    let normalizedShippingMethod: "POST" | "TIPAX" | "EXPRESS" = "POST"; // Default for backward compatibility
-    
-    // Check if shippingMethod is an ID (CUID format - typically starts with 'c' and is 25 chars)
-    const isShippingMethodId = typeof shippingMethod === 'string' && 
-                                shippingMethod.length > 20 && 
-                                /^[a-z]/.test(shippingMethod);
-    
-    if (isShippingMethodId) {
-      // Look up shipping method from database
-      console.log('🛒 API: Shipping method is an ID, looking up in database:', shippingMethod);
+    let normalizedShippingMethod: "POST" | "TIPAX" | "EXPRESS" = "POST";
+    let serverShippingAmount = new Decimal(0);
+
+    if (isShippingMethodConfigId(shippingMethod)) {
       const shippingMethodConfig = await prisma.shippingMethodConfig.findUnique({
         where: { id: shippingMethod },
-        select: { id: true, name: true, price: true, isActive: true }
+        select: { id: true, name: true, price: true, isActive: true },
       });
-      
+
       if (!shippingMethodConfig) {
-        console.error('❌ API: Shipping method not found:', shippingMethod);
         return NextResponse.json(
-          { 
-            success: false, 
-            error: `Shipping method not found: ${shippingMethod}` 
-          },
+          { success: false, error: `Shipping method not found: ${shippingMethod}` },
           { status: 400 }
         );
       }
-      
+
       if (!shippingMethodConfig.isActive) {
-        console.error('❌ API: Shipping method is not active:', shippingMethod);
         return NextResponse.json(
-          { 
-            success: false, 
-            error: `Shipping method "${shippingMethodConfig.name}" is not available` 
-          },
+          { success: false, error: `Shipping method "${shippingMethodConfig.name}" is not available` },
           { status: 400 }
         );
       }
-      
+
       shippingMethodId = shippingMethodConfig.id;
-      // Map to enum for backward compatibility (use POST as default)
-      normalizedShippingMethod = "POST";
-      console.log('✅ API: Shipping method found:', shippingMethodConfig.name, 'ID:', shippingMethodId);
+      serverShippingAmount = new Decimal(shippingMethodConfig.price);
     } else {
-      // Legacy enum value - normalize to uppercase
-      const validShippingMethods = ['POST', 'TIPAX', 'EXPRESS'];
-      const normalized = shippingMethod.toUpperCase();
-      
+      const validShippingMethods = ["POST", "TIPAX", "EXPRESS"];
+      const normalized = String(shippingMethod).toUpperCase();
+
       if (!validShippingMethods.includes(normalized)) {
-        console.error('❌ API: Invalid shipping method:', shippingMethod, 'Normalized:', normalized);
         return NextResponse.json(
-          { 
-            success: false, 
-            error: `Invalid shipping method: ${shippingMethod}. Must be one of: ${validShippingMethods.join(', ')} or a valid shipping method ID` 
+          {
+            success: false,
+            error: `Invalid shipping method: ${shippingMethod}. Must be one of: ${validShippingMethods.join(", ")} or a valid shipping method ID`,
           },
           { status: 400 }
         );
       }
-      
+
       normalizedShippingMethod = normalized as "POST" | "TIPAX" | "EXPRESS";
-      console.log('🛒 API: Using legacy shipping method enum:', normalizedShippingMethod);
+      serverShippingAmount = new Decimal(Number(shippingAmount || 0));
+      if (serverShippingAmount.isNegative()) {
+        return NextResponse.json(
+          { success: false, error: "Shipping amount cannot be negative" },
+          { status: 400 }
+        );
+      }
     }
 
-    // Generate order number
-    const orderNumber = `HS6-${Date.now().toString().slice(-6)}`;
-    console.log('🛒 API: Generated order number:', orderNumber);
-    console.log('🛒 API: Normalized methods:', {
-      originalShippingMethod: shippingMethod,
-      normalizedShippingMethod,
-      originalPaymentMethod: paymentMethod,
-      normalizedPaymentMethod
+    const userExists = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, email: true, isActive: true },
     });
 
-    // Validate and get coupon if coupon code is provided
-    let coupon = null;
-    let couponId = null;
-    if (couponCode) {
-      coupon = await prisma.coupon.findUnique({
-        where: { code: couponCode.toUpperCase() },
-      });
+    if (!userExists) {
+      return NextResponse.json(
+        { success: false, error: "User account not found. Please log out and log in again." },
+        { status: 404 }
+      );
+    }
 
-      if (coupon) {
-        // Re-validate coupon at order creation time
+    if (!userExists.isActive) {
+      return NextResponse.json(
+        { success: false, error: "Your account has been deactivated. Please contact support." },
+        { status: 403 }
+      );
+    }
+
+    if (!session.user.email) {
+      return NextResponse.json(
+        { success: false, error: "User email is required but not found in session" },
+        { status: 400 }
+      );
+    }
+
+    const orderNumber = `HS6-${Date.now().toString().slice(-6)}`;
+    const order = await prisma.$transaction(async (tx): Promise<CreatedOrderResult> => {
+      const validatedItems: ValidatedOrderItem[] = [];
+
+      for (const item of items) {
+        if (!item?.productId) {
+          throw new OrderCreationError("Each order item must include a productId");
+        }
+
+        const quantity = toPositiveInteger(item.quantity);
+        if (!quantity) {
+          throw new OrderCreationError("Each order item must include a positive integer quantity");
+        }
+
+        const product = await tx.product.findFirst({
+          where: {
+            id: item.productId,
+            isActive: true,
+            deletedAt: null,
+          },
+          include: {
+            images: {
+              where: { isPrimary: true },
+              select: { url: true },
+              take: 1,
+            },
+            variants: item.variantId
+              ? {
+                  where: { id: item.variantId },
+                  take: 1,
+                }
+              : false,
+          },
+        });
+
+        if (!product) {
+          throw new OrderCreationError("Product is not available");
+        }
+
+        const variant = item.variantId ? product.variants[0] : null;
+        if (item.variantId && !variant) {
+          throw new OrderCreationError("Selected product variant is not available");
+        }
+
+        const stockQuantity = variant ? variant.stockQuantity : product.stockQuantity;
+        const isInStock = variant ? variant.isInStock : product.isInStock;
+        if (!product.allowBackorders && (!isInStock || stockQuantity < quantity)) {
+          throw new OrderCreationError(`Insufficient stock for ${variant?.name || product.name}`);
+        }
+
+        const unitPrice = new Decimal(variant?.price ?? product.price);
+        const name = variant ? `${product.name} - ${variant.name}` : product.name;
+        const sku = variant?.sku || product.sku;
+        const attributes = variant?.attributes
+          ? (variant.attributes as Prisma.InputJsonValue)
+          : normalizeAttributes(item.attributes);
+
+        validatedItems.push({
+          productId: product.id,
+          variantId: variant?.id || null,
+          sku,
+          name,
+          description: product.shortDescription || product.description || null,
+          image: item.image || product.images[0]?.url || null,
+          unitPrice,
+          quantity,
+          totalPrice: unitPrice.mul(quantity),
+          attributes,
+          productName: product.name,
+        });
+      }
+
+      const subtotalDecimal = validatedItems.reduce(
+        (sum, item) => sum.plus(item.totalPrice),
+        new Decimal(0)
+      );
+
+      let coupon: Awaited<ReturnType<typeof tx.coupon.findUnique>> = null;
+      let couponId: string | null = null;
+      const normalizedCouponCode = typeof couponCode === "string" && couponCode.trim()
+        ? couponCode.trim().toUpperCase()
+        : null;
+
+      if (normalizedCouponCode) {
+        coupon = await tx.coupon.findUnique({
+          where: { code: normalizedCouponCode },
+        });
+
+        if (!coupon) {
+          throw new OrderCreationError("کد تخفیف معتبر نیست");
+        }
+
         const now = new Date();
         if (
           !coupon.isActive ||
           now < coupon.validFrom ||
           now > coupon.validUntil ||
           (coupon.usageLimit !== null && coupon.usageCount >= coupon.usageLimit) ||
-          (coupon.minimumAmount && subtotal < Number(coupon.minimumAmount))
+          (coupon.minimumAmount && subtotalDecimal.lt(coupon.minimumAmount))
         ) {
-          return NextResponse.json(
-            { success: false, error: "کد تخفیف معتبر نیست یا منقضی شده است" },
-            { status: 400 }
-          );
+          throw new OrderCreationError("کد تخفیف معتبر نیست یا منقضی شده است");
         }
 
-        // Check user usage limit
-        const userOrderCount = await prisma.order.count({
+        if (coupon.applicableTo === "CATEGORIES" && coupon.categoryIds.length > 0) {
+          const productCategories = await tx.product.findMany({
+            where: { id: { in: validatedItems.map((item) => item.productId) } },
+            select: { categoryId: true },
+          });
+          const categoryIds = productCategories.map((product) => product.categoryId);
+          const hasApplicableCategory = coupon.categoryIds.some((categoryId) =>
+            categoryIds.includes(categoryId)
+          );
+
+          if (!hasApplicableCategory) {
+            throw new OrderCreationError("این کد تخفیف برای محصولات انتخابی شما اعمال نمی‌شود");
+          }
+        }
+
+        if (coupon.applicableTo === "PRODUCTS" && coupon.productIds.length > 0) {
+          const productIds = new Set(validatedItems.map((item) => item.productId));
+          const hasApplicableProduct = coupon.productIds.some((productId) =>
+            productIds.has(productId)
+          );
+
+          if (!hasApplicableProduct) {
+            throw new OrderCreationError("این کد تخفیف برای محصولات انتخابی شما اعمال نمی‌شود");
+          }
+        }
+
+        const userOrderCount = await tx.order.count({
           where: {
             userId: session.user.id,
             couponId: coupon.id,
@@ -379,70 +532,34 @@ export async function POST(request: NextRequest) {
         });
 
         if (userOrderCount >= coupon.userUsageLimit) {
-          return NextResponse.json(
-            { success: false, error: "شما قبلاً از این کد تخفیف استفاده کرده‌اید" },
-            { status: 400 }
-          );
+          throw new OrderCreationError("شما قبلاً از این کد تخفیف استفاده کرده‌اید");
         }
 
         couponId = coupon.id;
       }
-    }
 
-    // Verify user exists in database before creating addresses
-    console.log('🔍 API: Verifying user exists in database:', session.user.id);
-    const userExists = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, email: true, isActive: true }
-    });
+      const discountAmountDecimal = coupon
+        ? calculateCouponDiscount(coupon, subtotalDecimal)
+        : new Decimal(0);
+      const taxAmountDecimal = new Decimal(Math.round(subtotalDecimal.toNumber() * 0.09));
+      const totalAmountDecimal = subtotalDecimal
+        .plus(serverShippingAmount)
+        .plus(taxAmountDecimal)
+        .minus(discountAmountDecimal);
 
-    if (!userExists) {
-      console.error('❌ API: User not found in database with ID:', session.user.id);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "User account not found. Please log out and log in again." 
-        },
-        { status: 404 }
-      );
-    }
-
-    if (!userExists.isActive) {
-      console.error('❌ API: User account is inactive:', session.user.id);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "Your account has been deactivated. Please contact support." 
-        },
-        { status: 403 }
-      );
-    }
-
-    console.log('✅ API: User verified, proceeding with order creation');
-
-    // Create order in transaction
-    const order = await prisma.$transaction(async (tx) => {
-      // Handle shipping address - use existing or create new
       let shippingAddr;
-      
       if (shippingAddress.addressId) {
-        // Use existing address (prevents duplication)
-        console.log('🏠 API: Using existing address:', shippingAddress.addressId);
         shippingAddr = await tx.address.findFirst({
-          where: { 
+          where: {
             id: shippingAddress.addressId,
-            userId: session.user.id // Verify ownership
-          }
+            userId: session.user.id,
+          },
         });
-        
+
         if (!shippingAddr) {
-          throw new Error("Selected address not found or does not belong to user");
+          throw new OrderCreationError("Selected address not found or does not belong to user");
         }
-        
-        console.log('✅ API: Existing address verified and will be used');
       } else {
-        // Create new shipping address
-        console.log('🏠 API: Creating new shipping address');
         shippingAddr = await tx.address.create({
           data: {
             userId: session.user.id,
@@ -456,239 +573,195 @@ export async function POST(request: NextRequest) {
             postalCode: shippingAddress.postalCode,
             country: "Iran",
             phone: shippingAddress.phone,
-            isDefault: false
-          }
+            isDefault: false,
+          },
         });
-        
-        console.log('✅ API: New shipping address created:', shippingAddr.id);
       }
 
-      // Validate and convert Decimal values
-      const subtotalDecimal = new Decimal(subtotal || 0);
-      const taxAmountDecimal = new Decimal(taxAmount || 0);
-      const shippingAmountDecimal = new Decimal(shippingAmount || 0);
-      const discountAmountDecimal = new Decimal(discountAmount || 0);
-      const totalAmountDecimal = new Decimal(totalAmount || 0);
-
-      // Validate customer email (required field)
-      if (!session.user.email) {
-        throw new Error("User email is required but not found in session");
-      }
-
-      console.log('🛒 API: Creating order with Decimal values:', {
-        subtotal: subtotalDecimal.toString(),
-        taxAmount: taxAmountDecimal.toString(),
-        shippingAmount: shippingAmountDecimal.toString(),
-        discountAmount: discountAmountDecimal.toString(),
-        totalAmount: totalAmountDecimal.toString(),
-        customerEmail: session.user.email,
-        customerPhone: shippingAddress.phone
-      });
-
-      // Set order expiry time (30 minutes from now)
-      // This prevents stock from being locked indefinitely if payment is not completed
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
-      // Create order (using normalized enum values and shipping method ID if available)
-      // Note: billingAddressId has been removed from schema, using type assertion
-      const orderData = {
+      const newOrder = await tx.order.create({
+        data: {
           orderNumber,
           userId: session.user.id,
           status: "PENDING",
           paymentStatus: "PENDING",
           paymentMethod: normalizedPaymentMethod as "ZARINPAL" | "BANK_TRANSFER" | "CASH_ON_DELIVERY",
-          shippingMethod: normalizedShippingMethod, // Keep enum for backward compatibility
-          shippingMethodId: shippingMethodId, // New dynamic shipping method reference
+          shippingMethod: normalizedShippingMethod,
+          shippingMethodId,
           subtotal: subtotalDecimal,
           taxAmount: taxAmountDecimal,
-          shippingAmount: shippingAmountDecimal,
+          shippingAmount: serverShippingAmount,
           discountAmount: discountAmountDecimal,
           totalAmount: totalAmountDecimal,
-          couponId: couponId || null,
-          couponCode: couponCode || null,
+          couponId,
+          couponCode: normalizedCouponCode,
           customerNote: customerNote || null,
           shippingAddressId: shippingAddr.id,
           customerEmail: session.user.email,
           customerPhone: shippingAddress.phone || null,
-          expiresAt: expiresAt
-      };
-
-      const newOrder = await tx.order.create({
-        data: orderData as Prisma.OrderUncheckedCreateInput // Type assertion - billingAddressId has been removed from schema
+          expiresAt,
+        } as Prisma.OrderUncheckedCreateInput,
       });
 
-      // Increment coupon usage count if coupon was used
-      if (couponId && coupon) {
+      if (couponId) {
         await tx.coupon.update({
           where: { id: couponId },
-          data: {
-            usageCount: {
-              increment: 1
-            }
-          }
+          data: { usageCount: { increment: 1 } },
         });
       }
 
-      // Create order items and update product stock
-      for (const item of items) {
-        console.log('🛒 API: Processing order item:', {
-          productId: item.productId,
-          sku: item.sku,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        });
+      const lowStockAlerts: LowStockAlert[] = [];
 
-        // Validate item data
-        if (!item.sku || !item.name || !item.price || !item.quantity) {
-          throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
-        }
-
-        // Validate and convert item prices to Decimal
-        const unitPrice = new Decimal(item.price || 0);
-        const itemQuantity = parseInt(String(item.quantity || 1));
-        const totalPrice = unitPrice.mul(itemQuantity);
-
-        console.log('🛒 API: Creating order item with Decimal values:', {
-          sku: item.sku,
-          name: item.name,
-          unitPrice: unitPrice.toString(),
-          quantity: itemQuantity,
-          totalPrice: totalPrice.toString()
-        });
-
-        // Create order item
+      for (const item of validatedItems) {
         await tx.orderItem.create({
           data: {
             orderId: newOrder.id,
-            productId: item.productId || null,
-            variantId: item.variantId || null,
+            productId: item.productId,
+            variantId: item.variantId,
             sku: item.sku,
             name: item.name,
-            description: item.description || null,
-            image: item.image || null,
-            unitPrice: unitPrice,
-            totalPrice: totalPrice,
-            quantity: itemQuantity,
-            attributes: item.attributes || {}
-          }
+            description: item.description,
+            image: item.image,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            quantity: item.quantity,
+            attributes: item.attributes,
+          },
         });
 
-        // Update product stock
-        if (item.productId) {
-          // Check if product exists
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-            select: { id: true, stockQuantity: true }
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: {
+            allowBackorders: true,
+            lowStockThreshold: true,
+          },
+        });
+
+        if (item.variantId) {
+          const variantUpdate = await tx.productVariant.updateMany({
+            where: {
+              id: item.variantId,
+              ...(product?.allowBackorders ? {} : { stockQuantity: { gte: item.quantity } }),
+            },
+            data: {
+              stockQuantity: { decrement: item.quantity },
+            },
           });
 
-          if (!product) {
-            console.warn(`⚠️ API: Product not found: ${item.productId}`);
-            // Continue without updating stock if product doesn't exist
-          } else {
-            await tx.product.update({
-              where: { id: item.productId },
-              data: {
-                stockQuantity: {
-                  decrement: item.quantity
-                }
-              }
+          if (variantUpdate.count !== 1) {
+            throw new OrderCreationError(`Insufficient stock for ${item.name}`);
+          }
+
+          const updatedVariant = await tx.productVariant.findUnique({
+            where: { id: item.variantId },
+            select: { stockQuantity: true },
+          });
+
+          if (updatedVariant) {
+            await tx.productVariant.update({
+              where: { id: item.variantId },
+              data: { isInStock: updatedVariant.stockQuantity > 0 },
             });
+          }
 
-            // Check if stock is now low and update isInStock
-            const updatedProduct = await tx.product.findUnique({
-              where: { id: item.productId },
-              select: { 
-                stockQuantity: true, 
-                lowStockThreshold: true,
-                name: true
-              }
+          continue;
+        }
+
+        const productUpdate = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            ...(product?.allowBackorders ? {} : { stockQuantity: { gte: item.quantity } }),
+          },
+          data: {
+            stockQuantity: { decrement: item.quantity },
+          },
+        });
+
+        if (productUpdate.count !== 1) {
+          throw new OrderCreationError(`Insufficient stock for ${item.name}`);
+        }
+
+        const updatedProduct = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: {
+            name: true,
+            stockQuantity: true,
+            lowStockThreshold: true,
+          },
+        });
+
+        if (updatedProduct) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { isInStock: updatedProduct.stockQuantity > 0 },
+          });
+
+          if (updatedProduct.stockQuantity <= updatedProduct.lowStockThreshold) {
+            lowStockAlerts.push({
+              productName: updatedProduct.name,
+              stockQuantity: updatedProduct.stockQuantity,
+              lowStockThreshold: updatedProduct.lowStockThreshold,
             });
-
-            if (updatedProduct && updatedProduct.stockQuantity <= updatedProduct.lowStockThreshold) {
-              await tx.product.update({
-                where: { id: item.productId },
-                data: {
-                  isInStock: updatedProduct.stockQuantity > 0
-                }
-              });
-
-              // Send low stock alert to admins (after transaction, non-blocking)
-              // We'll do this after the transaction completes
-              if (updatedProduct.stockQuantity <= updatedProduct.lowStockThreshold) {
-                // Get admin phone numbers (after transaction)
-                prisma.user.findMany({
-                  where: {
-                    role: { in: ['ADMIN', 'SUPER_ADMIN'] },
-                    phone: { not: null },
-                    isActive: true
-                  },
-                  select: { phone: true }
-                }).then(admins => {
-                  const adminPhones = admins
-                    .map(admin => admin.phone)
-                    .filter((phone): phone is string => phone !== null);
-                  
-                  if (adminPhones.length > 0) {
-                    sendLowStockAlert(
-                      updatedProduct.name,
-                      updatedProduct.stockQuantity,
-                      updatedProduct.lowStockThreshold,
-                      adminPhones
-                    );
-                  }
-                }).catch(err => {
-                  console.error('[SMS] Error fetching admin phones for low stock alert:', err);
-                });
-              }
-            }
           }
         }
       }
 
-      return newOrder;
+      return {
+        id: newOrder.id,
+        orderNumber: newOrder.orderNumber,
+        status: newOrder.status,
+        totalAmount: newOrder.totalAmount,
+        userId: newOrder.userId,
+        customerPhone: newOrder.customerPhone,
+        lowStockAlerts,
+      };
     });
-
-    if (!order) {
-      throw new Error("Failed to create order in transaction");
-    }
 
     console.log('🛒 API: Order created successfully:', order.id);
 
-    // Send order confirmation SMS (non-blocking) with product details
-    // Fetch user and order items for SMS
+    if (order.lowStockAlerts.length > 0) {
+      prisma.user.findMany({
+        where: {
+          role: { in: ["ADMIN", "SUPER_ADMIN"] },
+          phone: { not: null },
+          isActive: true,
+        },
+        select: { phone: true },
+      }).then((admins) => {
+        const adminPhones = admins
+          .map((admin) => admin.phone)
+          .filter((phone): phone is string => phone !== null);
+
+        if (adminPhones.length > 0) {
+          order.lowStockAlerts.forEach((alert) => {
+            sendLowStockAlert(
+              alert.productName,
+              alert.stockQuantity,
+              alert.lowStockThreshold,
+              adminPhones
+            );
+          });
+        }
+      }).catch((err) => {
+        console.error('[SMS] Error fetching admin phones for low stock alert:', err);
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: order.userId },
-      select: { firstName: true, lastName: true, phone: true }
+      select: { firstName: true, lastName: true, phone: true },
     });
     const customerPhone = user?.phone || order.customerPhone;
-    
+
     if (customerPhone) {
-      // Fetch order items for SMS
-      const orderItems = await prisma.orderItem.findMany({
-        where: { orderId: order.id },
-        select: { name: true, quantity: true }
-      });
-      
-      const customerName = user?.firstName && user?.lastName
-        ? `${user.firstName} ${user.lastName}`
-        : 'کاربر گرامی';
-      
-      // Prepare product list for SMS
-      const products = orderItems.map(item => 
-        item.quantity > 1 ? `${item.name} (${item.quantity} عدد)` : item.name
-      );
-      const totalAmount = Number(order.totalAmount);
-      
       console.log('📱 [Order Creation] Sending order confirmation SMS:', {
         orderNumber: order.orderNumber,
         phone: customerPhone,
-        customerName,
-        productsCount: products.length,
-        totalAmount,
+        totalAmount: Number(order.totalAmount),
       });
-      
+
       sendTemplateSMSSafe(
         {
           receptor: customerPhone,
@@ -709,16 +782,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Return order with basic info
     return NextResponse.json({
       success: true,
       data: {
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
-        totalAmount: order.totalAmount,
-        message: "Order created successfully"
-      }
+        totalAmount: Number(order.totalAmount),
+        message: "Order created successfully",
+      },
     }, { status: 201 });
 
   } catch (error) {
@@ -727,82 +799,61 @@ export async function POST(request: NextRequest) {
       message: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
     });
-    
-    // Handle Prisma foreign key constraint violations
+
+    if (error instanceof OrderCreationError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status }
+      );
+    }
+
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2003') {
         console.error('❌ API: Foreign key constraint violation:', error.meta);
         return NextResponse.json(
-          { 
-            success: false, 
-            error: "User account not found. Please log out and log in again." 
+          {
+            success: false,
+            error: "User account not found. Please log out and log in again."
           },
           { status: 404 }
         );
       }
-      
+
       if (error.code === 'P2002') {
         console.error('❌ API: Unique constraint violation:', error.meta);
         return NextResponse.json(
-          { 
-            success: false, 
-            error: "Order number already exists. Please try again." 
+          {
+            success: false,
+            error: "Order number already exists. Please try again."
           },
           { status: 409 }
         );
       }
     }
-    
-    // Handle other Prisma errors
+
     if (error instanceof Prisma.PrismaClientValidationError) {
       console.error('❌ API: Prisma validation error:', error.message);
-      
-      // Safe JSON stringify to avoid circular reference errors
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const safeStringify = (obj: any): string => {
-        try {
-          const seen = new WeakSet();
-          return JSON.stringify(obj, (key, value) => {
-            if (typeof value === 'object' && value !== null) {
-              if (seen.has(value)) {
-                return '[Circular]';
-              }
-              seen.add(value);
-            }
-            return value;
-          });
-        } catch {
-          return String(obj);
-        }
-      };
-      
-      console.error('❌ API: Validation error details:', {
-        message: error.message,
-        // Log the full error for debugging (safe stringify to avoid circular references)
-        error: safeStringify(error)
-      });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: "Invalid data provided. Please check your order details.",
-          details: process.env.NODE_ENV === "development" ? error.message : undefined
+          details: process.env.NODE_ENV === "development" ? error.message : undefined,
         },
         { status: 400 }
       );
     }
-    
-    // Return more detailed error message for debugging
-    const errorMessage = error instanceof Error 
-      ? error.message 
+
+    const errorMessage = error instanceof Error
+      ? error.message
       : "Failed to create order";
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: errorMessage,
-        details: process.env.NODE_ENV === "development" 
+        details: process.env.NODE_ENV === "development"
           ? (error instanceof Error ? error.stack : undefined)
-          : undefined
+          : undefined,
       },
       { status: 500 }
     );
