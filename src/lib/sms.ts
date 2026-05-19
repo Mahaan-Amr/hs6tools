@@ -266,7 +266,7 @@ export function formatShippingAddressForSMS(address?: {
  */
 function getSMSIrClient() {
   const apiKey = process.env.SMSIR_API_KEY;
-  const lineNumber = process.env.SMSIR_LINE_NUMBER || '';
+  const lineNumber = process.env.SMSIR_LINE_NUMBER?.trim() || undefined;
 
   if (!apiKey) {
     throw new Error('SMSIR_API_KEY is not set in environment variables');
@@ -297,7 +297,7 @@ function getSMSIrClient() {
  */
 async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
   try {
-    const lineNumber = options.sender || process.env.SMSIR_LINE_NUMBER || '';
+    const lineNumber = (options.sender || process.env.SMSIR_LINE_NUMBER)?.trim() || undefined;
 
     console.log('📱 [sendSMS] SMS.ir - Attempting to send SMS:', {
       receptor: options.receptor,
@@ -318,13 +318,11 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
     let result;
     try {
       // Only pass lineNumber if it's a valid non-empty string
-      const validLineNumber = lineNumber && lineNumber.trim() !== '' ? lineNumber : undefined;
-      
       result = await smsir.SendBulk(
         options.message,     // message text
         [options.receptor],  // mobileNumbers array
         null,                // sendDate (null = send immediately)
-        validLineNumber      // line number (undefined if not set, SMS.ir will use default)
+        lineNumber           // line number (undefined if not set, SMS.ir will use default)
       );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
