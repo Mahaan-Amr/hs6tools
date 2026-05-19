@@ -1,99 +1,38 @@
 "use client";
 
-import { useCartStore } from "@/contexts/CartContext";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { getMessages, Messages } from "@/lib/i18n";
-import WishlistButton from "./WishlistButton";
+import { useCartStore } from "@/contexts/CartContext";
+import type { Messages } from "@/lib/i18n";
+import type { PublicProduct } from "@/lib/catalog";
 import { formatPrice as formatPriceUtil } from "@/utils/format";
-
-interface ProductImage {
-  id: string;
-  url: string;
-  alt?: string;
-  title?: string;
-  isPrimary: boolean;
-  sortOrder: number;
-}
-
-interface ProductVariant {
-  id: string;
-  name: string;
-  sku: string;
-  price: number;
-  comparePrice?: number;
-  stockQuantity: number;
-  isInStock: boolean;
-  attributes: Record<string, string | number>;
-}
-
-interface ProductCategory {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-interface Product {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string;
-  shortDescription?: string;
-  price: number;
-  comparePrice?: number;
-  costPrice?: number;
-  stockQuantity: number;
-  isInStock: boolean;
-  allowBackorders: boolean;
-  weight?: number;
-  dimensions?: Record<string, number>;
-  material?: string;
-  warranty?: string;
-  brand?: string;
-  isFeatured: boolean;
-  category: ProductCategory;
-  images: ProductImage[];
-  variants: ProductVariant[];
-  _count: {
-    reviews: number;
-    variants: number;
-  };
-}
+import WishlistButton from "./WishlistButton";
 
 interface ProductCardProps {
-  product: Product;
+  product: PublicProduct;
   locale: string;
+  messages: Messages;
+  initialIsInWishlist?: boolean;
 }
 
-export default function ProductCard({ product, locale }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  locale,
+  messages,
+  initialIsInWishlist = false,
+}: ProductCardProps) {
   const { addItem } = useCartStore();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [messages, setMessages] = useState<Messages | null>(null);
 
-  useEffect(() => {
-    const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
-    };
-    loadMessages();
-  }, [locale]);
-
-  const formatPrice = (price: number) => {
-    // Use centralized utility that converts Rials to Tomans
-    return formatPriceUtil(price, locale);
-  };
+  const formatPrice = (price: number) => formatPriceUtil(price, locale);
 
   const handleAddToCart = async () => {
     if (!product.isInStock) return;
-    
+
     setIsAddingToCart(true);
-    
+
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       addItem({
         productId: product.id,
         name: product.name,
@@ -101,11 +40,8 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
         quantity: 1,
         image: product.images[0]?.url,
         sku: product.slug,
-        category: product.category.name
+        category: product.category.name,
       });
-      
-      // Show success feedback
-      // You could add a toast notification here
     } catch (error) {
       console.error("Error adding to cart:", error);
     } finally {
@@ -113,18 +49,18 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
     }
   };
 
-  const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
-  const hasDiscount = product.comparePrice && product.comparePrice > product.price;
+  const primaryImage = product.images.find((image) => image.isPrimary) || product.images[0];
+  const hasDiscount = Boolean(product.comparePrice && product.comparePrice > product.price);
 
   return (
     <div className="group glass rounded-3xl overflow-hidden hover:scale-105 transition-all duration-300 hover:shadow-glass-orange">
-      {/* Product Image */}
       <div className="relative aspect-square overflow-hidden">
         {primaryImage ? (
           <Image
             src={primaryImage.url}
             alt={primaryImage.alt || product.name}
             fill
+            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
             className="object-cover group-hover:scale-110 transition-transform duration-300"
           />
         ) : (
@@ -134,45 +70,44 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
             </svg>
           </div>
         )}
-        
-        {/* Featured Badge */}
+
         {product.isFeatured && (
           <div className="absolute top-3 right-3">
             <span className="bg-gradient-to-r from-primary-orange to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-              {messages?.products?.featured || 'ویژه'}
+              {messages.products.featured}
             </span>
           </div>
         )}
-        
-        {/* Wishlist Button */}
+
         <div className="absolute top-3 left-3">
-          <WishlistButton 
+          <WishlistButton
             productId={product.id}
             className="bg-black/20 backdrop-blur-sm"
-            locale={locale}
+            initialIsInWishlist={initialIsInWishlist}
+            labels={{
+              add: messages.wishlist.addToWishlist,
+              remove: messages.wishlist.removeFromWishlist,
+              loginRequired: messages.wishlist.loginRequired,
+            }}
           />
         </div>
-        
-        {/* Stock Status */}
+
         <div className="absolute bottom-3 left-3">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            product.isInStock 
-              ? "bg-primary-orange/20 text-primary-orange" 
-              : "bg-red-500/20 text-red-400"
-          }`}>
-            {product.isInStock 
-              ? (messages?.products?.inStock || 'موجود')
-              : (messages?.products?.outOfStock || 'ناموجود')
-            }
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              product.isInStock
+                ? "bg-primary-orange/20 text-primary-orange"
+                : "bg-red-500/20 text-red-400"
+            }`}
+          >
+            {product.isInStock ? messages.products.inStock : messages.products.outOfStock}
           </span>
         </div>
       </div>
 
-      {/* Product Info */}
       <div className="p-6">
-        {/* Category */}
         <div className="mb-3">
-          <Link 
+          <Link
             href={`/${locale}/categories/${product.category.slug}`}
             className="inline-block bg-primary-orange/20 text-primary-orange px-2 py-1 rounded-full text-xs font-medium hover:bg-primary-orange/30 transition-colors duration-200"
           >
@@ -180,21 +115,18 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
           </Link>
         </div>
 
-        {/* Product Name */}
         <Link href={`/${locale}/products/${product.slug}`}>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2 hover:text-primary-orange transition-colors duration-200">
             {product.name}
           </h3>
         </Link>
 
-        {/* Description */}
         {product.shortDescription && (
           <p className="text-gray-700 dark:text-gray-400 text-sm mb-4 line-clamp-2">
             {product.shortDescription}
           </p>
         )}
 
-        {/* Price */}
         <div className="flex items-center justify-between mb-4">
           <div className="space-y-1">
             <div className="text-xl font-bold text-gray-900 dark:text-white">
@@ -206,8 +138,7 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
               </div>
             )}
           </div>
-          
-          {/* Reviews Count */}
+
           {product._count.reviews > 0 && (
             <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400">
               <svg className="w-4 h-4 text-yellow-500 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -218,7 +149,6 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="space-y-3">
           <button
             onClick={handleAddToCart}
@@ -231,21 +161,21 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
           >
             {isAddingToCart ? (
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>{messages?.products?.addingToCart || 'در حال افزودن...'}</span>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>{messages.products.addingToCart}</span>
               </div>
+            ) : product.isInStock ? (
+              messages.products.addToCart
             ) : (
-              product.isInStock 
-                ? (messages?.products?.addToCart || 'افزودن به سبد خرید')
-                : (messages?.products?.outOfStock || 'ناموجود')
+              messages.products.outOfStock
             )}
           </button>
-          
+
           <Link
             href={`/${locale}/products/${product.slug}`}
             className="block w-full py-3 px-4 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-center rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200"
           >
-            {messages?.products?.viewDetails || 'مشاهده جزئیات'}
+            {messages.products.viewDetails}
           </Link>
         </div>
       </div>

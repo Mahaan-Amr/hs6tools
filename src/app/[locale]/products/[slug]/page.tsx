@@ -3,126 +3,27 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice as formatPriceUtil } from "@/utils/format";
-
-interface ProductImage {
-  id: string;
-  url: string;
-  alt?: string;
-  title?: string;
-  isPrimary: boolean;
-  sortOrder: number;
-}
-
-interface ProductVariant {
-  id: string;
-  name: string;
-  sku: string;
-  price: number;
-  comparePrice?: number;
-  stockQuantity: number;
-  isInStock: boolean;
-  attributes: Record<string, string | number>;
-}
-
-interface ProductCategory {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-interface ProductReview {
-  id: string;
-  title?: string;
-  content: string;
-  rating: number;
-  createdAt: string;
-  user: {
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-  };
-}
-
-interface Product {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string;
-  shortDescription?: string;
-  price: number;
-  comparePrice?: number;
-  costPrice?: number;
-  stockQuantity: number;
-  isInStock: boolean;
-  allowBackorders: boolean;
-  weight?: number;
-  dimensions?: Record<string, number>;
-  material?: string;
-  warranty?: string;
-  brand?: string;
-  isFeatured: boolean;
-  category: ProductCategory;
-  images: ProductImage[];
-  variants: ProductVariant[];
-  reviews: ProductReview[];
-  _count: {
-    reviews: number;
-    variants: number;
-  };
-}
+import { getPublicProductBySlug, getPublicProducts } from "@/lib/catalog";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
-}
-
-async function getProduct(slug: string): Promise<Product | null> {
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/products/search?slug=${slug}`, {
-      cache: 'no-store'
-    });
-    
-    if (!response.ok) {
-      return null;
-    }
-    
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    return null;
-  }
-}
-
-async function getRelatedProducts(categoryId: string, excludeProductId: string): Promise<Product[]> {
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/products?categoryId=${categoryId}&limit=4&exclude=${excludeProductId}`, {
-      cache: 'no-store'
-    });
-    
-    if (!response.ok) {
-      return [];
-    }
-    
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Error fetching related products:', error);
-    return [];
-  }
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { locale, slug } = await params;
   const t = await getMessages(locale);
   
-  const product = await getProduct(slug);
+  const product = await getPublicProductBySlug(slug);
   
   if (!product) {
     notFound();
   }
 
-  const relatedProducts = await getRelatedProducts(product.category.id, product.id);
+  const { products: relatedProducts } = await getPublicProducts({
+    categoryId: product.category.id,
+    excludeProductId: product.id,
+    limit: 4,
+  });
   
   const formatPrice = (price: number) => {
     // Use centralized utility that converts Rials to Tomans

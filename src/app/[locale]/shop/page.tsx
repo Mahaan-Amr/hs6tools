@@ -1,84 +1,40 @@
 import { getMessages } from "@/lib/i18n";
 import Link from "next/link";
-import ProductGrid from "@/components/ecommerce/ProductGrid";
 import AdvancedSearch from "@/components/ecommerce/AdvancedSearch";
+import ShopProductsSection from "@/components/ecommerce/ShopProductsSection";
 import IconRenderer from "@/components/shared/IconRenderer";
 import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
+import { getCurrentWishlistProductIds, getPublicCategories, getPublicProducts, PublicCategory } from "@/lib/catalog";
 
 interface ShopPageProps {
   params: Promise<{ locale: string }>;
 }
 
-interface Category {
-  id: string;
-  slug: string;
-  name: string;
-  nameEn?: string;
-  nameAr?: string;
-  description?: string;
-  descriptionEn?: string;
-  descriptionAr?: string;
-  image?: string;
-  icon?: string;
-  parentId?: string | null;
-  _count: {
-    products: number;
-  };
-}
-
-async function getProducts() {
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/products?limit=12&sortBy=createdAt&sortOrder=desc`, {
-      cache: 'no-store'
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch products');
-    }
-    
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
-}
-
-async function getFeaturedCategories(): Promise<Category[]> {
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/categories?onlyActive=true&includeProducts=true`, {
-      cache: 'no-store'
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch categories');
-    }
-    
-    const data = await response.json();
-    // Get parent categories with products, sorted by product count
-    const categories = (data.data || []).filter((cat: Category) => !cat.parentId && cat._count.products > 0);
-    // Sort by product count and take top 3
-    return categories.sort((a: Category, b: Category) => b._count.products - a._count.products).slice(0, 3);
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
+async function getFeaturedCategories(): Promise<PublicCategory[]> {
+  const categories = await getPublicCategories();
+  return categories
+    .filter((category) => !category.parentId && category._count.products > 0)
+    .sort((a, b) => b._count.products - a._count.products)
+    .slice(0, 3);
 }
 
 export default async function ShopPage({ params }: ShopPageProps) {
   const { locale } = await params;
   const t = await getMessages(locale);
-  const products = await getProducts();
-  const featuredCategories = await getFeaturedCategories();
+  const [{ products, pagination }, featuredCategories, wishlistProductIds] = await Promise.all([
+    getPublicProducts({ limit: 24, sortBy: "createdAt", sortOrder: "desc" }),
+    getFeaturedCategories(),
+    getCurrentWishlistProductIds(),
+  ]);
 
   // Helper to get localized category name
-  const getCategoryName = (category: Category) => {
+  const getCategoryName = (category: PublicCategory) => {
     if (locale === 'en' && category.nameEn) return category.nameEn;
     if (locale === 'ar' && category.nameAr) return category.nameAr;
     return category.name;
   };
 
-  const getCategoryDescription = (category: Category) => {
+  const getCategoryDescription = (category: PublicCategory) => {
     if (locale === 'en' && category.descriptionEn) return category.descriptionEn;
     if (locale === 'ar' && category.descriptionAr) return category.descriptionAr;
     return category.description || '';
@@ -197,7 +153,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
 
         {/* Advanced Search */}
         <div className="mb-12">
-          <AdvancedSearch locale={locale} />
+          <AdvancedSearch locale={locale} messages={t} />
         </div>
 
         {/* Products Section */}
@@ -208,22 +164,14 @@ export default async function ShopPage({ params }: ShopPageProps) {
             </h2>
           </div>
 
-          {/* Product Grid */}
-          <ProductGrid 
-            products={products} 
+          <ShopProductsSection
+            initialProducts={products}
+            initialPagination={pagination}
+            initialWishlistProductIds={wishlistProductIds}
             locale={locale}
-            loading={false}
+            messages={t}
           />
         </div>
-
-        {/* Load More Button */}
-        {products.length >= 12 && (
-          <div className="text-center" data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
-            <button className="px-8 py-4 bg-gradient-to-r from-primary-orange to-orange-500 text-white font-semibold rounded-xl hover:shadow-glass-orange hover:scale-105 transition-all duration-300">
-              {t.products.loadMoreProducts}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

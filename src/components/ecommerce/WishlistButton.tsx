@@ -1,91 +1,56 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { getMessages, Messages } from "@/lib/i18n";
-
-interface WishlistItem {
-  productId: string;
-  product: {
-    id: string;
-    name: string;
-  };
-}
 
 interface WishlistButtonProps {
   productId: string;
   className?: string;
-  locale?: string;
+  initialIsInWishlist?: boolean;
+  labels: {
+    add: string;
+    remove: string;
+    loginRequired: string;
+  };
 }
 
-export default function WishlistButton({ productId, className = "", locale = "fa" }: WishlistButtonProps) {
+export default function WishlistButton({
+  productId,
+  className = "",
+  initialIsInWishlist = false,
+  labels,
+}: WishlistButtonProps) {
   const { data: session } = useSession();
-  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(initialIsInWishlist);
   const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<Messages | null>(null);
-
-  useEffect(() => {
-    const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
-    };
-    loadMessages();
-  }, [locale]);
-
-  const checkWishlistStatus = useCallback(async () => {
-    try {
-      const response = await fetch("/api/wishlist");
-      if (response.ok) {
-        const data = await response.json();
-        const isInWishlist = data.data.some((item: WishlistItem) => item.productId === productId);
-        setIsInWishlist(isInWishlist);
-      }
-    } catch (error) {
-      console.error("Error checking wishlist status:", error);
-    }
-  }, [productId]);
-
-  // Check if product is in wishlist on mount
-  useEffect(() => {
-    if (session?.user) {
-      checkWishlistStatus();
-    }
-  }, [session?.user, checkWishlistStatus]);
 
   const toggleWishlist = async () => {
-    if (!session?.user) {
-      // Redirect to login or show login modal
-      return;
-    }
+    if (!session?.user) return;
 
     setIsLoading(true);
 
     try {
       if (isInWishlist) {
-        // Remove from wishlist
         const response = await fetch(`/api/wishlist?productId=${productId}`, {
-          method: "DELETE"
+          method: "DELETE",
         });
 
         if (response.ok) {
           setIsInWishlist(false);
-          // You could add a toast notification here
         } else {
           console.error("Failed to remove from wishlist");
         }
       } else {
-        // Add to wishlist
         const response = await fetch("/api/wishlist", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ productId })
+          body: JSON.stringify({ productId }),
         });
 
         if (response.ok) {
           setIsInWishlist(true);
-          // You could add a toast notification here
         } else {
           console.error("Failed to add to wishlist");
         }
@@ -101,7 +66,7 @@ export default function WishlistButton({ productId, className = "", locale = "fa
     return (
       <button
         className={`p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 ${className}`}
-        title={messages?.wishlist?.loginRequired || 'ورود برای افزودن به لیست علاقه‌مندی'}
+        title={labels.loginRequired}
         disabled
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,17 +82,15 @@ export default function WishlistButton({ productId, className = "", locale = "fa
       disabled={isLoading}
       className={`
         p-2 transition-all duration-200 rounded-full hover:bg-red-500/20 
-        ${isInWishlist 
-          ? "text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-600" 
-          : "text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+        ${
+          isInWishlist
+            ? "text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-600"
+            : "text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
         } 
         ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
         ${className}
       `}
-      title={isInWishlist 
-        ? (messages?.wishlist?.removeFromWishlist || 'حذف از لیست علاقه‌مندی')
-        : (messages?.wishlist?.addToWishlist || 'افزودن به لیست علاقه‌مندی')
-      }
+      title={isInWishlist ? labels.remove : labels.add}
     >
       {isLoading ? (
         <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />

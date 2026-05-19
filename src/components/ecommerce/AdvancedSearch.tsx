@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getMessages, Messages } from "@/lib/i18n";
+import type { Messages } from "@/lib/i18n";
 
 interface SearchSuggestion {
   value: string;
@@ -20,12 +20,12 @@ interface FilterOptions {
 
 interface AdvancedSearchProps {
   locale: string;
+  messages: Messages;
 }
 
-export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
+export default function AdvancedSearch({ locale, messages }: AdvancedSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [messages, setMessages] = useState<Messages | null>(null);
   
   // Search state
   const [query, setQuery] = useState(searchParams.get("q") || "");
@@ -33,14 +33,6 @@ export default function AdvancedSearch({ locale }: AdvancedSearchProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
-  useEffect(() => {
-    const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
-    };
-    loadMessages();
-  }, [locale]);
-  
   // Filter state
   const [filters, setFilters] = useState({
     categoryId: searchParams.get("categoryId") || "",

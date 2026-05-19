@@ -1,50 +1,19 @@
 import CategoryCard from "@/components/ecommerce/CategoryCard";
 import { getMessages } from "@/lib/i18n";
-
-interface Category {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string;
-  image?: string;
-  icon?: string;
-  parentId?: string;
-  _count: {
-    products: number;
-    children: number;
-  };
-}
+import { getPublicCategories, PublicCategory } from "@/lib/catalog";
 
 interface CategoriesPageProps {
   params: Promise<{ locale: string }>;
 }
 
-async function getCategories(): Promise<Category[]> {
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/categories?includeProducts=true&onlyActive=true`, {
-      cache: 'no-store'
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch categories');
-    }
-    
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
-}
-
 export default async function CategoriesPage({ params }: CategoriesPageProps) {
   const { locale } = await params;
   const t = await getMessages(locale);
-  const categories = await getCategories();
+  const categories = await getPublicCategories();
   
   // Separate parent and child categories
-  const parentCategories = categories.filter((cat: Category) => !cat.parentId);
-  const childCategories = categories.filter((cat: Category) => cat.parentId);
+  const parentCategories = categories.filter((cat: PublicCategory) => !cat.parentId);
+  const childCategories = categories.filter((cat: PublicCategory) => cat.parentId);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
@@ -66,7 +35,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
               {t.categories.parentCategories}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {parentCategories.map((category: Category, index: number) => (
+              {parentCategories.map((category: PublicCategory, index: number) => (
                 <div key={category.id} data-scroll-reveal style={{ transitionDelay: `${index * 0.07}s` }}>
                   <CategoryCard
                     id={category.id}
@@ -93,7 +62,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
               {t.categories.subcategories}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {childCategories.map((category: Category, index: number) => (
+              {childCategories.map((category: PublicCategory, index: number) => (
                 <div key={category.id} data-scroll-reveal style={{ transitionDelay: `${index * 0.05}s` }}>
                   <CategoryCard
                     id={category.id}

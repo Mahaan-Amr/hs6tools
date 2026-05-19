@@ -5,121 +5,33 @@ import ProductGrid from "@/components/ecommerce/ProductGrid";
 import { notFound } from "next/navigation";
 import IconRenderer from "@/components/shared/IconRenderer";
 import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
+import { getCurrentWishlistProductIds, getPublicCategoryBySlug, getPublicProducts } from "@/lib/catalog";
 
 interface CategoryPageProps {
   params: Promise<{ locale: string; slug: string }>;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  nameEn?: string;
-  nameAr?: string;
-  description?: string;
-  descriptionEn?: string;
-  descriptionAr?: string;
-  image?: string;
-  icon?: string;
-  parentId?: string;
-  parent?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  children: Array<{
-    id: string;
-    name: string;
-    slug: string;
-    _count: { products: number };
-  }>;
-  products: Array<{
-    id: string;
-    slug: string;
-    name: string;
-    description?: string;
-    shortDescription?: string;
-    price: number;
-    comparePrice?: number;
-    stockQuantity: number;
-    isInStock: boolean;
-    isFeatured: boolean;
-    images: Array<{
-      id: string;
-      url: string;
-      alt?: string;
-      isPrimary: boolean;
-      sortOrder: number;
-    }>;
-    category: {
-      id: string;
-      name: string;
-      slug: string;
-    };
-    _count: {
-      reviews: number;
-      variants: number;
-    };
-  }>;
-  _count: {
-    products: number;
-    children: number;
-  };
-}
-
-async function getCategory(slug: string): Promise<Category | null> {
-  try {
-    const response = await fetch(
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/categories/slug/${slug}`,
-      { cache: 'no-store' }
-    );
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
-      }
-      throw new Error('Failed to fetch category');
-    }
-    
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error('Error fetching category:', error);
-    return null;
-  }
-}
-
-async function getCategoryProducts(categoryId: string) {
-  try {
-    const response = await fetch(
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/products?categoryId=${categoryId}&includeChildren=true&limit=all&sortBy=sortOrder&sortOrder=asc`,
-      { cache: 'no-store' }
-    );
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch products');
-    }
-    
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Error fetching category products:', error);
-    return [];
-  }
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { locale, slug } = await params;
   const t = await getMessages(locale);
   
-  const category = await getCategory(slug);
+  const category = await getPublicCategoryBySlug(slug);
   
   if (!category) {
     notFound();
   }
 
   // Get all products for this category (including subcategories if needed)
-  const products = await getCategoryProducts(category.id);
+  const [{ products }, wishlistProductIds] = await Promise.all([
+    getPublicProducts({
+      categoryId: category.id,
+      includeChildren: true,
+      limit: 200,
+      sortBy: "sortOrder",
+      sortOrder: "asc",
+    }),
+    getCurrentWishlistProductIds(),
+  ]);
 
   // Get localized category name
   const getCategoryName = () => {
@@ -231,13 +143,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
 
         {/* Subcategories */}
-        {category.children.length > 0 && (
+        {(category.children?.length ?? 0) > 0 && (
           <div className="mb-12" data-scroll-reveal style={{ transitionDelay: "0.1s" }}>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {t.categories.subcategories}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {category.children.map((subcategory) => (
+              {category.children?.map((subcategory) => (
                 <Link
                   key={subcategory.id}
                   href={`/${locale}/categories/${subcategory.slug}`}
@@ -268,6 +180,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               products={products} 
               locale={locale}
               loading={false}
+              messages={t}
+              initialWishlistProductIds={wishlistProductIds}
             />
           ) : (
             <div className="text-center py-12">

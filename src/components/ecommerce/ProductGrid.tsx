@@ -1,105 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getMessages, Messages } from "@/lib/i18n";
+import type { Messages } from "@/lib/i18n";
+import type { PublicProduct } from "@/lib/catalog";
 import ProductCard from "./ProductCard";
 
-interface Product {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string;
-  shortDescription?: string;
-  price: number;
-  comparePrice?: number;
-  costPrice?: number;
-  stockQuantity: number;
-  isInStock: boolean;
-  allowBackorders: boolean;
-  weight?: number;
-  dimensions?: Record<string, number>;
-  material?: string;
-  warranty?: string;
-  brand?: string;
-  isFeatured: boolean;
-  images: Array<{
-    id: string;
-    url: string;
-    alt?: string;
-    title?: string;
-    isPrimary: boolean;
-    sortOrder: number;
-  }>;
-  variants: Array<{
-    id: string;
-    name: string;
-    sku: string;
-    price: number;
-    comparePrice?: number;
-    stockQuantity: number;
-    isInStock: boolean;
-    attributes: Record<string, string | number>;
-  }>;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-    description?: string;
-  };
-  _count: {
-    reviews: number;
-    variants: number;
-  };
-}
-
 interface ProductGridProps {
-  products: Product[];
+  products: PublicProduct[];
   locale: string;
+  messages: Messages;
+  initialWishlistProductIds?: string[];
   loading?: boolean;
   error?: string;
 }
 
-export default function ProductGrid({ products, locale, loading = false, error }: ProductGridProps) {
-  const [gridCols, setGridCols] = useState("grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4");
-  const [messages, setMessages] = useState<Messages | null>(null);
-
-  useEffect(() => {
-    const loadMessages = async () => {
-      const msgs = await getMessages(locale);
-      setMessages(msgs);
-    };
-    loadMessages();
-  }, [locale]);
-
-  useEffect(() => {
-    const updateGridCols = () => {
-      if (window.innerWidth >= 1280) {
-        setGridCols("grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4");
-      } else if (window.innerWidth >= 1024) {
-        setGridCols("grid-cols-1 md:grid-cols-2 lg:grid-cols-3");
-      } else if (window.innerWidth >= 768) {
-        setGridCols("grid-cols-1 md:grid-cols-2");
-      } else {
-        setGridCols("grid-cols-1");
-      }
-    };
-
-    updateGridCols();
-    window.addEventListener("resize", updateGridCols);
-    return () => window.removeEventListener("resize", updateGridCols);
-  }, []);
+export default function ProductGrid({
+  products,
+  locale,
+  messages,
+  initialWishlistProductIds = [],
+  loading = false,
+  error,
+}: ProductGridProps) {
+  const wishlistProductIds = new Set(initialWishlistProductIds);
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {[...Array(8)].map((_, index) => (
           <div key={index} className="glass rounded-3xl overflow-hidden animate-pulse">
-            <div className="aspect-square bg-gray-200 dark:bg-gray-700"></div>
+            <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
             <div className="p-6 space-y-4">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
             </div>
           </div>
         ))}
@@ -117,14 +51,14 @@ export default function ProductGrid({ products, locale, loading = false, error }
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {messages?.products?.errorLoading || 'خطا در بارگذاری محصولات'}
+            {messages.products.errorLoading}
           </h3>
           <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition-colors duration-200"
           >
-            {messages?.products?.retry || messages?.common?.retry || 'تلاش مجدد'}
+            {messages.products.retry || messages.common.retry}
           </button>
         </div>
       </div>
@@ -141,10 +75,10 @@ export default function ProductGrid({ products, locale, loading = false, error }
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {messages?.products?.noProductsFound || 'محصولی یافت نشد'}
+            {messages.products.noProductsFound}
           </h3>
           <p className="text-gray-700 dark:text-gray-300 text-sm">
-            {messages?.products?.noProductsMessage || 'متأسفانه محصولی با این مشخصات پیدا نشد. لطفاً فیلترهای خود را تغییر دهید.'}
+            {messages.products.noProductsMessage}
           </p>
         </div>
       </div>
@@ -152,12 +86,14 @@ export default function ProductGrid({ products, locale, loading = false, error }
   }
 
   return (
-    <div className={`grid ${gridCols} gap-6`}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product) => (
         <ProductCard
           key={product.id}
           product={product}
           locale={locale}
+          messages={messages}
+          initialIsInWishlist={wishlistProductIds.has(product.id)}
         />
       ))}
     </div>
