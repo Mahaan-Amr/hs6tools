@@ -43,7 +43,7 @@
 ### Option 1: Using SMS.ir (Recommended)
 ```env
 # SMS.ir Configuration
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_SECRET_KEY=  # Optional (new panels don't require it)
 SMSIR_VERIFY_TEMPLATE_ID=408915
 SMSIR_PASSWORD_RESET_TEMPLATE_ID=  # Optional (will use SMSIR_VERIFY_TEMPLATE_ID if not set)

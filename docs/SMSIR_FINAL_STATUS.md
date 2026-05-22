@@ -52,7 +52,7 @@
 
 **Current Configuration:**
 ```env
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 ```
 
@@ -152,7 +152,7 @@ SMSIR_VERIFY_TEMPLATE_ID=408915
 ### 2. Environment Variables ⏳
 - **Action:** Add to `.env.production`:
   ```env
-  SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+  SMSIR_API_KEY=your-smsir-api-key-here
   SMSIR_VERIFY_TEMPLATE_ID=408915
   ```
 
@@ -211,7 +211,7 @@ SMSIR_VERIFY_TEMPLATE_ID=408915
 
 **Configuration Status:** ⏳ **PENDING**
 
-- ✅ API Key: `qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw`
+- ✅ API Key: `your-smsir-api-key-here`
 - ✅ Template ID: `408915`
 - ⏳ Template Approval: Waiting
 - ⏳ Environment Variables: Need to add to `.env.production`

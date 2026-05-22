@@ -80,7 +80,7 @@
 
 ### API Key
 ```
-qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+your-smsir-api-key-here
 ```
 
 ### Template ID
@@ -90,7 +90,7 @@ qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
 
 ### Environment Variables Required
 ```env
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 ```
 
@@ -207,7 +207,7 @@ SMSIR_VERIFY_TEMPLATE_ID=408915
 ### 2. Environment Variables ⏳
 - **Action:** Add to `.env.production`:
   ```env
-  SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+  SMSIR_API_KEY=your-smsir-api-key-here
   SMSIR_VERIFY_TEMPLATE_ID=408915
   ```
 

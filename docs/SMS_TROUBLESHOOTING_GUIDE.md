@@ -23,7 +23,7 @@ pm2 logs hs6tools --lines 50 | grep -i "PM2 Config"
 **Expected Output:**
 ```
 [PM2 Config] Loaded 45 environment variables from .env
-[PM2 Config] SMS.ir API Key present: YES (qr6OhgdzDXrmHeEh...)
+[PM2 Config] SMS.ir API Key present: YES (48 chars)
 [PM2 Config] SMS.ir Template ID: 408915
 ```
 
@@ -43,7 +43,7 @@ pm2 logs hs6tools --lines 100 | grep -i "sms\|provider"
 **Expected Output (when SMS is sent):**
 ```
 📱 [verify-phone/send] SMS Provider Detection: {
-  smsirApiKey: 'qr6OhgdzDXrmHeEh... (48 chars)',
+  smsirApiKey: 'SET (48 chars)',
   smsirTemplateId: '408915',
   kavenegarApiKey: 'NOT SET',
   nodeEnv: 'production'
@@ -76,7 +76,7 @@ cat .env | grep SMSIR
 
 **Expected Output:**
 ```
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 ```
 
@@ -89,7 +89,7 @@ SMSIR_VERIFY_TEMPLATE_ID=408915
    ```bash
    nano .env.production
    # Add:
-   SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+   SMSIR_API_KEY=your-smsir-api-key-here
    SMSIR_VERIFY_TEMPLATE_ID=408915
    ```
 3. Run update script:

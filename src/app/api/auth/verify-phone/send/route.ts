@@ -5,6 +5,11 @@ import { rateLimitByIp } from "@/lib/rateLimit";
 import { isAllowedOrigin } from "@/utils/origin";
 import { VerificationType } from "@prisma/client";
 
+function getEnvValue(name: string): string | undefined {
+  const value = process.env[name]?.trim().replace(/^['"]|['"]$/g, '');
+  return value || undefined;
+}
+
 /**
  * POST /api/auth/verify-phone/send
  * Send phone verification code
@@ -12,18 +17,18 @@ import { VerificationType } from "@prisma/client";
 export async function POST(request: NextRequest) {
   try {
     // Check if SMS service is configured (SMS.ir takes priority, then Kavenegar)
-    const smsirApiKey = process.env.SMSIR_API_KEY;
-    const smsirTemplateId = process.env.SMSIR_VERIFY_TEMPLATE_ID;
+    const smsirApiKey = getEnvValue('SMSIR_API_KEY');
+    const smsirTemplateId = getEnvValue('SMSIR_VERIFY_TEMPLATE_ID');
     const kavenegarApiKey =
-      process.env.KAVENEGAR_API_KEY ||
-      process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ||
-      process.env.KAVENEGAR_API_TOKEN;
+      getEnvValue('KAVENEGAR_API_KEY') ||
+      getEnvValue('NEXT_PUBLIC_KAVENEGAR_API_KEY') ||
+      getEnvValue('KAVENEGAR_API_TOKEN');
 
     // Enhanced logging for debugging
     console.log('📱 [verify-phone/send] SMS Provider Detection:', {
-      smsirApiKey: smsirApiKey ? `${smsirApiKey.substring(0, 16)}... (${smsirApiKey.length} chars)` : 'NOT SET',
+      smsirApiKey: smsirApiKey ? `SET (${smsirApiKey.length} chars)` : 'NOT SET',
       smsirTemplateId: smsirTemplateId || 'NOT SET',
-      kavenegarApiKey: kavenegarApiKey ? `${kavenegarApiKey.substring(0, 16)}... (${kavenegarApiKey.length} chars)` : 'NOT SET',
+      kavenegarApiKey: kavenegarApiKey ? `SET (${kavenegarApiKey.length} chars)` : 'NOT SET',
       nodeEnv: process.env.NODE_ENV,
     });
 
@@ -172,7 +177,7 @@ export async function POST(request: NextRequest) {
     // Determine template based on SMS provider
     // SMS.ir uses Template ID (number), Kavenegar uses template name (string)
     const template = smsirApiKey 
-      ? (process.env.SMSIR_SIGNUP_VERIFY_TEMPLATE_ID || process.env.SMSIR_VERIFY_TEMPLATE_ID || 'verify') // Use Template ID for SMS.ir
+      ? (getEnvValue('SMSIR_SIGNUP_VERIFY_TEMPLATE_ID') || getEnvValue('SMSIR_VERIFY_TEMPLATE_ID') || '280627') // Use Template ID for SMS.ir
       : 'verify'; // Template name for Kavenegar
     
     const templateResult = await sendVerificationCode({

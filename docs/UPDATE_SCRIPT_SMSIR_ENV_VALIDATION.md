@@ -180,7 +180,7 @@ After restarting PM2, the script verifies:
 ### Using SMS.ir (Recommended)
 ```env
 # SMS.ir Configuration
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 # Optional
 SMSIR_SECRET_KEY=

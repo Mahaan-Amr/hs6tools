@@ -36,8 +36,8 @@ REQUIRED_ENV_VARS=(
 # SMS.ir fast-send template IDs approved/created in the SMS.ir panel.
 # These are only inserted into env files when the variable is missing.
 SMSIR_TEMPLATE_DEFAULTS=(
-  "SMSIR_VERIFY_TEMPLATE_ID=285627"
-  "SMSIR_SIGNUP_VERIFY_TEMPLATE_ID=285627"
+  "SMSIR_VERIFY_TEMPLATE_ID=280627"
+  "SMSIR_SIGNUP_VERIFY_TEMPLATE_ID=280627"
   "SMSIR_WELCOME_SIMPLE_TEMPLATE_ID=393070"
   "SMSIR_WELCOME_INFO_TEMPLATE_ID=393070"
   "SMSIR_LOGIN_OTP_TEMPLATE_ID=619622"
@@ -378,7 +378,7 @@ validate_smsir_config() {
     
     # Summary
     info "SMS.ir Configuration Summary:"
-    info "  ✅ API Key: ${SMSIR_API_KEY_VALUE:0:16}... (${#SMSIR_API_KEY_VALUE} chars)"
+    info "  ✅ API Key: SET (${#SMSIR_API_KEY_VALUE} chars)"
     if [ -n "$SMSIR_SECRET_KEY_VALUE" ]; then
         info "  ✅ Secret Key: ${SMSIR_SECRET_KEY_VALUE:0:16}... (${#SMSIR_SECRET_KEY_VALUE} chars)"
     else
@@ -493,7 +493,7 @@ validate_kavenegar_config() {
     
     # Summary
     info "Kavenegar Configuration Summary:"
-    info "  API Key: ${KAVENEGAR_API_KEY_VALUE:0:16}... (${#KAVENEGAR_API_KEY_VALUE} chars)"
+    info "  API Key: SET (${#KAVENEGAR_API_KEY_VALUE} chars)"
     info "  Sender: ${KAVENEGAR_SENDER_VALUE:-2000660110}"
 }
 
@@ -1047,7 +1047,7 @@ if (fs.existsSync(envPath)) {
   });
   
   console.log(`[PM2 Config] Loaded ${Object.keys(envVars).length} environment variables from .env`);
-  console.log(`[PM2 Config] SMS.ir API Key present: ${envVars.SMSIR_API_KEY ? 'YES (' + envVars.SMSIR_API_KEY.substring(0, 16) + '...)' : 'NO'}`);
+  console.log(`[PM2 Config] SMS.ir API Key present: ${envVars.SMSIR_API_KEY ? 'YES (' + envVars.SMSIR_API_KEY.length + ' chars)' : 'NO'}`);
   console.log(`[PM2 Config] SMS.ir Template ID: ${envVars.SMSIR_VERIFY_TEMPLATE_ID || 'NOT SET'}`);
 } else {
   console.warn('[PM2 Config] .env file not found at:', envPath);

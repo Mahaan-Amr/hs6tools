@@ -18,7 +18,7 @@ cp .env.production .env
 
 ### Step 2: Validate Configuration
 The script validates:
-- ✅ SMS.ir API key is present: `qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw`
+- ✅ SMS.ir API key is present: `your-smsir-api-key-here`
 - ✅ Template ID is present: `408915`
 - ✅ All required variables are set
 
@@ -49,7 +49,7 @@ When PM2 restarts, it automatically:
 
 2. **Add these lines:**
    ```env
-   SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+   SMSIR_API_KEY=your-smsir-api-key-here
    SMSIR_VERIFY_TEMPLATE_ID=408915
    ```
 
@@ -108,7 +108,7 @@ The script automatically verifies that API keys are loaded:
 
 ```env
 # SMS.ir Configuration (automatically loaded by update.sh)
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 
 # Optional

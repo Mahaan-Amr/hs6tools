@@ -119,8 +119,8 @@ export interface TemplateSMSOptions {
 }
 
 const DEFAULT_SMSIR_TEMPLATE_IDS: Partial<Record<SMSTemplateEnvKey, string>> = {
-  SMSIR_VERIFY_TEMPLATE_ID: '285627',
-  SMSIR_SIGNUP_VERIFY_TEMPLATE_ID: '285627',
+  SMSIR_VERIFY_TEMPLATE_ID: '280627',
+  SMSIR_SIGNUP_VERIFY_TEMPLATE_ID: '280627',
   SMSIR_WELCOME_SIMPLE_TEMPLATE_ID: '393070',
   SMSIR_WELCOME_INFO_TEMPLATE_ID: '393070',
   SMSIR_LOGIN_OTP_TEMPLATE_ID: '619622',
@@ -230,6 +230,15 @@ function toSMSIrParameters(parameters: Record<string, string | number>) {
   }));
 }
 
+function getEnvValue(name: string): string | undefined {
+  const value = process.env[name]?.trim().replace(/^['"]|['"]$/g, '');
+  return value || undefined;
+}
+
+function getSMSIrTemplateId(templateEnvKey: SMSTemplateEnvKey): string | undefined {
+  return getEnvValue(templateEnvKey) || DEFAULT_SMSIR_TEMPLATE_IDS[templateEnvKey];
+}
+
 export function getSMSStoreName(): string {
   return process.env.NEXT_PUBLIC_APP_NAME || 'HS6Tools';
 }
@@ -265,8 +274,8 @@ export function formatShippingAddressForSMS(address?: {
  * API: Direct API key authentication (no token system)
  */
 function getSMSIrClient() {
-  const apiKey = process.env.SMSIR_API_KEY;
-  const lineNumber = process.env.SMSIR_LINE_NUMBER?.trim() || undefined;
+  const apiKey = getEnvValue('SMSIR_API_KEY');
+  const lineNumber = getEnvValue('SMSIR_LINE_NUMBER');
 
   if (!apiKey) {
     throw new Error('SMSIR_API_KEY is not set in environment variables');
@@ -973,7 +982,7 @@ export async function sendTemplateSMS(options: TemplateSMSOptions): Promise<SMSR
     };
   }
 
-  const templateValue = process.env[options.templateEnvKey] || DEFAULT_SMSIR_TEMPLATE_IDS[options.templateEnvKey];
+  const templateValue = getSMSIrTemplateId(options.templateEnvKey);
   if (!templateValue) {
     return {
       success: false,

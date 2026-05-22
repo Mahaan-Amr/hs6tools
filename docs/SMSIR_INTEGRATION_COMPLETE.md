@@ -4,7 +4,7 @@
 
 ### API Key
 ```
-qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+your-smsir-api-key-here
 ```
 
 ### Template ID (Pattern Code)
@@ -29,7 +29,7 @@ Add to `.env.production`:
 
 ```env
 # SMS.ir Configuration
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 
 # Optional (new panels don't need secret key)
@@ -42,7 +42,7 @@ SMSIR_LINE_NUMBER=
 Copy to `.env.local`:
 
 ```env
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 ```
 
@@ -141,7 +141,7 @@ The code is already configured to:
 
 ## Next Steps
 
-1. ✅ **API Key:** Configured (`qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw`)
+1. ✅ **API Key:** Configured (`your-smsir-api-key-here`)
 2. ✅ **Template:** Created (ID: `408915`)
 3. ⏳ **Template Approval:** Wait for approval (check panel)
 4. ⏳ **Environment Variables:** Add to `.env.production`
@@ -152,7 +152,7 @@ The code is already configured to:
 
 ## Quick Reference
 
-**API Key:** `qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw`  
+**API Key:** `your-smsir-api-key-here`  
 **Template ID:** `408915`  
 **Template Status:** Under Review (waiting for approval)  
 **Panel URL:** `https://app.sms.ir/fast-send/template`

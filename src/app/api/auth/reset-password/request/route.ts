@@ -5,6 +5,11 @@ import { VerificationType } from "@prisma/client";
 import { rateLimitByIp } from "@/lib/rateLimit";
 import { isAllowedOrigin } from "@/utils/origin";
 
+function getEnvValue(name: string): string | undefined {
+  const value = process.env[name]?.trim().replace(/^['"]|['"]$/g, '');
+  return value || undefined;
+}
+
 /**
  * POST /api/auth/reset-password/request
  * Request password reset - sends verification code to phone
@@ -96,9 +101,9 @@ export async function POST(request: NextRequest) {
     // Send SMS with verification code
     // Try using template first, fallback to simple SMS
     // Determine template based on SMS provider
-    const smsirApiKey = process.env.SMSIR_API_KEY;
+    const smsirApiKey = getEnvValue('SMSIR_API_KEY');
     const template = smsirApiKey 
-      ? (process.env.SMSIR_PASSWORD_RESET_TEMPLATE_ID || process.env.SMSIR_VERIFY_TEMPLATE_ID || 'password-reset')
+      ? (getEnvValue('SMSIR_PASSWORD_RESET_TEMPLATE_ID') || getEnvValue('SMSIR_VERIFY_TEMPLATE_ID') || '846716')
       : 'password-reset'; // Template name for Kavenegar
     
     const templateResult = await sendVerificationCode({

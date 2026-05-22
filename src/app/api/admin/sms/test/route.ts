@@ -38,9 +38,6 @@ export async function GET() {
       SMSIR_API_KEY: {
         present: !!process.env.SMSIR_API_KEY,
         length: process.env.SMSIR_API_KEY?.length || 0,
-        preview: process.env.SMSIR_API_KEY
-          ? `${process.env.SMSIR_API_KEY.substring(0, 16)}...`
-          : "NOT SET",
       },
       SMSIR_SECRET_KEY: {
         present: !!process.env.SMSIR_SECRET_KEY,
@@ -88,7 +85,8 @@ export async function GET() {
 
         diagnostics.clientTest = {
           attempting: true,
-          apiKeyPreview: `${apiKey.substring(0, 16)}...`,
+          apiKeyPresent: true,
+          apiKeyLength: apiKey.length,
           lineNumber: lineNumber || 'default',
         };
 

@@ -50,7 +50,7 @@ This document confirms that SMS.ir integration is **complete and consistent** ac
 
 **Required:**
 ```env
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 ```
 

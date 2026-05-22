@@ -2,7 +2,7 @@
 
 ## Your API Key
 
-**API Key:** `qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw`
+**API Key:** `your-smsir-api-key-here`
 
 **Status:** ✅ Active (Production)
 
@@ -20,7 +20,7 @@ Add to `.env.production`:
 
 ```env
 # SMS.ir Configuration
-SMSIR_API_KEY=qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw
+SMSIR_API_KEY=your-smsir-api-key-here
 SMSIR_VERIFY_TEMPLATE_ID=408915
 ```
 
@@ -101,7 +101,7 @@ After deployment, the script verifies:
 
 ## Quick Setup Checklist
 
-- [x] API Key obtained: `qr6OhgdzDXrmHeEhS3MrJ6PbDF4fxehV86y8QvhEzrQKRyFw`
+- [x] API Key obtained: `your-smsir-api-key-here`
 - [x] Template created: `408915`
 - [ ] Template approved (pending)
 - [ ] Added to `.env.production`
