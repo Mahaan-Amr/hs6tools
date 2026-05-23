@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeUploadUrl } from "@/utils/image-url";
 
+const MAX_MONEY_VALUE = 999_999_999_999.99;
+
+function validateMoneyField(value: unknown, label: string, required = false) {
+  if (value === null || value === undefined || value === "") {
+    return required ? `${label} is required` : null;
+  }
+
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) {
+    return `${label} must be a valid positive number`;
+  }
+
+  if (numericValue > MAX_MONEY_VALUE) {
+    return `${label} is too large`;
+  }
+
+  return null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -135,6 +154,18 @@ export async function PUT(
           { status: 400 }
         );
       }
+    }
+
+    const moneyError =
+      validateMoneyField(body.price, "Price", true) ||
+      validateMoneyField(body.comparePrice, "Compare price") ||
+      validateMoneyField(body.costPrice, "Cost price");
+
+    if (moneyError) {
+      return NextResponse.json(
+        { success: false, error: moneyError },
+        { status: 400 }
+      );
     }
 
     // Handle image updates in a transaction

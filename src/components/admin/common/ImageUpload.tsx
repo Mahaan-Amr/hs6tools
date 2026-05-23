@@ -14,6 +14,7 @@ interface ImageFile {
   alt?: string;
   title?: string;
   isPrimary?: boolean;
+  sizeKnown?: boolean;
 }
 
 interface ImageUploadProps {
@@ -115,7 +116,7 @@ export default function ImageUpload({
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
+    if (bytes <= 0) return "";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -195,12 +196,13 @@ export default function ImageUpload({
           {images.map((image) => (
             <div key={image.id} className="relative group">
               {/* Image */}
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-800">
+              <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-800">
                 <Image
                   src={image.url}
                   alt={image.alt || image.originalName}
                   fill
                   className="object-cover"
+                  sizes="(max-width: 768px) 50vw, 25vw"
                 />
               </div>
 
@@ -232,7 +234,7 @@ export default function ImageUpload({
               {/* Image Info */}
               <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-2 text-white text-xs">
                 <p className="truncate">{image.originalName}</p>
-                <p className="text-gray-300">{formatFileSize(image.size)}</p>
+                {image.size > 0 && <p className="text-gray-300">{formatFileSize(image.size)}</p>}
               </div>
 
               {/* Primary Badge */}

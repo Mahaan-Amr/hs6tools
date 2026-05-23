@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeUploadUrl } from "@/utils/image-url";
+import { getSlugCandidates } from "@/utils/slug";
 
 const publicProductWhere: Prisma.ProductWhereInput = {
   isActive: true,
@@ -423,7 +424,7 @@ export async function getPublicCategories(): Promise<PublicCategory[]> {
 export async function getPublicCategoryBySlug(slug: string): Promise<PublicCategory | null> {
   const category = await prisma.category.findFirst({
     where: {
-      slug,
+      slug: { in: getSlugCandidates(slug) },
       ...publicCategoryWhere,
     },
     include: {
@@ -461,7 +462,7 @@ export async function getPublicCategoryBySlug(slug: string): Promise<PublicCateg
 export async function getPublicProductBySlug(slug: string): Promise<PublicProductDetail | null> {
   const product = await prisma.product.findFirst({
     where: {
-      slug,
+      slug: { in: getSlugCandidates(slug) },
       ...publicProductWhere,
     },
     include: {

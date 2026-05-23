@@ -6,8 +6,8 @@ import AuthProvider from "@/components/providers/AuthProvider";
 import ThemeProvider from "@/components/providers/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "HS6Tools - Industrial E-Commerce Platform",
-  description: "Premium industrial and woodworking tools manufacturer. High-quality diamond discs, cutters, clamps, and accessories.",
+  title: "HS6Tools",
+  description: "Premium industrial and woodworking tools manufacturer.",
   keywords: "industrial tools, woodworking tools, diamond discs, cutters, clamps, manufacturing tools",
   authors: [{ name: "HS6Tools" }],
   creator: "HS6Tools",
@@ -17,17 +17,17 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: new URL("https://hs6tools.com"),
   openGraph: {
-    title: "HS6Tools - Industrial E-Commerce Platform",
+    title: "HS6Tools",
     description: "Premium industrial and woodworking tools manufacturer",
-    url: "http://localhost:3000",
+    url: "https://hs6tools.com",
     siteName: "HS6Tools",
     locale: "fa_IR",
     type: "website",
     images: [
       {
-        url: "/logo.svg",
+        url: "/favicon-512.png",
         width: 1200,
         height: 630,
         alt: "HS6Tools Logo",
@@ -36,14 +36,18 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "HS6Tools - Industrial E-Commerce Platform",
+    title: "HS6Tools",
     description: "Premium industrial and woodworking tools manufacturer",
-    images: ["/logo.svg"],
+    images: ["/favicon-512.png"],
   },
   icons: {
-    icon: "/logo.svg",
-    shortcut: "/logo.svg",
-    apple: "/logo.svg",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
   robots: {
     index: true,

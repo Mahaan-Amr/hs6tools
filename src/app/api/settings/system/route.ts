@@ -1,33 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSystemSettings, normalizeSiteSeo } from "@/lib/site-settings";
 
 export async function GET() {
   try {
-    // Get system settings (create default if none exist)
-    let settings = await prisma.systemSettings.findFirst();
-    
-    if (!settings) {
-      // Create default settings
-      settings = await prisma.systemSettings.create({
-        data: {
-          siteName: "HS6Tools",
-          siteDescription: "Industrial E-Commerce Platform",
-          siteUrl: "http://localhost:3000",
-          contactEmail: "support@hs6tools.com",
-          contactPhone: "+98-21-12345678",
-          businessAddress: "Tehran, Iran",
-          currency: "IRR",
-          language: "fa",
-          timezone: "Asia/Tehran",
-          maintenanceMode: false,
-          allowRegistration: true,
-          requireEmailVerification: false,
-          requirePhoneVerification: false,
-        },
-      });
-    }
+    const settings = await getSystemSettings();
 
     return NextResponse.json({ success: true, data: settings });
   } catch (error) {
@@ -54,6 +34,7 @@ export async function PUT(request: NextRequest) {
       siteName,
       siteDescription,
       siteUrl,
+      siteSeo,
       contactEmail,
       contactPhone,
       businessAddress,
@@ -74,41 +55,35 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update or create settings
-    const settings = await prisma.systemSettings.upsert({
-      where: { id: "default" },
-      update: {
-        siteName,
-        siteDescription,
-        siteUrl,
-        contactEmail,
-        contactPhone,
-        businessAddress,
-        currency,
-        language,
-        timezone,
-        maintenanceMode,
-        allowRegistration,
-        requireEmailVerification,
-        requirePhoneVerification,
-      },
-      create: {
-        id: "default",
-        siteName,
-        siteDescription,
-        siteUrl,
-        contactEmail,
-        contactPhone,
-        businessAddress,
-        currency,
-        language,
-        timezone,
-        maintenanceMode,
-        allowRegistration,
-        requireEmailVerification,
-        requirePhoneVerification,
-      },
-    });
+    const existingSettings = await prisma.systemSettings.findFirst({ select: { id: true } });
+    const settingsData = {
+      siteName,
+      siteDescription,
+      siteUrl,
+      siteSeo: normalizeSiteSeo(siteSeo) as unknown as Prisma.InputJsonValue,
+      contactEmail,
+      contactPhone,
+      businessAddress,
+      currency,
+      language,
+      timezone,
+      maintenanceMode,
+      allowRegistration,
+      requireEmailVerification,
+      requirePhoneVerification,
+    };
+
+    const settings = existingSettings
+      ? await prisma.systemSettings.update({
+          where: { id: existingSettings.id },
+          data: settingsData,
+        })
+      : await prisma.systemSettings.create({
+          data: {
+            id: "default",
+            ...settingsData,
+          },
+        });
 
     return NextResponse.json({ success: true, data: settings });
   } catch (error) {

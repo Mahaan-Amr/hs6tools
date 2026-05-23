@@ -6,6 +6,8 @@ import { formatPrice } from "@/utils/format";
 import ImageUpload from "@/components/admin/common/ImageUpload";
 import { getMessages, Messages } from "@/lib/i18n";
 
+const MAX_MONEY_VALUE = 999_999_999_999.99;
+
 interface ImageFile {
   id: string;
   name: string;
@@ -153,6 +155,16 @@ export default function ProductForm({
 
     if (formData.price <= 0) {
       newErrors.price = String(t.priceRequired);
+    } else if (formData.price > MAX_MONEY_VALUE) {
+      newErrors.price = "قیمت بیش از حد مجاز است.";
+    }
+
+    if ((formData.comparePrice || 0) > MAX_MONEY_VALUE) {
+      newErrors.comparePrice = "قیمت مقایسه‌ای بیش از حد مجاز است.";
+    }
+
+    if ((formData.costPrice || 0) > MAX_MONEY_VALUE) {
+      newErrors.costPrice = "قیمت تمام‌شده بیش از حد مجاز است.";
     }
 
     if (formData.stockQuantity < 0) {
@@ -304,6 +316,7 @@ export default function ProductForm({
                 }`}
                 placeholder="0"
                 min="0"
+                max={MAX_MONEY_VALUE}
                 step="1000"
               />
               {errors.price && <p className="mt-1 text-sm text-red-400">{errors.price}</p>}
@@ -326,8 +339,10 @@ export default function ProductForm({
                 className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                 placeholder="0"
                 min="0"
+                max={MAX_MONEY_VALUE}
                 step="1000"
               />
+              {errors.comparePrice && <p className="mt-1 text-sm text-red-400">{errors.comparePrice}</p>}
               {formData.comparePrice && formData.comparePrice > 0 && (
                 <p className="mt-1 text-sm text-gray-400">
                   {formatPrice(formData.comparePrice)}
@@ -579,8 +594,10 @@ export default function ProductForm({
                     className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
                     placeholder="0"
                     min="0"
+                    max={MAX_MONEY_VALUE}
                     step="1000"
                   />
+                  {errors.costPrice && <p className="mt-1 text-sm text-red-400">{errors.costPrice}</p>}
                 </div>
 
                 {/* Weight */}

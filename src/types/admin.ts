@@ -407,6 +407,7 @@ export interface SystemSettings {
   siteName: string;
   siteDescription: string;
   siteUrl: string;
+  siteSeo: SiteSeoSettings;
   contactEmail: string;
   contactPhone: string;
   businessAddress: string;
@@ -418,6 +419,15 @@ export interface SystemSettings {
   requireEmailVerification: boolean;
   requirePhoneVerification: boolean;
 }
+
+export interface LocaleSeoSettings {
+  title: string;
+  description: string;
+  keywords: string;
+  socialImage: string;
+}
+
+export type SiteSeoSettings = Record<"fa" | "en" | "ar", LocaleSeoSettings>;
 
 export interface EmailSettings {
   smtpHost: string;

@@ -56,6 +56,7 @@ export default function HomepageSlider({
   }
 
   const activeSlide = slides[activeIndex];
+  const goToSlideHref = activeSlide.bannerHref;
 
   return (
     <div className="space-y-5">
@@ -64,81 +65,100 @@ export default function HomepageSlider({
           activeSlide.bannerHref ? "cursor-pointer" : ""
         }`}
         onClick={() => {
-          if (activeSlide.bannerHref) router.push(activeSlide.bannerHref);
+          if (goToSlideHref) router.push(goToSlideHref);
         }}
-        role={activeSlide.bannerHref ? "button" : undefined}
-        tabIndex={activeSlide.bannerHref ? 0 : undefined}
+        role={goToSlideHref ? "button" : undefined}
+        tabIndex={goToSlideHref ? 0 : undefined}
         onKeyDown={(event) => {
-          if (activeSlide.bannerHref && (event.key === "Enter" || event.key === " ")) {
+          if (goToSlideHref && (event.key === "Enter" || event.key === " ")) {
             event.preventDefault();
-            router.push(activeSlide.bannerHref);
+            router.push(goToSlideHref);
           }
         }}
       >
-        <div className="relative aspect-[16/8] min-h-[320px] md:min-h-[420px]">
-          {activeSlide.mobileImage ? (
-            <>
-              <div className="absolute inset-0 md:hidden">
-                <Image
-                  src={activeSlide.mobileImage}
-                  alt={activeSlide.title}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="100vw"
-                />
-              </div>
-              <div className="absolute inset-0 hidden md:block">
-                <Image
-                  src={activeSlide.desktopImage}
-                  alt={activeSlide.title}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="100vw"
-                />
-              </div>
-            </>
-          ) : (
-            <Image
-              src={activeSlide.desktopImage}
-              alt={activeSlide.title}
-              fill
-              priority
-              className="object-cover"
-              sizes="100vw"
-            />
-          )}
+        <div className="relative aspect-[4/5] min-h-[320px] sm:aspect-[16/9] md:aspect-[16/8] md:min-h-[420px]">
+          {slides.map((slide, index) => {
+            const isActive = index === activeIndex;
+            return (
+              <div
+                key={slide.id}
+                className={`absolute inset-0 transition-[opacity,transform] duration-700 ease-out ${
+                  isActive ? "z-10 scale-100 opacity-100" : "z-0 scale-[1.025] opacity-0"
+                }`}
+                aria-hidden={!isActive}
+              >
+                {slide.mobileImage ? (
+                  <>
+                    <div className="absolute inset-0 md:hidden">
+                      <Image
+                        src={slide.mobileImage}
+                        alt={slide.title}
+                        fill
+                        priority={index === 0}
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 0vw"
+                      />
+                    </div>
+                    <div className="absolute inset-0 hidden md:block">
+                      <Image
+                        src={slide.desktopImage}
+                        alt={slide.title}
+                        fill
+                        priority={index === 0}
+                        className="object-cover"
+                        sizes="100vw"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <Image
+                    src={slide.desktopImage}
+                    alt={slide.title}
+                    fill
+                    priority={index === 0}
+                    className="object-cover"
+                    sizes="100vw"
+                  />
+                )}
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,10,10,0.82)_0%,rgba(10,10,10,0.6)_42%,rgba(10,10,10,0.3)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.25),transparent_30%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.62)_48%,rgba(0,0,0,0.9)_100%)] md:bg-[linear-gradient(90deg,rgba(10,10,10,0.86)_0%,rgba(10,10,10,0.62)_42%,rgba(10,10,10,0.28)_100%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.25),transparent_30%)]" />
 
-          <div className="relative z-10 flex h-full items-end p-6 md:p-10">
-            <div className="max-w-2xl">
-              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-orange-200 backdrop-blur-sm">
-                Featured Banner
-              </span>
-              <h3 className="mt-4 text-3xl font-bold leading-tight text-white md:text-5xl">
-                {activeSlide.title}
-              </h3>
-              {activeSlide.subtitle && (
-                <p className="mt-4 max-w-xl text-sm leading-7 text-white/80 md:text-lg">
-                  {activeSlide.subtitle}
-                </p>
-              )}
-              {activeSlide.buttonLabel && activeSlide.buttonHref && (
-                <div className="mt-7">
-                  <Link
-                    href={activeSlide.buttonHref}
-                    onClick={(event) => event.stopPropagation()}
-                    className="inline-flex items-center rounded-2xl bg-primary-orange px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
-                  >
-                    {activeSlide.buttonLabel}
-                  </Link>
+                <div className="relative z-10 flex h-full items-end p-5 sm:p-6 md:p-10">
+                  <div className="max-w-full md:max-w-2xl">
+                    <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-200 backdrop-blur-sm sm:text-xs md:tracking-[0.32em]">
+                      Featured Banner
+                    </span>
+                    <h3
+                      className="mt-3 max-w-full overflow-hidden text-2xl font-bold leading-tight text-white sm:text-3xl md:mt-4 md:text-5xl"
+                      style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+                    >
+                      {slide.title}
+                    </h3>
+                    {slide.subtitle && (
+                      <p
+                        className="mt-3 max-w-full overflow-hidden text-sm leading-7 text-white/85 md:mt-4 md:max-w-xl md:text-lg"
+                        style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+                      >
+                        {slide.subtitle}
+                      </p>
+                    )}
+                    {slide.buttonLabel && slide.buttonHref && (
+                      <div className="mt-5 md:mt-7">
+                        <Link
+                          href={slide.buttonHref}
+                          onClick={(event) => event.stopPropagation()}
+                          className="inline-flex items-center rounded-xl bg-primary-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 md:rounded-2xl md:px-6 md:py-3"
+                        >
+                          {slide.buttonLabel}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            );
+          })}
         </div>
 
         {slides.length > 1 && (

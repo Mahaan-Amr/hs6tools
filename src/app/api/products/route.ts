@@ -6,6 +6,25 @@ import { authOptions } from "@/lib/auth";
 import { hasRole } from "@/lib/authz";
 import { normalizeUploadUrl } from "@/utils/image-url";
 
+const MAX_MONEY_VALUE = 999_999_999_999.99;
+
+function validateMoneyField(value: unknown, label: string, required = false) {
+  if (value === null || value === undefined || value === "") {
+    return required ? `${label} is required` : null;
+  }
+
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) {
+    return `${label} must be a valid positive number`;
+  }
+
+  if (numericValue > MAX_MONEY_VALUE) {
+    return `${label} is too large`;
+  }
+
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -184,6 +203,18 @@ export async function POST(request: NextRequest) {
     if (!body.name || !body.sku || !body.slug || !body.price || !body.categoryId) {
       return NextResponse.json(
         { success: false, error: "Name, SKU, slug, price, and categoryId are required" },
+        { status: 400 }
+      );
+    }
+
+    const moneyError =
+      validateMoneyField(body.price, "Price", true) ||
+      validateMoneyField(body.comparePrice, "Compare price") ||
+      validateMoneyField(body.costPrice, "Cost price");
+
+    if (moneyError) {
+      return NextResponse.json(
+        { success: false, error: moneyError },
         { status: 400 }
       );
     }

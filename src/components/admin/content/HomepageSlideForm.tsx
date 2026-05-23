@@ -228,6 +228,9 @@ export default function HomepageSlideForm({
                 required
                 category="homepage"
               />
+              <p className="mt-2 text-xs leading-6 text-gray-500 dark:text-gray-400">
+                پیشنهاد: 1600x800 پیکسل با نسبت 2:1. سوژه اصلی را نزدیک مرکز نگه دارید.
+              </p>
               {errors.desktopImage && <p className="mt-2 text-sm text-red-500">{errors.desktopImage}</p>}
             </div>
             <div>
@@ -242,6 +245,9 @@ export default function HomepageSlideForm({
                 label="تصویر موبایل"
                 category="homepage"
               />
+              <p className="mt-2 text-xs leading-6 text-gray-500 dark:text-gray-400">
+                اختیاری. پیشنهاد: 900x1200 پیکسل با نسبت 3:4. اگر خالی باشد تصویر دسکتاپ نمایش داده می‌شود.
+              </p>
             </div>
           </div>
 

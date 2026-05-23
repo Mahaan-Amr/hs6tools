@@ -3,6 +3,27 @@ import { useState, useEffect, useMemo } from "react";
 import { SystemSettings } from "@/types/admin";
 import { getMessages, Messages } from "@/lib/i18n";
 
+const defaultSiteSeo = {
+  fa: {
+    title: "HS6Tools",
+    description: "تولید کننده ابزارآلات صنعتی و نجاری با کیفیت بالا.",
+    keywords: "ابزار صنعتی, ابزار نجاری, دیسک الماسه, کاتر, گیره",
+    socialImage: "/favicon-512.png",
+  },
+  en: {
+    title: "HS6Tools",
+    description: "Premium industrial and woodworking tools manufacturer.",
+    keywords: "industrial tools, woodworking tools, diamond discs, cutters, clamps",
+    socialImage: "/favicon-512.png",
+  },
+  ar: {
+    title: "HS6Tools",
+    description: "مصنع أدوات صناعية وأدوات نجارة عالية الجودة.",
+    keywords: "أدوات صناعية, أدوات نجارة, أقراص ألماسية, قواطع, مشابك",
+    socialImage: "/favicon-512.png",
+  },
+};
+
 interface SystemSettingsFormProps {
   locale: string;
   onSaveSuccess: (message: string) => void;
@@ -21,6 +42,7 @@ export default function SystemSettingsForm({
     siteName: "",
     siteDescription: "",
     siteUrl: "",
+    siteSeo: defaultSiteSeo,
     contactEmail: "",
     contactPhone: "",
     businessAddress: "",
@@ -83,6 +105,25 @@ export default function SystemSettingsForm({
         return newErrors;
       });
     }
+  };
+
+  const handleSeoChange = (
+    seoLocale: keyof typeof defaultSiteSeo,
+    field: keyof (typeof defaultSiteSeo)["fa"],
+    value: string
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      siteSeo: {
+        ...defaultSiteSeo,
+        ...prev.siteSeo,
+        [seoLocale]: {
+          ...defaultSiteSeo[seoLocale],
+          ...prev.siteSeo?.[seoLocale],
+          [field]: value,
+        },
+      },
+    }));
   };
 
   const validateForm = (): boolean => {
@@ -348,6 +389,71 @@ export default function SystemSettingsForm({
                 <option value="Europe/London">لندن (UTC+0)</option>
               </select>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 md:col-span-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+            SEO و نمایش در گوگل
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {(["fa", "en", "ar"] as const).map((seoLocale) => {
+              const seo = formData.siteSeo?.[seoLocale] || defaultSiteSeo[seoLocale];
+              const label = seoLocale === "fa" ? "فارسی" : seoLocale === "en" ? "English" : "العربية";
+
+              return (
+                <div key={seoLocale} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                  <h4 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">{label}</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-gray-900 dark:text-white font-semibold mb-2 text-sm">
+                        عنوان صفحه
+                      </label>
+                      <input
+                        type="text"
+                        value={seo.title}
+                        onChange={(e) => handleSeoChange(seoLocale, "title", e.target.value)}
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-900 dark:text-white font-semibold mb-2 text-sm">
+                        توضیحات متا
+                      </label>
+                      <textarea
+                        value={seo.description}
+                        onChange={(e) => handleSeoChange(seoLocale, "description", e.target.value)}
+                        rows={3}
+                        className="w-full resize-none px-4 py-3 bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-900 dark:text-white font-semibold mb-2 text-sm">
+                        کلمات کلیدی
+                      </label>
+                      <input
+                        type="text"
+                        value={seo.keywords}
+                        onChange={(e) => handleSeoChange(seoLocale, "keywords", e.target.value)}
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-900 dark:text-white font-semibold mb-2 text-sm">
+                        تصویر اشتراک گذاری
+                      </label>
+                      <input
+                        type="text"
+                        value={seo.socialImage}
+                        onChange={(e) => handleSeoChange(seoLocale, "socialImage", e.target.value)}
+                        placeholder="/favicon-512.png"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

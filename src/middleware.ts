@@ -7,6 +7,13 @@ const defaultLocale = 'fa';
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const host = request.headers.get('host');
+
+  if (host === 'www.hs6tools.com') {
+    const url = request.nextUrl.clone();
+    url.hostname = 'hs6tools.com';
+    return NextResponse.redirect(url, 301);
+  }
   
   // Rate limit NextAuth credential POSTs to reduce brute-force risk
   if (pathname.startsWith('/api/auth') && request.method === 'POST') {

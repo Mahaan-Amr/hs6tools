@@ -125,9 +125,9 @@ model Product {
   slug              String    @unique
   description       String? // Persian description (for admin)
   shortDescription  String? // Persian short description (for admin)
-  price             Decimal   @db.Decimal(10, 2)
-  comparePrice      Decimal?  @db.Decimal(10, 2)
-  costPrice         Decimal?  @db.Decimal(10, 2)
+  price             Decimal   @db.Decimal(14, 2)
+  comparePrice      Decimal?  @db.Decimal(14, 2)
+  costPrice         Decimal?  @db.Decimal(14, 2)
   stockQuantity     Int       @default(0)
   lowStockThreshold Int       @default(5)
   isInStock         Boolean   @default(true)
@@ -186,8 +186,8 @@ model ProductVariant {
   sku           String      @unique
   name          String
   attributes    Json
-  price         Decimal?    @db.Decimal(10, 2)
-  comparePrice  Decimal?    @db.Decimal(10, 2)
+  price         Decimal?    @db.Decimal(14, 2)
+  comparePrice  Decimal?    @db.Decimal(14, 2)
   stockQuantity Int         @default(0)
   isInStock     Boolean     @default(true)
   createdAt     DateTime    @default(now())
@@ -203,11 +203,11 @@ model Order {
   orderNumber          String                @unique
   userId               String
   status               OrderStatus           @default(PENDING)
-  totalAmount          Decimal               @db.Decimal(10, 2)
-  subtotal             Decimal               @db.Decimal(10, 2)
-  taxAmount            Decimal               @db.Decimal(10, 2)
-  shippingAmount       Decimal               @db.Decimal(10, 2)
-  discountAmount       Decimal               @db.Decimal(10, 2)
+  totalAmount          Decimal               @db.Decimal(14, 2)
+  subtotal             Decimal               @db.Decimal(14, 2)
+  taxAmount            Decimal               @db.Decimal(14, 2)
+  shippingAmount       Decimal               @db.Decimal(14, 2)
+  discountAmount       Decimal               @db.Decimal(14, 2)
   couponId             String?
   couponCode           String?
   customerEmail        String
@@ -247,8 +247,8 @@ model OrderItem {
   name        String
   description String?
   image       String?
-  unitPrice   Decimal         @db.Decimal(10, 2)
-  totalPrice  Decimal         @db.Decimal(10, 2)
+  unitPrice   Decimal         @db.Decimal(14, 2)
+  totalPrice  Decimal         @db.Decimal(14, 2)
   quantity    Int
   attributes  Json?
   createdAt   DateTime        @default(now())
@@ -398,6 +398,7 @@ model SystemSettings {
   siteName                 String   @default("HS6Tools")
   siteDescription          String?  @db.Text
   siteUrl                  String   @default("http://localhost:3000")
+  siteSeo                  Json     @default("{}")
   contactEmail             String   @default("support@hs6tools.com")
   contactPhone             String   @default("+98-21-12345678")
   businessAddress          String?  @db.Text
@@ -607,9 +608,9 @@ model Coupon {
   code            String             @unique
   description     String?
   discountType    DiscountType
-  discountValue   Decimal            @db.Decimal(10, 2)
-  minimumAmount   Decimal?           @db.Decimal(10, 2)
-  maximumDiscount Decimal?           @db.Decimal(10, 2)
+  discountValue   Decimal            @db.Decimal(14, 2)
+  minimumAmount   Decimal?           @db.Decimal(14, 2)
+  maximumDiscount Decimal?           @db.Decimal(14, 2)
   usageLimit      Int? // Total usage limit (null = unlimited)
   usageCount      Int                @default(0)
   userUsageLimit  Int                @default(1) // Per user usage limit
@@ -632,7 +633,7 @@ model ShippingMethodConfig {
   id            String   @id @default(cuid())
   name          String
   description   String?
-  price         Decimal  @db.Decimal(10, 2)
+  price         Decimal  @db.Decimal(14, 2)
   estimatedDays String // e.g., "3-5 business days"
   isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
@@ -836,9 +837,9 @@ model Quote {
   customerId  String
   quoteNumber String      @unique
   items       Json
-  subtotal    Decimal     @db.Decimal(10, 2)
-  tax         Decimal     @db.Decimal(10, 2)
-  total       Decimal     @db.Decimal(10, 2)
+  subtotal    Decimal     @db.Decimal(14, 2)
+  tax         Decimal     @db.Decimal(14, 2)
+  total       Decimal     @db.Decimal(14, 2)
   validUntil  DateTime
   status      QuoteStatus
   createdAt   DateTime    @default(now())

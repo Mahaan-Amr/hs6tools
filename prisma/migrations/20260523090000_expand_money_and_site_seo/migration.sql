@@ -1,0 +1,35 @@
+ALTER TABLE "products"
+  ALTER COLUMN "price" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "comparePrice" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "costPrice" TYPE DECIMAL(14, 2);
+
+ALTER TABLE "product_variants"
+  ALTER COLUMN "price" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "comparePrice" TYPE DECIMAL(14, 2);
+
+ALTER TABLE "orders"
+  ALTER COLUMN "totalAmount" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "subtotal" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "taxAmount" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "shippingAmount" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "discountAmount" TYPE DECIMAL(14, 2);
+
+ALTER TABLE "order_items"
+  ALTER COLUMN "unitPrice" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "totalPrice" TYPE DECIMAL(14, 2);
+
+ALTER TABLE "coupons"
+  ALTER COLUMN "discountValue" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "minimumAmount" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "maximumDiscount" TYPE DECIMAL(14, 2);
+
+ALTER TABLE "shipping_methods"
+  ALTER COLUMN "price" TYPE DECIMAL(14, 2);
+
+ALTER TABLE "quotes"
+  ALTER COLUMN "subtotal" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "tax" TYPE DECIMAL(14, 2),
+  ALTER COLUMN "total" TYPE DECIMAL(14, 2);
+
+ALTER TABLE "system_settings"
+  ADD COLUMN IF NOT EXISTS "siteSeo" JSONB NOT NULL DEFAULT '{}';
