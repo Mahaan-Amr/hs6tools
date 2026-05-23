@@ -50,13 +50,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type - support both images and videos
-    const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/avif"];
+    const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/avif", "image/svg+xml"];
     const allowedVideoTypes = ["video/mp4", "video/quicktime", "video/x-msvideo"]; // MP4, MOV, AVI
     const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
     
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Only images (JPEG, PNG, WebP, AVIF) and videos (MP4, MOV) are allowed" },
+        { error: "Invalid file type. Only images (JPEG, PNG, WebP, AVIF, SVG) and videos (MP4, MOV) are allowed" },
         { status: 400 }
       );
     }

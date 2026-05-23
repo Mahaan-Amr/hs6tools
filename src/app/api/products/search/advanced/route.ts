@@ -271,20 +271,23 @@ async function performAdvancedSearch(searchParams: URLSearchParams) {
           select: {
             id: true,
             name: true,
-            slug: true
+            slug: true,
+            description: true
           }
         },
         images: {
-          where: { isPrimary: true },
-          take: 1,
           orderBy: { sortOrder: "asc" }
         },
         variants: {
           select: {
             id: true,
+            name: true,
+            sku: true,
             price: true,
+            comparePrice: true,
             stockQuantity: true,
-            isInStock: true
+            isInStock: true,
+            attributes: true
           }
         },
         _count: {
@@ -308,8 +311,52 @@ async function performAdvancedSearch(searchParams: URLSearchParams) {
 
   return {
     products: products.map((product) => ({
-      ...product,
-      images: product.images.map((image) => ({ ...image, url: normalizeUploadUrl(image.url) })),
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      description: product.description ?? undefined,
+      shortDescription: product.shortDescription ?? undefined,
+      price: Number(product.price),
+      comparePrice: product.comparePrice ? Number(product.comparePrice) : undefined,
+      costPrice: product.costPrice ? Number(product.costPrice) : undefined,
+      stockQuantity: product.stockQuantity,
+      isInStock: product.isInStock,
+      allowBackorders: product.allowBackorders,
+      weight: product.weight ? Number(product.weight) : undefined,
+      dimensions: product.dimensions && typeof product.dimensions === "object" && !Array.isArray(product.dimensions)
+        ? product.dimensions
+        : undefined,
+      material: product.material ?? undefined,
+      warranty: product.warranty ?? undefined,
+      brand: product.brand ?? undefined,
+      isFeatured: product.isFeatured,
+      category: {
+        id: product.category.id,
+        name: product.category.name,
+        slug: product.category.slug,
+        description: product.category.description ?? undefined,
+      },
+      images: product.images.map((image) => ({
+        id: image.id,
+        url: normalizeUploadUrl(image.url),
+        alt: image.alt ?? undefined,
+        title: image.title ?? undefined,
+        isPrimary: image.isPrimary,
+        sortOrder: image.sortOrder,
+      })),
+      variants: product.variants.map((variant) => ({
+        id: variant.id,
+        name: variant.name,
+        sku: variant.sku,
+        price: variant.price ? Number(variant.price) : Number(product.price),
+        comparePrice: variant.comparePrice ? Number(variant.comparePrice) : undefined,
+        stockQuantity: variant.stockQuantity,
+        isInStock: variant.isInStock,
+        attributes: variant.attributes && typeof variant.attributes === "object" && !Array.isArray(variant.attributes)
+          ? variant.attributes
+          : {},
+      })),
+      _count: product._count,
     })),
     pagination: {
       page,

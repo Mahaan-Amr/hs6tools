@@ -141,6 +141,7 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions);
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
     
     // Check if user is authenticated
     if (!session?.user?.id) {
@@ -212,7 +213,7 @@ export async function PATCH(
     try {
       await restoreStockAndUpdateOrder(
         order.id,
-        order.paymentStatus, // Keep payment status as is
+        body?.paymentStatus === "FAILED" ? "FAILED" : order.paymentStatus,
         "CANCELLED",
         "Cancelled by customer"
       );

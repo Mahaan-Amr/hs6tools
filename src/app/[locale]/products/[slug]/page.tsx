@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice as formatPriceUtil } from "@/utils/format";
-import { getPublicProductBySlug, getPublicProducts } from "@/lib/catalog";
+import { getCurrentWishlistProductIds, getPublicProductBySlug, getPublicProducts } from "@/lib/catalog";
+import ProductDetailActions from "@/components/ecommerce/ProductDetailActions";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -19,11 +20,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const { products: relatedProducts } = await getPublicProducts({
-    categoryId: product.category.id,
-    excludeProductId: product.id,
-    limit: 4,
-  });
+  const [{ products: relatedProducts }, wishlistProductIds] = await Promise.all([
+    getPublicProducts({
+      categoryId: product.category.id,
+      excludeProductId: product.id,
+      limit: 4,
+    }),
+    getCurrentWishlistProductIds(),
+  ]);
   
   const formatPrice = (price: number) => {
     // Use centralized utility that converts Rials to Tomans
@@ -35,7 +39,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   };
 
   const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
-  const hasVariants = product.variants.length > 0;
   const hasDiscount = product.comparePrice && product.comparePrice > product.price;
 
   return (
@@ -170,43 +173,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </p>
             )}
 
-            {/* Variants */}
-            {hasVariants && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.products.selectVariant}</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {product.variants.map((variant) => (
-                    <div key={variant.id} className="glass rounded-xl p-4 cursor-pointer hover:ring-2 ring-primary-orange transition-all duration-200">
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{variant.name}</div>
-                      <div className="font-semibold text-gray-900 dark:text-white mb-2">
-                        {formatPrice(variant.price)}
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {t.products.stock}: {variant.stockQuantity} {t.products.stockCount}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Action Buttons */}
-            <div className="space-y-4">
-              <button
-                className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
-                  product.isInStock
-                    ? "bg-gradient-to-r from-primary-orange to-orange-500 text-white hover:shadow-glass-orange hover:scale-105"
-                    : "bg-gray-600 text-gray-300 cursor-not-allowed"
-                }`}
-                disabled={!product.isInStock}
-              >
-                {product.isInStock ? t.products.addToCart : t.products.outOfStock}
-              </button>
-              
-              <button className="w-full py-4 px-6 glass border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-200">
-                {t.products.addToWishlist}
-              </button>
-            </div>
+            <ProductDetailActions
+              product={product}
+              locale={locale}
+              messages={t}
+              initialIsInWishlist={wishlistProductIds.includes(product.id)}
+            />
 
             {/* Product Details */}
             <div className="glass rounded-2xl p-6 space-y-4">

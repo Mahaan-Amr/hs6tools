@@ -84,6 +84,7 @@ export interface PublicCategory {
   image?: string;
   icon?: string;
   parentId?: string | null;
+  sortOrder: number;
   parent?: {
     id: string;
     name: string;
@@ -176,6 +177,7 @@ interface CatalogCategoryRecord {
   image: string | null;
   icon: string | null;
   parentId: string | null;
+  sortOrder: number;
   parent?: {
     id: string;
     name: string;
@@ -268,6 +270,7 @@ function mapCategory(category: CatalogCategoryRecord): PublicCategory {
     image: normalizeUploadUrl(category.image),
     icon: category.icon ?? undefined,
     parentId: category.parentId,
+    sortOrder: category.sortOrder,
     parent: category.parent
       ? {
           id: category.parent.id,

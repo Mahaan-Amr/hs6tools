@@ -6,6 +6,7 @@ interface IconRendererProps {
   className?: string;
   fallback?: ReactNode;
   strokeWidth?: number;
+  alt?: string;
 }
 
 type LucideModule = Record<string, unknown>;
@@ -18,12 +19,24 @@ export function resolveLucideIcon(name?: string | null) {
     : null;
 }
 
+function isIconUrl(name?: string | null) {
+  if (!name) return false;
+  return name.startsWith("/") || name.startsWith("http://") || name.startsWith("https://");
+}
+
 export default function IconRenderer({
   name,
   className,
   fallback = null,
   strokeWidth = 2,
+  alt = "",
 }: IconRendererProps) {
+  if (isIconUrl(name)) {
+    // Uploaded SVG/PNG/WebP icons are rendered as image assets, not inline markup.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={name!} alt={alt} className={className} loading="lazy" />;
+  }
+
   const Icon = resolveLucideIcon(name);
 
   if (!Icon) {

@@ -389,11 +389,21 @@ export default function CategoryForm({
             </div>
 
             <div>
-              <IconPicker
-                value={formData.icon || null}
-                onChange={(icon) => handleInputChange("icon", icon || "")}
-                label={String(t.icon)}
-              />
+              <div className="space-y-6">
+                <IconPicker
+                  value={formData.icon || null}
+                  onChange={(icon) => handleInputChange("icon", icon || "")}
+                  label={String(t.icon)}
+                />
+                <ImageUpload
+                  images={formData.icon?.startsWith("/") ? [buildImageFile(formData.icon)] : []}
+                  onImagesChange={(images) => handleInputChange("icon", images[0]?.url || "")}
+                  multiple={false}
+                  maxImages={1}
+                  category="icons"
+                  label={`${String(t.icon)} SVG/PNG`}
+                />
+              </div>
             </div>
 
             <div>

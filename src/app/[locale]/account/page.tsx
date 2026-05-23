@@ -157,14 +157,14 @@ function AccountPageContent({ params }: AccountPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
+    <div className="account-page min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-12" data-scroll-reveal>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             {String(messages?.customer?.account?.title)}
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6 text-justify leading-relaxed">
+          <p className="text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-6 text-justify leading-relaxed">
             {String(messages?.customer?.account?.subtitle)}
           </p>
           

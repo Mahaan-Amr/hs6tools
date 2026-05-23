@@ -123,6 +123,9 @@ export default function ImageUpload({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  const isSvg = (image: ImageFile) =>
+    image.type === "image/svg+xml" || image.url.toLowerCase().endsWith(".svg");
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Label */}
@@ -142,7 +145,7 @@ export default function ImageUpload({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.svg"
           multiple={multiple}
           onChange={handleFileSelect}
           className="hidden"
@@ -197,13 +200,23 @@ export default function ImageUpload({
             <div key={image.id} className="relative group">
               {/* Image */}
               <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-800">
-                <Image
-                  src={image.url}
-                  alt={image.alt || image.originalName}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                />
+                {isSvg(image) ? (
+                  // Render uploaded SVGs as external image assets, not inline markup.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={image.url}
+                    alt={image.alt || image.originalName}
+                    className="h-full w-full object-contain p-4"
+                  />
+                ) : (
+                  <Image
+                    src={image.url}
+                    alt={image.alt || image.originalName}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                  />
+                )}
               </div>
 
               {/* Overlay Actions */}

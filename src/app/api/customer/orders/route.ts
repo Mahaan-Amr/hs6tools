@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import { SMSIRFastSendTemplates, sendLowStockAlert, sendTemplateSMSSafe } from "@/lib/sms";
+import { sendLowStockAlert } from "@/lib/sms";
 
 class OrderCreationError extends Error {
   constructor(message: string, public status = 400) {
@@ -746,39 +746,6 @@ export async function POST(request: NextRequest) {
         }
       }).catch((err) => {
         console.error('[SMS] Error fetching admin phones for low stock alert:', err);
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: order.userId },
-      select: { firstName: true, lastName: true, phone: true },
-    });
-    const customerPhone = user?.phone || order.customerPhone;
-
-    if (customerPhone) {
-      console.log('📱 [Order Creation] Sending order confirmation SMS:', {
-        orderNumber: order.orderNumber,
-        phone: customerPhone,
-        totalAmount: Number(order.totalAmount),
-      });
-
-      sendTemplateSMSSafe(
-        {
-          receptor: customerPhone,
-          templateEnvKey: 'SMSIR_PURCHASE_CONFIRMED_TEMPLATE_ID',
-          parameters: {
-            ORDER: order.orderNumber,
-          },
-        },
-        SMSIRFastSendTemplates.PURCHASE_CONFIRMED(order.orderNumber),
-        `Order created: ${order.orderNumber}`
-      );
-    } else {
-      console.warn('⚠️ [Order Creation] No phone number found for SMS:', {
-        orderNumber: order.orderNumber,
-        userId: order.userId,
-        userPhone: user?.phone,
-        customerPhone: order.customerPhone,
       });
     }
 

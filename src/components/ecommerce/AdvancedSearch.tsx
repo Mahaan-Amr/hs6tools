@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Messages } from "@/lib/i18n";
+import type { PublicCategory } from "@/lib/catalog";
 
 interface SearchSuggestion {
   value: string;
@@ -21,9 +22,11 @@ interface FilterOptions {
 interface AdvancedSearchProps {
   locale: string;
   messages: Messages;
+  categories?: PublicCategory[];
+  onApply?: (params: URLSearchParams) => void;
 }
 
-export default function AdvancedSearch({ locale, messages }: AdvancedSearchProps) {
+export default function AdvancedSearch({ locale, messages, categories = [], onApply }: AdvancedSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -118,26 +121,32 @@ export default function AdvancedSearch({ locale, messages }: AdvancedSearchProps
   // Handle search submission
   const handleSearch = async (searchQuery?: string) => {
     const finalQuery = searchQuery || query;
-    if (!finalQuery.trim()) return;
 
-    // Add to search history
-    const newHistory = [finalQuery, ...searchHistory.filter(h => h !== finalQuery)].slice(0, 10);
-    setSearchHistory(newHistory);
-    localStorage.setItem(`search-history-${locale}`, JSON.stringify(newHistory));
+    if (finalQuery.trim()) {
+      const newHistory = [finalQuery, ...searchHistory.filter(h => h !== finalQuery)].slice(0, 10);
+      setSearchHistory(newHistory);
+      localStorage.setItem(`search-history-${locale}`, JSON.stringify(newHistory));
+    }
 
     // Hide suggestions
     setShowSuggestions(false);
 
     // Update URL with search parameters
     const params = new URLSearchParams();
-    params.set("q", finalQuery);
+    if (finalQuery.trim()) {
+      params.set("q", finalQuery);
+    }
     
     // Add filters to URL
     Object.entries(filters).forEach(([key, value]) => {
       if (value) params.set(key, value);
     });
 
-    // Navigate to search results
+    if (onApply) {
+      onApply(params);
+      return;
+    }
+
     router.push(`/${locale}/search?${params.toString()}`);
   };
 
@@ -170,6 +179,11 @@ export default function AdvancedSearch({ locale, messages }: AdvancedSearchProps
     };
     setFilters(clearedFilters);
     localStorage.setItem(`search-filters-${locale}`, JSON.stringify(clearedFilters));
+    if (onApply) {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("q", query);
+      onApply(params);
+    }
   };
 
   // Load filters from localStorage
@@ -324,7 +338,11 @@ export default function AdvancedSearch({ locale, messages }: AdvancedSearchProps
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-orange"
               >
                 <option value="">{messages?.search?.allCategories || 'همه دسته‌ها'}</option>
-                {/* Categories would be loaded from API */}
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name} ({category._count.products})
+                  </option>
+                ))}
               </select>
             </div>
 

@@ -540,6 +540,17 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
         if (!paymentResponse.ok || !paymentResult.success || !paymentResult.paymentUrl) {
           console.error('❌ Payment request failed:', paymentResult.error);
+          await fetch(`/api/customer/orders/${result.data.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              paymentStatus: 'FAILED',
+            }),
+          }).catch((cancelError) => {
+            console.error('Failed to cancel unpaid order after payment request failure:', cancelError);
+          });
           throw new Error(paymentResult.error || String(t.paymentRequestFailed || 'Failed to create payment request'));
         }
 
