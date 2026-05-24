@@ -14,17 +14,54 @@
 // Zarinpal API Response Types
 export interface ZarinpalPaymentRequestResponse {
   data: {
-    code: number;
-    message: string;
-    authority: string;
-    fee_type: string;
-    fee: number;
+    code?: number;
+    message?: string;
+    authority?: string;
+    fee_type?: string;
+    fee?: number;
   };
-  errors: Array<{
-    code: number;
-    message: string;
-    validations?: Record<string, string[]>;
-  }>;
+  errors: ZarinpalErrorResponse;
+}
+
+type ZarinpalError = {
+  code?: number;
+  message?: string;
+  validations?: Record<string, string[]> | [];
+};
+
+type ZarinpalErrorResponse =
+  | (ZarinpalError & {
+      length?: number;
+      [index: number]: ZarinpalError | undefined;
+    })
+  | ZarinpalError[]
+  | null
+  | undefined;
+
+function getFirstZarinpalError(errors: ZarinpalErrorResponse): ZarinpalError | null {
+  if (!errors) {
+    return null;
+  }
+
+  if (Array.isArray(errors)) {
+    return errors[0] || null;
+  }
+
+  if (typeof errors === "object" && ("message" in errors || "code" in errors)) {
+    return errors as ZarinpalError;
+  }
+
+  return null;
+}
+
+function getFetchErrorMessage(error: unknown, context: string): string {
+  if (error instanceof Error) {
+    const cause = "cause" in error ? error.cause : undefined;
+    const causeMessage = cause instanceof Error ? ` (${cause.message})` : "";
+    return `${context}: ${error.message}${causeMessage}`;
+  }
+
+  return context;
 }
 
 export interface ZarinpalPaymentVerifyResponse {
@@ -114,6 +151,10 @@ function getApiBaseUrl(sandbox: boolean = false): string {
 export async function requestPayment(
   options: PaymentRequestOptions
 ): Promise<{ success: boolean; authority?: string; paymentUrl?: string; error?: string }> {
+  const timeoutMs = 15000;
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
   try {
     const baseUrl = getApiBaseUrl(options.sandbox);
     const url = `${baseUrl}/payment/request.json`;
@@ -171,6 +212,8 @@ export async function requestPayment(
       sandbox: options.sandbox,
     });
 
+    timeout = setTimeout(() => controller.abort(), timeoutMs);
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -178,13 +221,19 @@ export async function requestPayment(
         'Accept': 'application/json',
       },
       body: JSON.stringify(requestBody),
+      signal: controller.signal,
     });
 
     const data: ZarinpalPaymentRequestResponse = await response.json();
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = undefined;
+    }
+    const firstError = getFirstZarinpalError(data.errors);
 
-    if (!response.ok || data.errors?.length > 0) {
-      const errorMessage = data.errors?.[0]?.message || 'خطا در درخواست پرداخت';
-      const errorCode = data.errors?.[0]?.code || response.status;
+    if (!response.ok || firstError) {
+      const errorMessage = firstError?.message || 'خطا در درخواست پرداخت';
+      const errorCode = firstError?.code || response.status;
       console.error('❌ [Zarinpal] Payment request failed:', {
         status: response.status,
         errors: data.errors,
@@ -223,10 +272,15 @@ export async function requestPayment(
       };
     }
   } catch (error) {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
     console.error('❌ [Zarinpal] Payment request exception:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'خطا در ارتباط با درگاه پرداخت',
+      error: error instanceof DOMException && error.name === "AbortError"
+        ? `Payment gateway did not respond within ${timeoutMs / 1000} seconds`
+        : getFetchErrorMessage(error, 'خطا در ارتباط با درگاه پرداخت'),
     };
   }
 }
