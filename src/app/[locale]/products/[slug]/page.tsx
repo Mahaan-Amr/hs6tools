@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatPrice as formatPriceUtil } from "@/utils/format";
 import { getCurrentWishlistProductIds, getPublicProductBySlug, getPublicProducts } from "@/lib/catalog";
 import ProductDetailActions from "@/components/ecommerce/ProductDetailActions";
+import ProductImageGallery from "@/components/ecommerce/ProductImageGallery";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -38,7 +39,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return new Date(dateString).toLocaleDateString(locale === "fa" ? "fa-IR" : "en-US");
   };
 
-  const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
   const hasDiscount = product.comparePrice && product.comparePrice > product.price;
 
   return (
@@ -71,51 +71,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
-          <div className="space-y-4">
-            {/* Main Image */}
-            <div className="relative aspect-square rounded-3xl overflow-hidden glass">
-              {primaryImage ? (
-                <Image
-                  src={primaryImage.url}
-                  alt={primaryImage.alt || product.name}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                  <svg className="w-16 h-16 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              )}
-              
-              {/* Featured Badge */}
-              {product.isFeatured && (
-                <div className="absolute top-4 right-4">
-                  <span className="bg-gradient-to-r from-primary-orange to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    {t.products.featured}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Thumbnail Images */}
-            {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-4">
-                {product.images.slice(0, 4).map((image) => (
-                  <div key={image.id} className="relative aspect-square rounded-2xl overflow-hidden glass cursor-pointer hover:ring-2 ring-primary-orange transition-all duration-200">
-                    <Image
-                      src={image.url}
-                      alt={image.alt || product.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProductImageGallery
+            images={product.images}
+            productName={product.name}
+            isFeatured={product.isFeatured}
+            featuredLabel={t.products.featured}
+          />
 
           {/* Product Info */}
           <div className="space-y-6">

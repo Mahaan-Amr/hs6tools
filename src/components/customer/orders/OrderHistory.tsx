@@ -74,6 +74,10 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
     return formatPriceUtil(price, locale);
   };
 
+  const filterLabelClass = "block text-sm font-medium text-gray-900 dark:text-white mb-2";
+  const filterSelectClass = "w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 dark:bg-white/10 dark:border-white/20 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-orange";
+  const mutedTextClass = "text-gray-600 dark:text-gray-400";
+
   const getStatusInfo = (status: string) => {
     const t = messages?.customer?.orders?.orderStatuses;
     const statusMap: Record<string, { label: string; color: string }> = {
@@ -244,10 +248,10 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           {messages?.customer?.orders?.errorLoadingOrders || 'خطا در بارگذاری سفارشات'}
         </h3>
-        <p className="text-gray-400 mb-4">{ordersError}</p>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">{ordersError}</p>
         <button 
           onClick={() => fetchOrders(currentPage, 10, filters)}
           className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
@@ -262,14 +266,14 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
     return (
       <div className="text-center py-8">
         <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-8 h-8 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           {messages?.customer?.orders?.noOrders || 'هنوز سفارشی ندارید'}
         </h3>
-        <p className="text-gray-400">
+        <p className="text-gray-600 dark:text-gray-400">
           {messages?.customer?.orders?.noOrdersMessage || 'اولین سفارش خود را ثبت کنید'}
         </p>
       </div>
@@ -299,13 +303,13 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className={filterLabelClass}>
               {messages?.customer?.orders?.filters?.filterStatus || 'وضعیت سفارش'}
             </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className={filterSelectClass}
             >
               <option value="">
                 {messages?.customer?.orders?.filters?.allStatuses || 'همه وضعیت‌ها'}
@@ -336,13 +340,13 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
 
           {/* Date Range Filter */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className={filterLabelClass}>
               {messages?.customer?.orders?.filters?.dateRange || 'بازه زمانی'}
             </label>
             <select
               value={filters.dateRange}
               onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className={filterSelectClass}
             >
               <option value="">
                 {messages?.customer?.orders?.filters?.allTimes || 'همه زمان‌ها'}
@@ -364,13 +368,13 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
 
           {/* Sort By */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className={filterLabelClass}>
               {messages?.customer?.orders?.filters?.sortBy || 'مرتب‌سازی بر اساس'}
             </label>
             <select
               value={filters.sortBy}
               onChange={(e) => handleSortChange(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+              className={filterSelectClass}
             >
               <option value="createdAt">
                 {messages?.customer?.orders?.filters?.orderDate || 'تاریخ سفارش'}
@@ -389,12 +393,12 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
 
           {/* Sort Order */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className={filterLabelClass}>
               {messages?.customer?.orders?.filters?.sortOrder || 'ترتیب'}
             </label>
             <button
               onClick={() => handleSortChange(filters.sortBy)}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white hover:bg-white/20 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 hover:bg-gray-50 dark:bg-white/10 dark:border-white/20 dark:text-white dark:hover:bg-white/20 transition-colors flex items-center justify-center gap-2"
             >
               {filters.sortOrder === 'asc' 
                 ? (messages?.customer?.orders?.filters?.ascending || 'صعودی')
@@ -420,7 +424,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                 {/* Order Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-3">
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {messages?.customer?.orders?.orderNumber || 'سفارش شماره'} {order.orderNumber}
                     </h3>
                     <span className={`px-3 py-1 text-xs rounded-full ${statusInfo.color}`}>
@@ -431,23 +435,23 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-gray-300">
                     <div>
-                      <span className="text-gray-400">
+                      <span className={mutedTextClass}>
                         {messages?.customer?.orders?.orderDate || 'تاریخ سفارش'}:
                       </span>
                       <br />
                       {formatDate(order.createdAt)}
                     </div>
                     <div>
-                      <span className="text-gray-400">
+                      <span className={mutedTextClass}>
                         {messages?.customer?.orders?.itemCount || 'تعداد محصولات'}:
                       </span>
                       <br />
                       {order.items.length} {messages?.customer?.orders?.itemCount || 'محصول'}
                     </div>
                     <div>
-                      <span className="text-gray-400">روش ارسال:</span>
+                      <span className={mutedTextClass}>روش ارسال:</span>
                       <br />
                       {order.shippingMethod === 'TIPAX' ? 'تیپاکس' : 
                        order.shippingMethod === 'POST' ? 'پست' : 
@@ -469,12 +473,12 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                               className="w-8 h-8 rounded object-cover"
                             />
                           )}
-                          <span className="text-sm text-white">{item.name}</span>
-                          <span className="text-xs text-gray-400">×{item.quantity}</span>
+                          <span className="text-sm text-gray-900 dark:text-white">{item.name}</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">×{item.quantity}</span>
                         </div>
                       ))}
                       {order.items.length > 3 && (
-                        <span className="text-sm text-gray-400">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
                           و {order.items.length - 3} {messages?.customer?.orders?.itemCount || 'محصول'} دیگر...
                         </span>
                       )}
@@ -485,7 +489,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                 {/* Order Actions and Total */}
                 <div className="flex flex-col items-end gap-4">
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-white">{formatPrice(order.totalAmount)}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatPrice(order.totalAmount)}</p>
                     {order.discountAmount > 0 && (
                       <p className="text-sm text-green-400">
                         تخفیف: {formatPrice(order.discountAmount)}
@@ -553,7 +557,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={!ordersPagination.hasPrev}
-            className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white/10 dark:text-white dark:border-white/20 dark:hover:bg-white/20 transition-colors"
           >
             {messages?.customer?.orders?.pagination?.previous || 'قبلی'}
           </button>
@@ -566,7 +570,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                 className={`px-3 py-2 rounded-lg transition-colors ${
                   page === currentPage
                     ? 'bg-primary-orange text-white'
-                    : 'bg-white/10 text-white hover:bg-white/20'
+                    : 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 dark:bg-white/10 dark:text-white dark:border-white/20 dark:hover:bg-white/20'
                 }`}
               >
                 {page}
@@ -577,7 +581,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={!ordersPagination.hasNext}
-            className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white/10 dark:text-white dark:border-white/20 dark:hover:bg-white/20 transition-colors"
           >
             {messages?.customer?.orders?.pagination?.next || 'بعدی'}
           </button>
