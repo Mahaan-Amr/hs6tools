@@ -170,7 +170,7 @@ export default function ProductVariantSelector({
               <div className="text-lg font-bold text-gray-900 dark:text-white">
                 {formatPrice(selectedVariant.price)}
               </div>
-              {selectedVariant.comparePrice && selectedVariant.comparePrice > selectedVariant.price && (
+              {typeof selectedVariant.comparePrice === "number" && selectedVariant.comparePrice > selectedVariant.price && (
                 <div className="text-sm text-gray-500 dark:text-gray-400 line-through">
                   {formatPrice(selectedVariant.comparePrice)}
                 </div>

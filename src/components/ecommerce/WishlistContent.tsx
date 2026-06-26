@@ -253,7 +253,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
                 <div className="text-xl font-bold text-gray-900 dark:text-white">
                   {formatPrice(item.product.price)}
                 </div>
-                {item.product.comparePrice && item.product.comparePrice > item.product.price && (
+                {typeof item.product.comparePrice === "number" && item.product.comparePrice > item.product.price && (
                   <div className="text-sm text-gray-500 dark:text-gray-400 line-through">
                     {formatPrice(item.product.comparePrice)}
                   </div>

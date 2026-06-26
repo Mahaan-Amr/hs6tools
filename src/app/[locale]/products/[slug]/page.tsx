@@ -39,7 +39,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return new Date(dateString).toLocaleDateString(locale === "fa" ? "fa-IR" : "en-US");
   };
 
-  const hasDiscount = product.comparePrice && product.comparePrice > product.price;
+  const hasDiscount = Boolean(product.comparePrice && product.comparePrice > product.price);
+  const hasProductSpecs = Boolean(
+    product.brand ||
+    product.material ||
+    (product.weight !== undefined && product.weight > 0) ||
+    product.warranty
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
@@ -143,36 +149,38 @@ export default async function ProductPage({ params }: ProductPageProps) {
             />
 
             {/* Product Details */}
-            <div className="glass rounded-2xl p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.products.productSpecs}</h3>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {product.brand && (
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">{t.products.brand}</span>
-                    <span className="text-gray-900 dark:text-white ml-2">{product.brand}</span>
-                  </div>
-                )}
-                {product.material && (
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">{t.products.material}</span>
-                    <span className="text-gray-900 dark:text-white ml-2">{product.material}</span>
-                  </div>
-                )}
-                {product.weight && (
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">{t.products.weight}</span>
-                    <span className="text-gray-900 dark:text-white ml-2">{product.weight} {t.products.weightUnit}</span>
-                  </div>
-                )}
-                {product.warranty && (
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">{t.products.warranty}</span>
-                    <span className="text-gray-900 dark:text-white ml-2">{product.warranty}</span>
-                  </div>
-                )}
+            {hasProductSpecs && (
+              <div className="glass rounded-2xl p-6 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t.products.productSpecs}</h3>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {product.brand && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">{t.products.brand}</span>
+                      <span className="text-gray-900 dark:text-white ml-2">{product.brand}</span>
+                    </div>
+                  )}
+                  {product.material && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">{t.products.material}</span>
+                      <span className="text-gray-900 dark:text-white ml-2">{product.material}</span>
+                    </div>
+                  )}
+                  {product.weight !== undefined && product.weight > 0 && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">{t.products.weight}</span>
+                      <span className="text-gray-900 dark:text-white ml-2">{product.weight} {t.products.weightUnit}</span>
+                    </div>
+                  )}
+                  {product.warranty && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">{t.products.warranty}</span>
+                      <span className="text-gray-900 dark:text-white ml-2">{product.warranty}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

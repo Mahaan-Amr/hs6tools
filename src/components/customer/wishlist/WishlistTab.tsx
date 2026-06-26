@@ -214,7 +214,7 @@ export default function WishlistTab({ locale }: WishlistTabProps) {
                       <span className="text-lg font-bold text-primary-orange">
                         {formatPrice(item.product.price)}
                       </span>
-                      {item.product.comparePrice && item.product.comparePrice > item.product.price && (
+                      {typeof item.product.comparePrice === "number" && item.product.comparePrice > item.product.price && (
                         <span className="text-sm text-gray-400 line-through">
                           {formatPrice(item.product.comparePrice)}
                         </span>
