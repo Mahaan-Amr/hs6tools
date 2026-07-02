@@ -40,8 +40,10 @@ function applyContactInfoOverrides(
 ): ContactPageContentData["contactCards"] {
   if (locale !== "fa") return cards;
 
-  return cards.map((card) =>
-    card.icon === "Phone" ? { ...card, value: faContactPhoneValue } : card
+  return cards.map((card, index) =>
+    index === 1 || card.icon?.toLowerCase().includes("phone")
+      ? { ...card, value: faContactPhoneValue }
+      : card
   ) as ContactPageContentData["contactCards"];
 }
 
