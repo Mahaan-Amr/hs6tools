@@ -86,7 +86,7 @@ export default function CheckoutAddressSelector({
   return (
     <div className="space-y-6">
       {/* Shipping Address Section */}
-      <div className="glass rounded-xl p-6">
+      <div className="readable-panel-soft rounded-2xl p-6">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           {messages?.checkout?.shippingAddress || 'آدرس ارسال'}
         </h3>
@@ -99,7 +99,7 @@ export default function CheckoutAddressSelector({
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                   selectedShippingAddress?.id === address.id
                     ? 'border-primary-orange bg-primary-orange/10'
-                    : 'border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/40'
+                    : 'border-gray-300 bg-white hover:border-gray-400 dark:border-white/15 dark:bg-gray-800/80 dark:hover:border-white/40'
                 }`}
                 onClick={() => handleAddressSelect(address)}
               >
@@ -154,7 +154,7 @@ export default function CheckoutAddressSelector({
         
         <button
           onClick={handleAddNewAddress}
-          className="mt-4 w-full px-4 py-3 bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white border border-gray-300 dark:border-white/20 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors duration-200"
+          className="readable-secondary-button mt-4 w-full rounded-lg px-4 py-3"
         >
           + {messages?.customer?.addresses?.addNewAddress || 'افزودن آدرس جدید'}
         </button>

@@ -53,7 +53,7 @@ export default function ContactTicketForm({ locale, form }: ContactTicketFormPro
           </label>
           <input
             type="text"
-            className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-orange dark:border-white/20 dark:bg-white/10 dark:text-white dark:placeholder:text-gray-400"
+            className="readable-field"
             placeholder={fields.firstNamePlaceholder}
           />
         </div>
@@ -63,7 +63,7 @@ export default function ContactTicketForm({ locale, form }: ContactTicketFormPro
           </label>
           <input
             type="text"
-            className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-orange dark:border-white/20 dark:bg-white/10 dark:text-white dark:placeholder:text-gray-400"
+            className="readable-field"
             placeholder={fields.lastNamePlaceholder}
           />
         </div>
@@ -75,7 +75,7 @@ export default function ContactTicketForm({ locale, form }: ContactTicketFormPro
         </label>
         <input
           type="email"
-          className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-orange dark:border-white/20 dark:bg-white/10 dark:text-white dark:placeholder:text-gray-400"
+          className="readable-field"
           placeholder={fields.emailPlaceholder}
         />
       </div>
@@ -89,7 +89,7 @@ export default function ContactTicketForm({ locale, form }: ContactTicketFormPro
           value={subject}
           onChange={(event) => setSubject(event.target.value)}
           required
-          className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-orange dark:border-white/20 dark:bg-white/10 dark:text-white dark:placeholder:text-gray-400"
+          className="readable-field"
           placeholder={fields.subjectPlaceholder}
         />
       </div>
@@ -103,7 +103,7 @@ export default function ContactTicketForm({ locale, form }: ContactTicketFormPro
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           required
-          className="w-full resize-none rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-orange dark:border-white/20 dark:bg-white/10 dark:text-white dark:placeholder:text-gray-400"
+          className="readable-field resize-none"
           placeholder={fields.messagePlaceholder}
         />
       </div>

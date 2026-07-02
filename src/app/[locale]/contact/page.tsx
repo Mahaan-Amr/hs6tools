@@ -26,7 +26,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-          <div className="glass rounded-3xl p-8" data-scroll-reveal>
+          <div className="readable-panel-soft rounded-3xl p-8" data-scroll-reveal>
             <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
               {page.content.form.title}
             </h2>
@@ -34,7 +34,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
           </div>
 
           <div className="space-y-8">
-            <div className="glass rounded-3xl p-8" data-scroll-reveal style={{ transitionDelay: "0.1s" }}>
+            <div className="readable-panel-soft rounded-3xl p-8" data-scroll-reveal style={{ transitionDelay: "0.1s" }}>
               <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
                 {page.content.contactInfoTitle}
               </h2>
@@ -55,7 +55,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{card.title}</h3>
-                      <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300 md:text-base">
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-300 md:text-base">
                         {card.value}
                       </p>
                     </div>
@@ -64,7 +64,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
               </div>
             </div>
 
-            <div className="glass rounded-3xl p-8" data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
+            <div className="readable-panel-soft rounded-3xl p-8" data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
               <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
                 {page.content.workingHours.title}
               </h2>

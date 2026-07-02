@@ -358,7 +358,7 @@ export default function CheckoutSuccessPage({ params, searchParams }: CheckoutSu
         </div>
         
         {/* Next Steps */}
-        <div className="glass rounded-3xl p-8 mb-8 max-w-2xl mx-auto">
+        <div className="readable-panel-soft mx-auto mb-8 max-w-2xl rounded-3xl p-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.nextSteps)}</h3>
           <div className="space-y-3 text-left text-gray-600 dark:text-gray-300">
             <div className="flex items-start space-x-3">
@@ -405,7 +405,7 @@ export default function CheckoutSuccessPage({ params, searchParams }: CheckoutSu
         </div>
         
         {/* Contact Info */}
-        <div className="mt-12 p-6 glass rounded-2xl max-w-lg mx-auto">
+        <div className="readable-panel-soft mx-auto mt-12 max-w-lg rounded-2xl p-6">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.needHelp || "Need Help?")}</h4>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
             {String(t.contactMessage || "If you have any questions about your order, please contact us:")}

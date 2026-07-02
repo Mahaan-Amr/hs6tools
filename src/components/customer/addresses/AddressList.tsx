@@ -137,7 +137,7 @@ export default function AddressList({ locale }: AddressListProps) {
   return (
     <div className="space-y-4">
       {addresses.map((address) => (
-        <div key={address.id} className="glass rounded-xl p-6 border border-white/10">
+        <div key={address.id} className="readable-panel-soft rounded-2xl p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -188,12 +188,12 @@ export default function AddressList({ locale }: AddressListProps) {
 
           {/* Address Content */}
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-white">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {address.title}
             </h3>
             
-            <div className="text-gray-300">
-              <p className="font-medium text-white">
+            <div className="text-gray-700 dark:text-gray-300">
+              <p className="font-medium text-gray-900 dark:text-white">
                 {address.firstName} {address.lastName}
               </p>
               {address.company && (
@@ -225,13 +225,13 @@ export default function AddressList({ locale }: AddressListProps) {
               }}
             >
               <div 
-                className="glass rounded-xl p-6 max-w-md mx-4"
+                className="readable-panel max-w-md rounded-2xl p-6 mx-4"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 className="text-lg font-semibold text-white mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {messages?.customer?.addresses?.deleteAddress || 'حذف آدرس'}
                 </h3>
-                <p className="text-gray-300 mb-6">
+                <p className="text-gray-700 dark:text-gray-300 mb-6">
                   {messages?.customer?.addresses?.deleteConfirmMessage || 'آیا مطمئن هستید که می‌خواهید این آدرس را حذف کنید؟ این عملیات قابل بازگشت نیست.'}
                 </p>
                 
@@ -268,7 +268,7 @@ export default function AddressList({ locale }: AddressListProps) {
                       setDeleteError(null);
                     }}
                     disabled={isDeleting === address.id}
-                    className="flex-1 px-4 py-2 bg-white/10 text-white font-medium rounded-lg hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="readable-secondary-button flex-1 px-4 py-2"
                   >
                     {messages?.common?.cancel || 'لغو'}
                   </button>

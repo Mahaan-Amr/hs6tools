@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .readable-panel {
+    @apply border border-gray-200 bg-white shadow-2xl shadow-black/10 dark:border-white/10 dark:bg-gray-950/95 dark:shadow-black/40;
+  }
+
+  .readable-panel-soft {
+    @apply border border-gray-200 bg-white/95 shadow-xl shadow-black/5 dark:border-white/10 dark:bg-gray-900/90 dark:shadow-black/30;
+  }
+
+  .readable-field {
+    @apply w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-500 transition-colors duration-200 focus:border-primary-orange focus:outline-none focus:ring-2 focus:ring-primary-orange/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-white/15 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-800/60 dark:disabled:text-gray-500;
+  }
+
+  .readable-label {
+    @apply mb-2 block text-sm font-medium text-gray-900 dark:text-white;
+  }
+
+  .readable-secondary-button {
+    @apply rounded-xl border border-gray-300 bg-white px-6 py-3 font-medium text-gray-900 transition-colors duration-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700;
+  }
+}
+
 :root {
   /* Light mode colors (default) */
   --background: #ffffff;

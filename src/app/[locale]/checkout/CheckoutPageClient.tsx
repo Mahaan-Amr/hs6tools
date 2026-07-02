@@ -699,7 +699,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
           <div className="lg:col-span-2">
             {/* Step 1: Address Information */}
             {currentStep === 1 && (
-              <div className="glass rounded-3xl p-8">
+              <div className="readable-panel rounded-3xl p-6 sm:p-8">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.shippingInfo)}</h2>
                 
                 {/* Show read-only address in retry mode */}
@@ -766,7 +766,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       type="text"
                       value={address.firstName}
                       onChange={(e) => handleAddressChange("firstName", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      className="readable-field"
                       placeholder={String(t.firstNamePlaceholder)}
                     />
                   </div>
@@ -777,7 +777,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       type="text"
                       value={address.lastName}
                       onChange={(e) => handleAddressChange("lastName", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      className="readable-field"
                       placeholder={String(t.lastNamePlaceholder)}
                     />
                   </div>
@@ -788,7 +788,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       type="tel"
                       value={address.phone}
                       onChange={(e) => handleAddressChange("phone", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      className="readable-field"
                       placeholder={String(t.phonePlaceholder)}
                     />
                   </div>
@@ -799,7 +799,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       type="text"
                       value={address.postalCode}
                       onChange={(e) => handleAddressChange("postalCode", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      className="readable-field"
                       placeholder={String(t.postalCodePlaceholder)}
                     />
                   </div>
@@ -810,7 +810,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       type="text"
                       value={address.province}
                       onChange={(e) => handleAddressChange("province", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      className="readable-field"
                       placeholder={String(t.provincePlaceholder)}
                     />
                   </div>
@@ -821,7 +821,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       type="text"
                       value={address.city}
                       onChange={(e) => handleAddressChange("city", e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200"
+                      className="readable-field"
                       placeholder={String(t.cityPlaceholder)}
                     />
                   </div>
@@ -832,7 +832,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       value={address.address}
                       onChange={(e) => handleAddressChange("address", e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-primary-orange transition-colors duration-200 resize-none"
+                      className="readable-field resize-none"
                       placeholder={String(t.fullAddressPlaceholder)}
                     />
                   </div>
@@ -843,7 +843,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
             {/* Step 2: Shipping Method */}
             {currentStep === 2 && (
-              <div className="glass rounded-3xl p-8">
+              <div className="readable-panel rounded-3xl p-6 sm:p-8">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.selectShippingMethod)}</h2>
                 
                 {shippingMethodsLoading ? (
@@ -862,7 +862,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                       className={`p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
                         selectedShipping === method.id
                           ? "border-primary-orange bg-primary-orange/10"
-                          : "border-gray-300 dark:border-white/20 bg-gray-100 dark:bg-white/5 hover:border-gray-300 dark:hover:border-white/40"
+                          : "border-gray-300 bg-white hover:border-gray-400 dark:border-white/15 dark:bg-gray-800/80 dark:hover:border-white/40"
                       }`}
                       onClick={() => setSelectedShipping(method.id)}
                     >
@@ -900,11 +900,11 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
             {/* Step 3: Order Review */}
             {currentStep === 3 && (
-              <div className="glass rounded-3xl p-8">
+              <div className="readable-panel rounded-3xl p-6 sm:p-8">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{String(t.orderReview)}</h2>
                 
                 {/* Address Summary */}
-                <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
+                <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-6 dark:border-white/10 dark:bg-gray-800/80">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.shippingInfoLabel || t.shippingAddress || 'آدرس ارسال')}</h3>
                   <div className="text-gray-600 dark:text-gray-300">
                     {useSavedAddresses && selectedShippingAddress ? (
@@ -929,7 +929,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 </div>
 
                 {/* Shipping Summary */}
-                <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
+                <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-6 dark:border-white/10 dark:bg-gray-800/80">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.shippingMethodLabel)}</h3>
                   <div className="text-gray-600 dark:text-gray-300">
                     <p>{selectedShippingMethod?.name}</p>
@@ -939,7 +939,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                 </div>
 
                 {/* Order Items */}
-                <div className="mb-8 p-6 bg-gray-100 dark:bg-white/5 rounded-2xl">
+                <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-6 dark:border-white/10 dark:bg-gray-800/80">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{String(t.orderItems)}</h3>
                   <div className="space-y-3">
                     {displayItems.map((item) => (
@@ -1000,11 +1000,11 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="glass rounded-3xl p-6 sticky top-24">
+            <div className="readable-panel sticky top-24 rounded-3xl p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{String(t.orderSummary)}</h2>
               
               {/* Coupon Code Section */}
-              <div className="mb-6 p-4 bg-gray-100 dark:bg-white/5 rounded-xl">
+              <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-gray-800/80">
                 {!appliedCoupon ? (
                   <div className="space-y-3">
                     <label className="block text-sm font-medium text-gray-900 dark:text-white">
@@ -1019,7 +1019,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                           setCouponError(null);
                         }}
                         placeholder={String(t.couponPlaceholder)}
-                        className="flex-1 min-w-0 px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
+                        className="readable-field min-w-0 flex-1 rounded-lg py-2"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
                             handleApplyCoupon();

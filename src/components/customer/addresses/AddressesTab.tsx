@@ -136,7 +136,7 @@ export default function AddressesTab({ locale }: AddressesTabProps) {
 
       {/* Form or List */}
       {showForm ? (
-        <div className="glass rounded-xl p-6">
+        <div className="readable-panel rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-white">
               {editingAddress 
@@ -147,7 +147,7 @@ export default function AddressesTab({ locale }: AddressesTabProps) {
             
             <button
               onClick={handleCancel}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+              className="rounded-lg p-2 text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

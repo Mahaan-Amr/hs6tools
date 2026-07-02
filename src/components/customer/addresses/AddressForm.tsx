@@ -239,18 +239,21 @@ export default function AddressForm({
     return errorMessage ? `${fieldName} ${errorMessage}` : `${fieldName} is invalid`;
   };
 
+  const fieldClass = (hasError?: boolean) =>
+    `readable-field ${hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Address Type and Title */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.addressType || 'نوع آدرس'} *
           </label>
           <select
             value={formData.type}
             onChange={(e) => handleInputChange('type', e.target.value)}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+            className="readable-field"
             disabled
           >
             <option value="SHIPPING">{messages?.customer?.addresses?.shipping || 'ارسال'}</option>
@@ -258,16 +261,14 @@ export default function AddressForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.title || 'عنوان'} *
           </label>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => handleInputChange('title', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.title ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.title)}
             placeholder={messages?.customer?.addresses?.title || 'عنوان'}
           />
           {errors.title && (
@@ -281,16 +282,14 @@ export default function AddressForm({
       {/* Name Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.firstName || 'نام'} *
           </label>
           <input
             type="text"
             value={formData.firstName}
             onChange={(e) => handleInputChange('firstName', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.firstName ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.firstName)}
             placeholder={messages?.customer?.addresses?.firstName || 'نام'}
           />
           {errors.firstName && (
@@ -301,16 +300,14 @@ export default function AddressForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.lastName || 'نام خانوادگی'} *
           </label>
           <input
             type="text"
             value={formData.lastName}
             onChange={(e) => handleInputChange('lastName', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.lastName ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.lastName)}
             placeholder={messages?.customer?.addresses?.lastName || 'نام خانوادگی'}
           />
           {errors.lastName && (
@@ -323,14 +320,14 @@ export default function AddressForm({
 
       {/* Company */}
       <div>
-        <label className="block text-sm font-medium text-white mb-2">
+        <label className="readable-label">
           {messages?.customer?.addresses?.company || 'شرکت'}
         </label>
         <input
           type="text"
           value={formData.company}
           onChange={(e) => handleInputChange('company', e.target.value)}
-          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+          className="readable-field"
           placeholder={messages?.customer?.addresses?.companyOptional || messages?.customer?.addresses?.company || 'شرکت (اختیاری)'}
         />
       </div>
@@ -338,16 +335,14 @@ export default function AddressForm({
       {/* Address Lines */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.addressLine1 || 'خط آدرس 1'} *
           </label>
           <input
             type="text"
             value={formData.addressLine1}
             onChange={(e) => handleInputChange('addressLine1', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.addressLine1 ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.addressLine1)}
             placeholder={messages?.customer?.addresses?.addressLine1 || 'آدرس کامل'}
           />
           {errors.addressLine1 && (
@@ -358,14 +353,14 @@ export default function AddressForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.addressLine2 || 'خط آدرس 2'}
           </label>
           <input
             type="text"
             value={formData.addressLine2}
             onChange={(e) => handleInputChange('addressLine2', e.target.value)}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+            className="readable-field"
             placeholder={messages?.customer?.addresses?.addressLine2Optional || messages?.customer?.addresses?.addressLine2 || 'آدرس تکمیلی (اختیاری)'}
           />
         </div>
@@ -374,16 +369,14 @@ export default function AddressForm({
       {/* City, State, Postal Code */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.city || 'شهر'} *
           </label>
           <input
             type="text"
             value={formData.city}
             onChange={(e) => handleInputChange('city', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.city ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.city)}
             placeholder={messages?.customer?.addresses?.city || 'شهر'}
           />
           {errors.city && (
@@ -394,16 +387,14 @@ export default function AddressForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.state || 'استان'} *
           </label>
           <input
             type="text"
             value={formData.state}
             onChange={(e) => handleInputChange('state', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.state ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.state)}
             placeholder={messages?.customer?.addresses?.state || 'استان'}
           />
           {errors.state && (
@@ -414,16 +405,14 @@ export default function AddressForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.postalCode || 'کد پستی'} *
           </label>
           <input
             type="text"
             value={formData.postalCode}
             onChange={(e) => handleInputChange('postalCode', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.postalCode ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.postalCode)}
             placeholder="1234567890"
             maxLength={10}
           />
@@ -438,13 +427,13 @@ export default function AddressForm({
       {/* Country and Phone */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.country || 'کشور'} *
           </label>
           <select
             value={formData.country}
             onChange={(e) => handleInputChange('country', e.target.value)}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
+            className="readable-field"
           >
             <option value="Iran">{messages?.customer?.addresses?.countries?.iran || 'ایران'}</option>
             <option value="Afghanistan">{messages?.customer?.addresses?.countries?.afghanistan || 'افغانستان'}</option>
@@ -455,16 +444,14 @@ export default function AddressForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="readable-label">
             {messages?.customer?.addresses?.phone || 'تلفن'} *
           </label>
           <input
             type="tel"
             value={formData.phone}
             onChange={(e) => handleInputChange('phone', e.target.value)}
-            className={`w-full px-4 py-3 bg-white/10 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-orange ${
-              errors.phone ? 'border-red-500' : 'border-white/20'
-            }`}
+            className={fieldClass(!!errors.phone)}
             placeholder="09123456789"
           />
           {errors.phone && (
@@ -484,7 +471,7 @@ export default function AddressForm({
           onChange={(e) => handleInputChange('isDefault', e.target.checked)}
           className="w-4 h-4 text-primary-orange bg-white/10 border-white/20 rounded focus:ring-primary-orange focus:ring-2"
         />
-        <label htmlFor="isDefault" className="ml-2 text-sm text-white">
+        <label htmlFor="isDefault" className="ml-2 text-sm text-gray-900 dark:text-white">
           {messages?.customer?.addresses?.isDefault || 'آدرس پیش‌فرض'}
         </label>
       </div>
@@ -510,7 +497,7 @@ export default function AddressForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-6 py-3 bg-white/10 text-white font-medium rounded-xl hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          className="readable-secondary-button"
         >
           {messages?.common?.cancel || 'لغو'}
         </button>

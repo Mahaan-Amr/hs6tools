@@ -18,6 +18,8 @@ const fallbackContactDetails = {
   email: "info@hs6tools.com",
 } as const;
 
+const faContactPhoneValue = "برای مشاوره: 09122935341\nروبیکا، تلگرام، واتساپ: 09981705895";
+
 function resolveLocale(locale: string): PageLocale {
   return locales.includes(locale as Locale) ? (locale as PageLocale) : defaultLocale;
 }
@@ -30,6 +32,17 @@ function normalizeNullableIcon(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed || null;
+}
+
+function applyContactInfoOverrides(
+  locale: PageLocale,
+  cards: ContactPageContentData["contactCards"]
+): ContactPageContentData["contactCards"] {
+  if (locale !== "fa") return cards;
+
+  return cards.map((card) =>
+    card.icon === "Phone" ? { ...card, value: faContactPhoneValue } : card
+  ) as ContactPageContentData["contactCards"];
 }
 
 function buildDefaultAboutContent(locale: PageLocale, messages: Messages): AboutPageContentPayload {
@@ -91,7 +104,7 @@ function buildDefaultContactContent(locale: PageLocale, messages: Messages): Con
         submitLabel: messages.contact.sendMessage,
       },
       contactInfoTitle: messages.contact.contactInfo,
-      contactCards: [
+      contactCards: applyContactInfoOverrides(locale, [
         {
           title: messages.contact.address,
           value: fallbackContactDetails.address,
@@ -107,7 +120,7 @@ function buildDefaultContactContent(locale: PageLocale, messages: Messages): Con
           value: fallbackContactDetails.email,
           icon: "Mail",
         },
-      ],
+      ]),
       workingHours: {
         title: messages.contact.workingHours,
         lines: [
@@ -347,7 +360,7 @@ function normalizeContactContent(
         content.contactInfoTitle,
         fallback.content.contactInfoTitle
       ),
-      contactCards: [0, 1, 2].map((index) => {
+      contactCards: applyContactInfoOverrides(locale, [0, 1, 2].map((index) => {
         const card =
           contactCards[index] && typeof contactCards[index] === "object"
             ? (contactCards[index] as Record<string, unknown>)
@@ -358,7 +371,7 @@ function normalizeContactContent(
           value: normalizeText(card.value, fallback.content.contactCards[index].value),
           icon: normalizeNullableIcon(card.icon) || fallback.content.contactCards[index].icon,
         };
-      }) as ContactPageContentData["contactCards"],
+      }) as ContactPageContentData["contactCards"]),
       workingHours: {
         title: normalizeText(workingHours.title, fallback.content.workingHours.title),
         lines: [

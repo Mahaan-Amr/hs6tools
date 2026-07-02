@@ -58,6 +58,19 @@ function getFetchErrorMessage(error: unknown, context: string): string {
   if (error instanceof Error) {
     const cause = "cause" in error ? error.cause : undefined;
     const causeMessage = cause instanceof Error ? ` (${cause.message})` : "";
+    const causeCode =
+      cause && typeof cause === "object" && "code" in cause
+        ? String((cause as { code?: unknown }).code)
+        : "";
+
+    if (
+      causeCode === "EAI_AGAIN" ||
+      causeCode === "ENOTFOUND" ||
+      causeMessage.includes("getaddrinfo")
+    ) {
+      return `${context}: DNS lookup failed for ZarinPal. Check the server DNS, VPN/proxy, firewall, and outbound HTTPS access to api.zarinpal.com. ${error.message}${causeMessage}`;
+    }
+
     return `${context}: ${error.message}${causeMessage}`;
   }
 
