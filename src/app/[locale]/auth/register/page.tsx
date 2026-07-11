@@ -9,6 +9,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { sanitizeCallbackUrl } from "@/utils/safeRedirect";
 
+const SMS_RESEND_COOLDOWN_SECONDS = 120;
+
 interface RegisterPageProps {
   params: Promise<{ locale: string }>;
 }
@@ -126,7 +128,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         }
         
         setInfo(infoMessage);
-        setCountdown(300); // 5 minutes
+        setCountdown(SMS_RESEND_COOLDOWN_SECONDS);
         // Start countdown timer
         const timer = setInterval(() => {
           setCountdown((prev) => {
@@ -182,7 +184,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         }
         
         setInfo(infoMessage);
-        setCountdown(300); // 5 minutes in seconds
+        setCountdown(SMS_RESEND_COOLDOWN_SECONDS);
         // Start countdown timer
         const timer = setInterval(() => {
           setCountdown((prev) => {
