@@ -7,9 +7,7 @@ import { UserRole } from "@prisma/client";
  * Check if user has admin access
  */
 export function isAdmin(role: UserRole | undefined): boolean {
-  console.log("isAdmin function called with role:", role);
   const result = role === "ADMIN" || role === "SUPER_ADMIN";
-  console.log("isAdmin result:", result);
   return result;
 }
 
@@ -23,9 +21,12 @@ export function isSuperAdmin(role: UserRole | undefined): boolean {
 /**
  * Check if user has permission for specific role
  */
-export function hasPermission(userRole: UserRole | undefined, requiredRole: UserRole): boolean {
+export function hasPermission(
+  userRole: UserRole | undefined,
+  requiredRole: UserRole,
+): boolean {
   if (!userRole) return false;
-  
+
   const roleHierarchy = {
     CUSTOMER: 1,
     ADMIN: 2,
@@ -40,7 +41,7 @@ export function hasPermission(userRole: UserRole | undefined, requiredRole: User
  */
 export async function requireAdminAuth() {
   const session = await getServerSession(authOptions);
-  
+
   if (!session?.user) {
     redirect("/auth/login");
   }
@@ -57,7 +58,7 @@ export async function requireAdminAuth() {
  */
 export async function requireSuperAdminAuth() {
   const session = await getServerSession(authOptions);
-  
+
   if (!session?.user) {
     redirect("/auth/login");
   }
@@ -74,7 +75,7 @@ export async function requireSuperAdminAuth() {
  */
 export async function getCurrentAdminUser() {
   const session = await getServerSession(authOptions);
-  
+
   if (!session?.user || !isAdmin(session.user.role)) {
     return null;
   }
@@ -85,33 +86,36 @@ export async function getCurrentAdminUser() {
 /**
  * Check if user can access specific admin feature
  */
-export function canAccessFeature(userRole: UserRole | undefined, feature: string): boolean {
+export function canAccessFeature(
+  userRole: UserRole | undefined,
+  feature: string,
+): boolean {
   if (!userRole) return false;
 
   // Define feature permissions
   const featurePermissions: Record<string, UserRole[]> = {
     // Product management - Admin and Super Admin
-    "products": ["ADMIN", "SUPER_ADMIN"],
-    "categories": ["ADMIN", "SUPER_ADMIN"],
-    
+    products: ["ADMIN", "SUPER_ADMIN"],
+    categories: ["ADMIN", "SUPER_ADMIN"],
+
     // User management - Super Admin only
-    "users": ["SUPER_ADMIN"],
-    "roles": ["SUPER_ADMIN"],
-    
+    users: ["SUPER_ADMIN"],
+    roles: ["SUPER_ADMIN"],
+
     // Order management - Admin and Super Admin
-    "orders": ["ADMIN", "SUPER_ADMIN"],
-    
+    orders: ["ADMIN", "SUPER_ADMIN"],
+
     // Content management - Admin and Super Admin
-    "content": ["ADMIN", "SUPER_ADMIN"],
-    "blog": ["ADMIN", "SUPER_ADMIN"],
-    
+    content: ["ADMIN", "SUPER_ADMIN"],
+    blog: ["ADMIN", "SUPER_ADMIN"],
+
     // Analytics and reports - Admin and Super Admin
-    "analytics": ["ADMIN", "SUPER_ADMIN"],
-    "reports": ["ADMIN", "SUPER_ADMIN"],
-    
+    analytics: ["ADMIN", "SUPER_ADMIN"],
+    reports: ["ADMIN", "SUPER_ADMIN"],
+
     // System settings - Super Admin only
-    "settings": ["SUPER_ADMIN"],
-    "system": ["SUPER_ADMIN"],
+    settings: ["SUPER_ADMIN"],
+    system: ["SUPER_ADMIN"],
   };
 
   const allowedRoles = featurePermissions[feature];
@@ -127,55 +131,53 @@ export function getAdminNavigationItems(userRole: UserRole | undefined) {
       name: "داشبورد",
       href: "/admin",
       icon: "dashboard",
-      roles: ["ADMIN", "SUPER_ADMIN"]
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       name: "محصولات",
       href: "/admin/products",
       icon: "products",
-      roles: ["ADMIN", "SUPER_ADMIN"]
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       name: "دسته‌بندی‌ها",
       href: "/admin/categories",
       icon: "categories",
-      roles: ["ADMIN", "SUPER_ADMIN"]
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       name: "سفارشات",
       href: "/admin/orders",
       icon: "orders",
-      roles: ["ADMIN", "SUPER_ADMIN"]
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       name: "کاربران",
       href: "/admin/users",
       icon: "users",
-      roles: ["SUPER_ADMIN"]
+      roles: ["SUPER_ADMIN"],
     },
     {
       name: "محتوا",
       href: "/admin/content",
       icon: "content",
-      roles: ["ADMIN", "SUPER_ADMIN"]
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       name: "گزارش‌ها",
       href: "/admin/analytics",
       icon: "analytics",
-      roles: ["ADMIN", "SUPER_ADMIN"]
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       name: "تنظیمات",
       href: "/admin/settings",
       icon: "settings",
-      roles: ["SUPER_ADMIN"]
-    }
+      roles: ["SUPER_ADMIN"],
+    },
   ];
 
-  return allItems.filter(item => 
-    item.roles.includes(userRole as UserRole)
-  );
+  return allItems.filter((item) => item.roles.includes(userRole as UserRole));
 }
 
 /**

@@ -16,18 +16,18 @@ interface WebhookPayload {
 
 /**
  * POST /api/payment/zarinpal/webhook
- * 
+ *
  * Handles webhook notifications from ZarinPal
- * 
+ *
  * This endpoint serves as a backup verification mechanism. When callback fails
  * (network issues, user closes browser, etc.), ZarinPal sends webhook notification
  * directly to our server to ensure payment status is updated.
- * 
+ *
  * Security:
  * - Validates webhook signature using HMAC-SHA256
  * - Checks request origin
  * - Idempotent (handles duplicate webhooks safely)
- * 
+ *
  * Webhook Payload (from ZarinPal):
  * {
  *   authority: string,
@@ -39,65 +39,47 @@ interface WebhookPayload {
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   let webhookData: WebhookPayload | null = null;
-  
-  try {
-    console.log('🔔 [Webhook] ========== WEBHOOK RECEIVED ==========');
-    console.log('🔔 [Webhook] Headers:', {
-      contentType: request.headers.get('content-type'),
-      userAgent: request.headers.get('user-agent'),
-      origin: request.headers.get('origin'),
-      signature: request.headers.get('x-zarinpal-signature') || 'not provided',
-    });
 
+  try {
     // Parse webhook payload
     const body = await request.text();
-    console.log('🔔 [Webhook] Raw body:', body);
 
     try {
       webhookData = JSON.parse(body) as WebhookPayload;
     } catch {
-      console.error('❌ [Webhook] Invalid JSON payload');
+      console.error("❌ [Webhook] Invalid JSON payload");
       return NextResponse.json(
         { success: false, error: "Invalid JSON payload" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!webhookData) {
-      console.error('❌ [Webhook] Webhook data is null');
+      console.error("❌ [Webhook] Webhook data is null");
       return NextResponse.json(
         { success: false, error: "Invalid webhook data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { authority, status, amount, ref_id } = webhookData;
-
-    console.log('🔔 [Webhook] Parsed data:', {
-      authority,
-      status,
-      amount,
-      ref_id,
-      hasAuthority: !!authority,
-      hasStatus: !!status,
-    });
+    const { authority, status } = webhookData;
 
     // ============================================
     // 1. VALIDATE REQUIRED FIELDS
     // ============================================
     if (!authority) {
-      console.error('❌ [Webhook] Missing authority');
+      console.error("❌ [Webhook] Missing authority");
       return NextResponse.json(
         { success: false, error: "Missing authority parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!status) {
-      console.error('❌ [Webhook] Missing status');
+      console.error("❌ [Webhook] Missing status");
       return NextResponse.json(
         { success: false, error: "Missing status parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -105,38 +87,40 @@ export async function POST(request: NextRequest) {
     // 2. VERIFY WEBHOOK SIGNATURE (if configured)
     // ============================================
     const webhookSecret = process.env.ZARINPAL_WEBHOOK_SECRET;
-    const providedSignature = request.headers.get('x-zarinpal-signature');
+    const providedSignature = request.headers.get("x-zarinpal-signature");
 
     if (webhookSecret) {
       if (!providedSignature) {
-        console.error('❌ [Webhook] Missing signature header');
+        console.error("❌ [Webhook] Missing signature header");
         return NextResponse.json(
           { success: false, error: "Missing webhook signature" },
-          { status: 401 }
+          { status: 401 },
         );
       }
 
       // Calculate expected signature using HMAC-SHA256
       const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
+        .createHmac("sha256", webhookSecret)
         .update(body)
-        .digest('hex');
+        .digest("hex");
 
       if (expectedSignature !== providedSignature) {
-        console.error('❌ [Webhook] Invalid signature:', {
-          expected: expectedSignature.substring(0, 10) + '...',
-          provided: providedSignature.substring(0, 10) + '...',
+        console.error("❌ [Webhook] Invalid signature:", {
+          expected: expectedSignature.substring(0, 10) + "...",
+          provided: providedSignature.substring(0, 10) + "...",
         });
         return NextResponse.json(
           { success: false, error: "Invalid webhook signature" },
-          { status: 401 }
+          { status: 401 },
         );
       }
-
-      console.log('✅ [Webhook] Signature validated');
     } else {
-      console.warn('⚠️ [Webhook] Webhook secret not configured, skipping signature validation');
-      console.warn('⚠️ [Webhook] Set ZARINPAL_WEBHOOK_SECRET environment variable for security');
+      console.warn(
+        "⚠️ [Webhook] Webhook secret not configured, skipping signature validation",
+      );
+      console.warn(
+        "⚠️ [Webhook] Set ZARINPAL_WEBHOOK_SECRET environment variable for security",
+      );
     }
 
     // ============================================
@@ -165,30 +149,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!order) {
-      console.error('❌ [Webhook] Order not found for authority:', authority);
+      console.error("❌ [Webhook] Order not found for authority:", authority);
       return NextResponse.json(
         { success: false, error: "Order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
-
-    console.log('🔔 [Webhook] Order found:', {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      currentStatus: order.paymentStatus,
-      amount: Number(order.totalAmount),
-    });
 
     // ============================================
     // 4. CHECK IF ALREADY PROCESSED (IDEMPOTENCY)
     // ============================================
     if (order.paymentStatus === "PAID") {
-      console.log('⚠️ [Webhook] Order already paid (idempotent), returning success:', {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        paymentDate: order.paymentDate,
-      });
-      
       // Return success for idempotency - webhook might be sent multiple times
       return NextResponse.json({
         success: true,
@@ -205,11 +176,6 @@ export async function POST(request: NextRequest) {
     // 5. HANDLE CANCELLED/FAILED PAYMENT
     // ============================================
     if (status === "NOK") {
-      console.log('⚠️ [Webhook] Payment cancelled/failed:', {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-      });
-
       // Note: Stock restoration should already be handled by callback
       // or will be handled by expiry cron job
       // We just log this event for monitoring
@@ -228,25 +194,17 @@ export async function POST(request: NextRequest) {
     // 6. VERIFY PAYMENT WITH ZARINPAL API
     // ============================================
     const paymentSettings = await prisma.paymentSettings.findFirst();
-    
+
     if (!paymentSettings?.zarinpalMerchantId) {
-      console.error('❌ [Webhook] Payment settings not configured');
+      console.error("❌ [Webhook] Payment settings not configured");
       return NextResponse.json(
         { success: false, error: "Payment gateway not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // ZarinPal v4 REST API expects amount in Rials (not Tomans)
     const amountInRials = Number(order.totalAmount);
-
-    console.log('💳 [Webhook] Verifying payment with ZarinPal:', {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      authority,
-      amount: amountInRials,
-      sandbox: paymentSettings.zarinpalSandbox,
-    });
 
     const verifyResult = await verifyPayment({
       merchantId: paymentSettings.zarinpalMerchantId,
@@ -256,7 +214,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verifyResult.success || !verifyResult.refId) {
-      console.error('❌ [Webhook] Payment verification failed:', {
+      console.error("❌ [Webhook] Payment verification failed:", {
         orderId: order.id,
         error: verifyResult.error,
       });
@@ -267,18 +225,13 @@ export async function POST(request: NextRequest) {
           success: false,
           error: verifyResult.error || "Payment verification failed",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // ============================================
     // 7. UPDATE ORDER STATUS TO PAID
     // ============================================
-    console.log('✅ [Webhook] Payment verified successfully:', {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      refId: verifyResult.refId,
-    });
 
     const paidUpdate = await prisma.order.updateMany({
       where: {
@@ -318,7 +271,7 @@ export async function POST(request: NextRequest) {
     if (!updatedOrder) {
       return NextResponse.json(
         { success: false, error: "Order not found after payment update" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -326,14 +279,15 @@ export async function POST(request: NextRequest) {
     // 8. SEND SMS NOTIFICATION (NON-BLOCKING)
     // ============================================
     const customerPhone = updatedOrder.user.phone || updatedOrder.customerPhone;
-    
-    if (customerPhone && paidUpdate.count === 1) {
-      const customerName = updatedOrder.user.firstName && updatedOrder.user.lastName
-        ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
-        : 'کاربر گرامی';
 
-      const products = updatedOrder.orderItems.map(item =>
-        item.quantity > 1 ? `${item.name} (${item.quantity} عدد)` : item.name
+    if (customerPhone && paidUpdate.count === 1) {
+      const customerName =
+        updatedOrder.user.firstName && updatedOrder.user.lastName
+          ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
+          : "کاربر گرامی";
+
+      const products = updatedOrder.orderItems.map((item) =>
+        item.quantity > 1 ? `${item.name} (${item.quantity} عدد)` : item.name,
       );
 
       void customerName;
@@ -341,36 +295,31 @@ export async function POST(request: NextRequest) {
 
       const smsMessage = SMSIRFastSendTemplates.INVOICE(
         updatedOrder.orderNumber,
-        Number(updatedOrder.totalAmount)
+        Number(updatedOrder.totalAmount),
       );
-
-      console.log('📱 [Webhook] Sending payment success SMS');
 
       sendTemplateSMSSafe(
         {
           receptor: customerPhone,
-          templateEnvKey: 'SMSIR_INVOICE_TEMPLATE_ID',
+          templateEnvKey: "SMSIR_INVOICE_TEMPLATE_ID",
           parameters: {
             INVOICE: updatedOrder.orderNumber,
             AMOUNT: Number(updatedOrder.totalAmount),
           },
         },
         smsMessage,
-        `Webhook payment success: ${updatedOrder.orderNumber}`
+        `Webhook payment success: ${updatedOrder.orderNumber}`,
       ).catch((err) => {
-        console.error('❌ [Webhook] SMS error (non-blocking):', err);
+        console.error("❌ [Webhook] SMS error (non-blocking):", err);
       });
     } else {
-      console.warn('⚠️ [Webhook] No phone number for SMS notification');
+      console.warn("⚠️ [Webhook] No phone number for SMS notification");
     }
 
     // ============================================
     // 9. RETURN SUCCESS RESPONSE
     // ============================================
     const duration = Date.now() - startTime;
-    
-    console.log('✅ [Webhook] ========== WEBHOOK PROCESSED SUCCESSFULLY ==========');
-    console.log('✅ [Webhook] Processing time:', duration, 'ms');
 
     return NextResponse.json({
       success: true,
@@ -382,27 +331,26 @@ export async function POST(request: NextRequest) {
         processingTime: duration,
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error('❌ [Webhook] ========== WEBHOOK ERROR ==========');
-    console.error('❌ [Webhook] Error:', error);
-    console.error('❌ [Webhook] Processing time:', duration, 'ms');
-    console.error('❌ [Webhook] Webhook data:', webhookData);
+    console.error("❌ [Webhook] ========== WEBHOOK ERROR ==========");
+    console.error("❌ [Webhook] Error:", error);
+    console.error("❌ [Webhook] Processing time:", duration, "ms");
+    console.error("❌ [Webhook] Webhook data:", webhookData);
 
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 /**
  * GET /api/payment/zarinpal/webhook
- * 
+ *
  * Health check endpoint for webhook
  */
 export async function GET() {
@@ -416,4 +364,3 @@ export async function GET() {
     },
   });
 }
-

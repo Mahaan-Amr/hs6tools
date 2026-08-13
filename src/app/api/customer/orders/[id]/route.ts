@@ -8,23 +8,23 @@ import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 // GET /api/customer/orders/[id] - Get specific order details
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
     const { id } = await params;
-    
+
     // Check if user is authenticated
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Check if id is an orderNumber (starts with "HS6-") or order ID (UUID)
     const isOrderNumber = id.startsWith("HS6-");
-    
+
     // Build where clause based on whether it's an orderNumber or order ID
     const whereClause = isOrderNumber
       ? { orderNumber: id, userId: session.user.id }
@@ -43,18 +43,18 @@ export async function GET(
                 slug: true,
                 images: {
                   where: { isPrimary: true },
-                  select: { url: true, alt: true }
-                }
-              }
+                  select: { url: true, alt: true },
+                },
+              },
             },
             variant: {
               select: {
                 id: true,
                 name: true,
-                sku: true
-              }
-            }
-          }
+                sku: true,
+              },
+            },
+          },
         },
         shippingAddress: true,
         user: {
@@ -63,16 +63,16 @@ export async function GET(
             firstName: true,
             lastName: true,
             email: true,
-            phone: true
-          }
-        }
-      }
+            phone: true,
+          },
+        },
+      },
     });
 
     if (!order) {
       return NextResponse.json(
         { success: false, error: "Order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -99,10 +99,10 @@ export async function GET(
         firstName: order.user.firstName,
         lastName: order.user.lastName,
         email: order.user.email,
-        phone: order.user.phone
+        phone: order.user.phone,
       },
       shippingAddress: order.shippingAddress,
-      items: order.orderItems.map(item => ({
+      items: order.orderItems.map((item) => ({
         id: item.id,
         productId: item.productId,
         variantId: item.variantId,
@@ -115,20 +115,19 @@ export async function GET(
         quantity: item.quantity,
         attributes: item.attributes,
         product: item.product,
-        variant: item.variant
-      }))
+        variant: item.variant,
+      })),
     };
 
     return NextResponse.json({
       success: true,
-      data: transformedOrder
+      data: transformedOrder,
     });
-
   } catch (error) {
     console.error("Error fetching order details:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -136,24 +135,24 @@ export async function GET(
 // PATCH /api/customer/orders/[id] - Cancel an order
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    
+
     // Check if user is authenticated
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Check if id is an orderNumber (starts with "HS6-") or order ID (UUID)
     const isOrderNumber = id.startsWith("HS6-");
-    
+
     // Build where clause based on whether it's an orderNumber or order ID
     const whereClause = isOrderNumber
       ? { orderNumber: id, userId: session.user.id }
@@ -167,7 +166,7 @@ export async function PATCH(
     if (!order) {
       return NextResponse.json(
         { success: false, error: "Order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -180,28 +179,28 @@ export async function PATCH(
     if (order.paymentStatus === "PAID") {
       return NextResponse.json(
         { success: false, error: "Cannot cancel a paid order" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (order.status === "CANCELLED") {
       return NextResponse.json(
         { success: false, error: "Order is already cancelled" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (order.status === "DELIVERED") {
       return NextResponse.json(
         { success: false, error: "Cannot cancel a delivered order" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (order.status === "REFUNDED") {
       return NextResponse.json(
         { success: false, error: "Cannot cancel a refunded order" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -215,11 +214,12 @@ export async function PATCH(
         order.id,
         body?.paymentStatus === "FAILED" ? "FAILED" : order.paymentStatus,
         "CANCELLED",
-        "Cancelled by customer"
       );
-      console.log(`✅ Order cancelled and stock restored: ${order.orderNumber}`);
     } catch (error) {
-      console.error(`❌ Error restoring stock during cancellation for ${order.orderNumber}:`, error);
+      console.error(
+        `❌ Error restoring stock during cancellation for ${order.orderNumber}:`,
+        error,
+      );
       // If stock restoration fails, still allow cancellation but log the error
       // Admin can manually adjust inventory if needed
     }
@@ -245,23 +245,27 @@ export async function PATCH(
     if (!updatedOrder) {
       return NextResponse.json(
         { success: false, error: "Order not found after cancellation" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Send SMS notification to customer (non-blocking)
     const customerPhone = updatedOrder.user.phone || order.customerPhone;
     if (customerPhone) {
-      const customerName = updatedOrder.user.firstName && updatedOrder.user.lastName
-        ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
-        : 'کاربر گرامی';
+      const customerName =
+        updatedOrder.user.firstName && updatedOrder.user.lastName
+          ? `${updatedOrder.user.firstName} ${updatedOrder.user.lastName}`
+          : "کاربر گرامی";
 
       sendSMSSafe(
         {
           receptor: customerPhone,
-          message: SMSTemplates.ORDER_CANCELLED(order.orderNumber, customerName)
+          message: SMSTemplates.ORDER_CANCELLED(
+            order.orderNumber,
+            customerName,
+          ),
         },
-        `Order cancelled: ${order.orderNumber}`
+        `Order cancelled: ${order.orderNumber}`,
       );
     }
 
@@ -291,7 +295,7 @@ export async function PATCH(
         phone: updatedOrder.user.phone,
       },
       shippingAddress: updatedOrder.shippingAddress,
-      items: updatedOrder.orderItems.map(item => ({
+      items: updatedOrder.orderItems.map((item) => ({
         id: item.id,
         productId: item.productId,
         variantId: item.variantId,
@@ -306,19 +310,16 @@ export async function PATCH(
       })),
     };
 
-    console.log(`✅ Order ${updatedOrder.orderNumber} cancelled by user ${session.user.id}`);
-
     return NextResponse.json({
       success: true,
       data: transformedOrder,
       message: "Order cancelled successfully",
     });
-
   } catch (error) {
     console.error("Error cancelling order:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -326,23 +327,23 @@ export async function PATCH(
 // DELETE /api/customer/orders/[id] - Delete an order (only if not paid and not shipped)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
     const { id } = await params;
-    
+
     // Check if user is authenticated
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Check if id is an orderNumber (starts with "HS6-") or order ID (UUID)
     const isOrderNumber = id.startsWith("HS6-");
-    
+
     // Build where clause based on whether it's an orderNumber or order ID
     const whereClause = isOrderNumber
       ? { orderNumber: id, userId: session.user.id }
@@ -356,25 +357,28 @@ export async function DELETE(
     if (!order) {
       return NextResponse.json(
         { success: false, error: "Order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Orders can only be deleted if:
     // 1. Not paid (paymentStatus is PENDING or FAILED)
     // 2. Not shipped (status is PENDING, CONFIRMED, or CANCELLED, and no shippedAt date)
-    const canDelete = 
+    const canDelete =
       (order.paymentStatus === "PENDING" || order.paymentStatus === "FAILED") &&
-      (order.status === "PENDING" || order.status === "CONFIRMED" || order.status === "CANCELLED") &&
+      (order.status === "PENDING" ||
+        order.status === "CONFIRMED" ||
+        order.status === "CANCELLED") &&
       !order.shippedAt;
 
     if (!canDelete) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: "Order cannot be deleted. Only unpaid and unshipped orders can be deleted." 
+        {
+          success: false,
+          error:
+            "Order cannot be deleted. Only unpaid and unshipped orders can be deleted.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -383,18 +387,15 @@ export async function DELETE(
       where: { id: order.id },
     });
 
-    console.log(`✅ Order ${order.orderNumber} deleted by user ${session.user.id}`);
-
     return NextResponse.json({
       success: true,
       message: "Order deleted successfully",
     });
-
   } catch (error) {
     console.error("Error deleting order:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

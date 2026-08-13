@@ -1,9 +1,9 @@
 /**
  * Zarinpal Payment Gateway Service
- * 
+ *
  * This service handles payment processing using Zarinpal REST API
  * Documentation: https://www.zarinpal.com/docs/
- * 
+ *
  * API Endpoints:
  * - Payment Request: POST /pg/v4/payment/request.json
  * - Payment Verification: POST /pg/v4/payment/verify.json
@@ -38,7 +38,9 @@ type ZarinpalErrorResponse =
   | null
   | undefined;
 
-function getFirstZarinpalError(errors: ZarinpalErrorResponse): ZarinpalError | null {
+function getFirstZarinpalError(
+  errors: ZarinpalErrorResponse,
+): ZarinpalError | null {
   if (!errors) {
     return null;
   }
@@ -152,9 +154,9 @@ export interface RefundOptions {
  */
 function getApiBaseUrl(sandbox: boolean = false): string {
   if (sandbox) {
-    return 'https://sandbox.zarinpal.com/pg/v4';
+    return "https://sandbox.zarinpal.com/pg/v4";
   }
-  return 'https://api.zarinpal.com/pg/v4';
+  return "https://api.zarinpal.com/pg/v4";
 }
 
 /**
@@ -162,8 +164,13 @@ function getApiBaseUrl(sandbox: boolean = false): string {
  * Returns payment URL and authority for redirecting user
  */
 export async function requestPayment(
-  options: PaymentRequestOptions
-): Promise<{ success: boolean; authority?: string; paymentUrl?: string; error?: string }> {
+  options: PaymentRequestOptions,
+): Promise<{
+  success: boolean;
+  authority?: string;
+  paymentUrl?: string;
+  error?: string;
+}> {
   const timeoutMs = 15000;
   const controller = new AbortController();
   let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -174,7 +181,7 @@ export async function requestPayment(
 
     // Validate merchant ID format (Zarinpal requires at least 36 characters)
     if (!options.merchantId || options.merchantId.trim().length < 36) {
-      console.error('❌ [Zarinpal] Invalid merchant ID:', {
+      console.error("❌ [Zarinpal] Invalid merchant ID:", {
         length: options.merchantId?.length || 0,
         required: 36,
       });
@@ -186,13 +193,13 @@ export async function requestPayment(
 
     // Ensure amount is an integer (Zarinpal requires integer)
     const amountInteger = Math.floor(options.amount);
-    
+
     // Validate amount is at least 10,000 Rials
     if (amountInteger < 10000) {
-      console.error('❌ [Zarinpal] Amount too low:', amountInteger);
+      console.error("❌ [Zarinpal] Amount too low:", amountInteger);
       return {
         success: false,
-        error: `مبلغ باید حداقل ۱۰,۰۰۰ ریال باشد. مبلغ فعلی: ${amountInteger.toLocaleString('fa-IR')} ریال`,
+        error: `مبلغ باید حداقل ۱۰,۰۰۰ ریال باشد. مبلغ فعلی: ${amountInteger.toLocaleString("fa-IR")} ریال`,
       };
     }
 
@@ -202,36 +209,24 @@ export async function requestPayment(
       description: options.description,
       callback_url: options.callbackUrl,
     };
-    
+
     // Only add mobile if provided and valid
     if (options.mobile) {
       requestBody.mobile = options.mobile;
     }
-    
+
     // Only add email if provided and valid
     if (options.email) {
       requestBody.email = options.email;
     }
 
-    console.log('💳 [Zarinpal] Payment request body:', {
-      url,
-      merchantId: options.merchantId.substring(0, 8) + '...', // Partial for security
-      amount: amountInteger,
-      description: options.description,
-      descriptionLength: options.description.length,
-      callbackUrl: options.callbackUrl,
-      hasMobile: !!options.mobile,
-      hasEmail: !!options.email,
-      sandbox: options.sandbox,
-    });
-
     timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(requestBody),
       signal: controller.signal,
@@ -245,9 +240,9 @@ export async function requestPayment(
     const firstError = getFirstZarinpalError(data.errors);
 
     if (!response.ok || firstError) {
-      const errorMessage = firstError?.message || 'خطا در درخواست پرداخت';
+      const errorMessage = firstError?.message || "خطا در درخواست پرداخت";
       const errorCode = firstError?.code || response.status;
-      console.error('❌ [Zarinpal] Payment request failed:', {
+      console.error("❌ [Zarinpal] Payment request failed:", {
         status: response.status,
         errors: data.errors,
       });
@@ -263,19 +258,14 @@ export async function requestPayment(
         ? `https://sandbox.zarinpal.com/pg/StartPay/${authority}`
         : `https://www.zarinpal.com/pg/StartPay/${authority}`;
 
-      console.log('✅ [Zarinpal] Payment request successful:', {
-        authority,
-        paymentUrl,
-      });
-
       return {
         success: true,
         authority,
         paymentUrl,
       };
     } else {
-      const errorMessage = data.data.message || 'خطا در درخواست پرداخت';
-      console.error('❌ [Zarinpal] Payment request failed:', {
+      const errorMessage = data.data.message || "خطا در درخواست پرداخت";
+      console.error("❌ [Zarinpal] Payment request failed:", {
         code: data.data.code,
         message: data.data.message,
       });
@@ -288,12 +278,13 @@ export async function requestPayment(
     if (timeout) {
       clearTimeout(timeout);
     }
-    console.error('❌ [Zarinpal] Payment request exception:', error);
+    console.error("❌ [Zarinpal] Payment request exception:", error);
     return {
       success: false,
-      error: error instanceof DOMException && error.name === "AbortError"
-        ? `Payment gateway did not respond within ${timeoutMs / 1000} seconds`
-        : getFetchErrorMessage(error, 'خطا در ارتباط با درگاه پرداخت'),
+      error:
+        error instanceof DOMException && error.name === "AbortError"
+          ? `Payment gateway did not respond within ${timeoutMs / 1000} seconds`
+          : getFetchErrorMessage(error, "خطا در ارتباط با درگاه پرداخت"),
     };
   }
 }
@@ -303,7 +294,7 @@ export async function requestPayment(
  * Call this after user returns from payment page
  */
 export async function verifyPayment(
-  options: PaymentVerifyOptions
+  options: PaymentVerifyOptions,
 ): Promise<{ success: boolean; refId?: number; error?: string }> {
   try {
     const baseUrl = getApiBaseUrl(options.sandbox);
@@ -315,19 +306,11 @@ export async function verifyPayment(
       amount: options.amount,
     };
 
-    console.log('💳 [Zarinpal] Payment verification:', {
-      url,
-      merchantId: options.merchantId,
-      authority: options.authority,
-      amount: options.amount,
-      sandbox: options.sandbox,
-    });
-
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(requestBody),
     });
@@ -335,9 +318,9 @@ export async function verifyPayment(
     const data: ZarinpalPaymentVerifyResponse = await response.json();
 
     if (!response.ok || data.errors?.length > 0) {
-      const errorMessage = data.errors?.[0]?.message || 'خطا در تأیید پرداخت';
+      const errorMessage = data.errors?.[0]?.message || "خطا در تأیید پرداخت";
       const errorCode = data.errors?.[0]?.code || response.status;
-      console.error('❌ [Zarinpal] Payment verification failed:', {
+      console.error("❌ [Zarinpal] Payment verification failed:", {
         status: response.status,
         errors: data.errors,
       });
@@ -350,19 +333,14 @@ export async function verifyPayment(
     // Code 100 means payment was successful
     if (data.data.code === 100) {
       const refId = data.data.ref_id;
-      console.log('✅ [Zarinpal] Payment verified successfully:', {
-        refId,
-        fee: data.data.fee,
-        feeType: data.data.fee_type,
-      });
       return {
         success: true,
         refId,
       };
     } else {
       // Other codes indicate payment failure or cancellation
-      const errorMessage = data.data.message || 'پرداخت ناموفق بود';
-      console.error('❌ [Zarinpal] Payment verification failed:', {
+      const errorMessage = data.data.message || "پرداخت ناموفق بود";
+      console.error("❌ [Zarinpal] Payment verification failed:", {
         code: data.data.code,
         message: data.data.message,
       });
@@ -372,10 +350,13 @@ export async function verifyPayment(
       };
     }
   } catch (error) {
-    console.error('❌ [Zarinpal] Payment verification exception:', error);
+    console.error("❌ [Zarinpal] Payment verification exception:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'خطا در ارتباط با درگاه پرداخت',
+      error:
+        error instanceof Error
+          ? error.message
+          : "خطا در ارتباط با درگاه پرداخت",
     };
   }
 }
@@ -386,30 +367,25 @@ export async function verifyPayment(
  */
 export async function getUnverifiedTransactions(
   merchantId: string,
-  sandbox: boolean = false
+  sandbox: boolean = false,
 ): Promise<{ success: boolean; authorities?: string[]; error?: string }> {
   try {
     const baseUrl = getApiBaseUrl(sandbox);
     const url = `${baseUrl}/payment/unVerified.json?merchant_id=${merchantId}`;
 
-    console.log('💳 [Zarinpal] Fetching unverified transactions:', {
-      url,
-      merchantId,
-      sandbox,
-    });
-
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Accept': 'application/json',
+        Accept: "application/json",
       },
     });
 
     const data: ZarinpalUnverifiedResponse = await response.json();
 
     if (!response.ok || data.errors?.length > 0) {
-      const errorMessage = data.errors?.[0]?.message || 'خطا در دریافت تراکنش‌ها';
-      console.error('❌ [Zarinpal] Unverified transactions fetch failed:', {
+      const errorMessage =
+        data.errors?.[0]?.message || "خطا در دریافت تراکنش‌ها";
+      console.error("❌ [Zarinpal] Unverified transactions fetch failed:", {
         status: response.status,
         errors: data.errors,
       });
@@ -421,9 +397,6 @@ export async function getUnverifiedTransactions(
 
     if (data.data.code === 100) {
       const authorities = data.data.authorities?.map((a) => a.authority) || [];
-      console.log('✅ [Zarinpal] Unverified transactions fetched:', {
-        count: authorities.length,
-      });
       return {
         success: true,
         authorities,
@@ -431,14 +404,17 @@ export async function getUnverifiedTransactions(
     } else {
       return {
         success: false,
-        error: data.data.message || 'خطا در دریافت تراکنش‌ها',
+        error: data.data.message || "خطا در دریافت تراکنش‌ها",
       };
     }
   } catch (error) {
-    console.error('❌ [Zarinpal] Unverified transactions exception:', error);
+    console.error("❌ [Zarinpal] Unverified transactions exception:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'خطا در ارتباط با درگاه پرداخت',
+      error:
+        error instanceof Error
+          ? error.message
+          : "خطا در ارتباط با درگاه پرداخت",
     };
   }
 }
@@ -448,7 +424,7 @@ export async function getUnverifiedTransactions(
  * Note: Refund requires special permissions from Zarinpal
  */
 export async function refundPayment(
-  options: RefundOptions
+  options: RefundOptions,
 ): Promise<{ success: boolean; refundId?: number; error?: string }> {
   try {
     const baseUrl = getApiBaseUrl(options.sandbox);
@@ -459,18 +435,11 @@ export async function refundPayment(
       authority: options.authority,
     };
 
-    console.log('💳 [Zarinpal] Payment refund:', {
-      url,
-      merchantId: options.merchantId,
-      authority: options.authority,
-      sandbox: options.sandbox,
-    });
-
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(requestBody),
     });
@@ -478,8 +447,8 @@ export async function refundPayment(
     const data: ZarinpalRefundResponse = await response.json();
 
     if (!response.ok || data.errors?.length > 0) {
-      const errorMessage = data.errors?.[0]?.message || 'خطا در بازپرداخت';
-      console.error('❌ [Zarinpal] Payment refund failed:', {
+      const errorMessage = data.errors?.[0]?.message || "خطا در بازپرداخت";
+      console.error("❌ [Zarinpal] Payment refund failed:", {
         status: response.status,
         errors: data.errors,
       });
@@ -491,9 +460,6 @@ export async function refundPayment(
 
     if (data.data.code === 100) {
       const refundId = data.data.refund_id;
-      console.log('✅ [Zarinpal] Payment refunded successfully:', {
-        refundId,
-      });
       return {
         success: true,
         refundId,
@@ -501,14 +467,17 @@ export async function refundPayment(
     } else {
       return {
         success: false,
-        error: data.data.message || 'خطا در بازپرداخت',
+        error: data.data.message || "خطا در بازپرداخت",
       };
     }
   } catch (error) {
-    console.error('❌ [Zarinpal] Payment refund exception:', error);
+    console.error("❌ [Zarinpal] Payment refund exception:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'خطا در ارتباط با درگاه پرداخت',
+      error:
+        error instanceof Error
+          ? error.message
+          : "خطا در ارتباط با درگاه پرداخت",
     };
   }
 }
@@ -530,4 +499,3 @@ export function rialsToTomans(rials: number): number {
 export function tomansToRials(tomans: number): number {
   return tomans * 10;
 }
-

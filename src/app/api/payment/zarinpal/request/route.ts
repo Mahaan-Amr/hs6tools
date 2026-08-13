@@ -13,14 +13,14 @@ function parseZarinpalSandbox(value: string | undefined): boolean {
 
 /**
  * POST /api/payment/zarinpal/request
- * 
+ *
  * Creates a payment request for an order and returns Zarinpal payment URL
- * 
+ *
  * Request body:
  * {
  *   orderId: string
  * }
- * 
+ *
  * Response:
  * {
  *   success: boolean,
@@ -32,11 +32,11 @@ function parseZarinpalSandbox(value: string | undefined): boolean {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     if (!orderId) {
       return NextResponse.json(
         { success: false, error: "Order ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     if (!order) {
       return NextResponse.json(
         { success: false, error: "Order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -78,16 +78,15 @@ export async function POST(request: NextRequest) {
     if (order.paymentStatus === "PAID") {
       return NextResponse.json(
         { success: false, error: "Order is already paid" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get payment settings or create default if not exists
     let paymentSettings = await prisma.paymentSettings.findFirst();
-    
+
     if (!paymentSettings) {
       // Create default payment settings if not exists
-      console.log('⚠️ [Payment Request] Payment settings not found, creating default...');
       paymentSettings = await prisma.paymentSettings.create({
         data: {
           zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || "",
@@ -95,25 +94,29 @@ export async function POST(request: NextRequest) {
           zarinpalSandbox: parseZarinpalSandbox(process.env.ZARINPAL_SANDBOX),
           allowBankTransfer: true,
           allowCashOnDelivery: true,
-        }
+        },
       });
-      console.log('✅ [Payment Request] Default payment settings created');
     }
-    
-    if (!paymentSettings.zarinpalMerchantId || paymentSettings.zarinpalMerchantId.trim() === "") {
+
+    if (
+      !paymentSettings.zarinpalMerchantId ||
+      paymentSettings.zarinpalMerchantId.trim() === ""
+    ) {
       // Try to get from environment variable as fallback
       const envMerchantId = process.env.ZARINPAL_MERCHANT_ID;
       if (envMerchantId) {
-        console.log('⚠️ [Payment Request] Using merchant ID from environment variable');
         paymentSettings.zarinpalMerchantId = envMerchantId;
       } else {
-        console.error('❌ [Payment Request] Zarinpal Merchant ID is not configured');
+        console.error(
+          "❌ [Payment Request] Zarinpal Merchant ID is not configured",
+        );
         return NextResponse.json(
-          { 
-            success: false, 
-            error: "Payment gateway is not configured. Please configure Zarinpal Merchant ID in admin settings or environment variables." 
+          {
+            success: false,
+            error:
+              "Payment gateway is not configured. Please configure Zarinpal Merchant ID in admin settings or environment variables.",
           },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
@@ -121,72 +124,76 @@ export async function POST(request: NextRequest) {
     // Validate merchant ID format (Zarinpal requires at least 36 characters)
     const merchantId = paymentSettings.zarinpalMerchantId.trim();
     if (merchantId.length < 36) {
-      console.error('❌ [Payment Request] Invalid merchant ID length:', {
+      console.error("❌ [Payment Request] Invalid merchant ID length:", {
         length: merchantId.length,
         required: 36,
-        isPlaceholder: merchantId.includes('your-mer') || merchantId.includes('placeholder'),
+        isPlaceholder:
+          merchantId.includes("your-mer") || merchantId.includes("placeholder"),
       });
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Merchant ID نامعتبر است. Merchant ID باید حداقل 36 کاراکتر باشد. لطفاً Merchant ID معتبر را در تنظیمات ادمین یا متغیرهای محیطی تنظیم کنید.` 
+        {
+          success: false,
+          error: `Merchant ID نامعتبر است. Merchant ID باید حداقل 36 کاراکتر باشد. لطفاً Merchant ID معتبر را در تنظیمات ادمین یا متغیرهای محیطی تنظیم کنید.`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Prepare payment request
     // ZarinPal v4 REST API expects amount in Rials (not Tomans)
     const amountInRials = Number(order.totalAmount);
-    
+
     // Validate amount (Zarinpal minimum is 10,000 Rials)
     if (amountInRials < 10000) {
-      console.error('❌ [Payment Request] Amount too low:', {
+      console.error("❌ [Payment Request] Amount too low:", {
         amountInRials,
-        minimum: 10000
+        minimum: 10000,
       });
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `مبلغ سفارش باید حداقل ۱۰,۰۰۰ ریال باشد. مبلغ فعلی: ${amountInRials.toLocaleString('fa-IR')} ریال` 
+        {
+          success: false,
+          error: `مبلغ سفارش باید حداقل ۱۰,۰۰۰ ریال باشد. مبلغ فعلی: ${amountInRials.toLocaleString("fa-IR")} ریال`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     // Ensure amount is an integer (Zarinpal requires integer)
     const amountInteger = Math.floor(amountInRials);
-    
+
     const description = `پرداخت سفارش ${order.orderNumber}`;
-    
+
     // Validate description length (max 255 characters)
     if (description.length > 255) {
-      console.error('❌ [Payment Request] Description too long:', description.length);
+      console.error(
+        "❌ [Payment Request] Description too long:",
+        description.length,
+      );
       return NextResponse.json(
-        { 
-          success: false, 
-          error: "توضیحات سفارش بیش از حد مجاز است" 
+        {
+          success: false,
+          error: "توضیحات سفارش بیش از حد مجاز است",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     // Get callback URL based on locale
     // Use getSiteOrigin helper to get proper domain (handles production vs development)
     const origin = getSiteOrigin(request);
     const callbackUrl = `${origin}/api/payment/zarinpal/callback`;
-    
+
     // Validate callback URL format
     try {
       new URL(callbackUrl);
     } catch {
-      console.error('❌ [Payment Request] Invalid callback URL:', callbackUrl);
+      console.error("❌ [Payment Request] Invalid callback URL:", callbackUrl);
       return NextResponse.json(
-        { 
-          success: false, 
-          error: "آدرس بازگشت نامعتبر است" 
+        {
+          success: false,
+          error: "آدرس بازگشت نامعتبر است",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -194,14 +201,17 @@ export async function POST(request: NextRequest) {
     let mobileFormatted: string | undefined = undefined;
     if (order.user.phone) {
       // Remove spaces, dashes, and other non-digit characters
-      const phoneDigits = order.user.phone.replace(/\D/g, '');
+      const phoneDigits = order.user.phone.replace(/\D/g, "");
       // Check if it's a valid Iranian mobile number (09xxxxxxxxx)
-      if (phoneDigits.length === 11 && phoneDigits.startsWith('09')) {
+      if (phoneDigits.length === 11 && phoneDigits.startsWith("09")) {
         mobileFormatted = phoneDigits;
-      } else if (phoneDigits.length === 10 && phoneDigits.startsWith('9')) {
+      } else if (phoneDigits.length === 10 && phoneDigits.startsWith("9")) {
         mobileFormatted = `0${phoneDigits}`;
       } else {
-        console.warn('⚠️ [Payment Request] Invalid mobile format, skipping:', order.user.phone);
+        console.warn(
+          "⚠️ [Payment Request] Invalid mobile format, skipping:",
+          order.user.phone,
+        );
       }
     }
 
@@ -212,23 +222,12 @@ export async function POST(request: NextRequest) {
       if (emailRegex.test(order.user.email)) {
         emailFormatted = order.user.email;
       } else {
-        console.warn('⚠️ [Payment Request] Invalid email format, skipping:', order.user.email);
+        console.warn(
+          "⚠️ [Payment Request] Invalid email format, skipping:",
+          order.user.email,
+        );
       }
     }
-
-    console.log('💳 [Payment Request] Creating payment request:', {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      amountInRials: Number(order.totalAmount),
-      amountInTomans: amountInteger,
-      description,
-      descriptionLength: description.length,
-      callbackUrl,
-      mobile: mobileFormatted || 'not provided',
-      email: emailFormatted || 'not provided',
-      merchantId: paymentSettings.zarinpalMerchantId.substring(0, 8) + '...', // Partial for security
-      sandbox: paymentSettings.zarinpalSandbox,
-    });
 
     // Request payment from Zarinpal
     const paymentResult = await requestPayment({
@@ -241,14 +240,18 @@ export async function POST(request: NextRequest) {
       sandbox: paymentSettings.zarinpalSandbox,
     });
 
-    if (!paymentResult.success || !paymentResult.authority || !paymentResult.paymentUrl) {
-      console.error('❌ [Payment Request] Failed:', paymentResult.error);
+    if (
+      !paymentResult.success ||
+      !paymentResult.authority ||
+      !paymentResult.paymentUrl
+    ) {
+      console.error("❌ [Payment Request] Failed:", paymentResult.error);
       return NextResponse.json(
-        { 
-          success: false, 
-          error: paymentResult.error || "Failed to create payment request" 
+        {
+          success: false,
+          error: paymentResult.error || "Failed to create payment request",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -260,26 +263,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('✅ [Payment Request] Payment request created successfully:', {
-      orderId: order.id,
-      authority: paymentResult.authority,
-    });
-
     return NextResponse.json({
       success: true,
       paymentUrl: paymentResult.paymentUrl,
       authority: paymentResult.authority,
     });
-
   } catch (error) {
     console.error("❌ [Payment Request] Error:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Internal server error" 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

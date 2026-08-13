@@ -1,7 +1,14 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { useSession } from 'next-auth/react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
+import { useSession } from "next-auth/react";
 
 interface CustomerProfile {
   id: string;
@@ -102,13 +109,17 @@ interface CustomerContextType {
   error: string | null;
   refreshProfile: () => Promise<void>;
   updateProfile: (data: Partial<CustomerProfile>) => Promise<boolean>;
-  
+
   // Order management
   orders: CustomerOrder[];
   ordersLoading: boolean;
   ordersError: string | null;
   ordersPagination: OrderPagination | null;
-  fetchOrders: (page?: number, limit?: number, filters?: OrderFilters) => Promise<void>;
+  fetchOrders: (
+    page?: number,
+    limit?: number,
+    filters?: OrderFilters,
+  ) => Promise<void>;
   fetchOrderDetails: (orderId: string) => Promise<CustomerOrder | null>;
   refreshOrders: () => Promise<void>;
 
@@ -117,8 +128,11 @@ interface CustomerContextType {
   addressesLoading: boolean;
   addressesError: string | null;
   fetchAddresses: () => Promise<void>;
-  createAddress: (addressData: Omit<CustomerAddress, 'id'>) => Promise<boolean>;
-  updateAddress: (id: string, addressData: Partial<CustomerAddress>) => Promise<boolean>;
+  createAddress: (addressData: Omit<CustomerAddress, "id">) => Promise<boolean>;
+  updateAddress: (
+    id: string,
+    addressData: Partial<CustomerAddress>,
+  ) => Promise<boolean>;
   deleteAddress: (id: string) => Promise<boolean>;
   setDefaultAddress: (id: string) => Promise<boolean>;
   refreshAddresses: () => Promise<void>;
@@ -131,19 +145,22 @@ interface OrderFilters {
   sortOrder?: string;
 }
 
-const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
+const CustomerContext = createContext<CustomerContextType | undefined>(
+  undefined,
+);
 
 export function CustomerProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Order management state
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
-  const [ordersPagination, setOrdersPagination] = useState<OrderPagination | null>(null);
+  const [ordersPagination, setOrdersPagination] =
+    useState<OrderPagination | null>(null);
 
   // Address management state
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
@@ -152,48 +169,44 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(async () => {
     if (!session?.user?.id) {
-      console.log('❌ fetchProfile: No session user ID');
       return;
     }
 
-    console.log('🔍 fetchProfile: Starting fetch for user:', session.user.id);
     setLoading(true);
     setError(null);
 
     try {
-      console.log('🔍 fetchProfile: Calling /api/customer/profile');
-      const response = await fetch('/api/customer/profile');
-      console.log('🔍 fetchProfile: Response status:', response.status);
-      
+      const response = await fetch("/api/customer/profile");
+
       const result = await response.json();
-      console.log('🔍 fetchProfile: Response result:', result);
 
       if (result.success) {
-        console.log('✅ fetchProfile: Successfully fetched profile');
         setProfile(result.data);
       } else {
-        console.error('❌ fetchProfile: API error:', result.error);
-        setError(result.error || 'Failed to fetch profile');
+        console.error("❌ fetchProfile: API error:", result.error);
+        setError(result.error || "Failed to fetch profile");
       }
     } catch (err) {
-      console.error('❌ fetchProfile: Network error:', err);
-      setError('Network error occurred');
+      console.error("❌ fetchProfile: Network error:", err);
+      setError("Network error occurred");
     } finally {
       setLoading(false);
     }
   }, [session?.user?.id]);
 
-  const updateProfile = async (data: Partial<CustomerProfile>): Promise<boolean> => {
+  const updateProfile = async (
+    data: Partial<CustomerProfile>,
+  ): Promise<boolean> => {
     if (!session?.user?.id) return false;
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/customer/profile', {
-        method: 'PUT',
+      const response = await fetch("/api/customer/profile", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
@@ -205,12 +218,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         await fetchProfile();
         return true;
       } else {
-        setError(result.error || 'Failed to update profile');
+        setError(result.error || "Failed to update profile");
         return false;
       }
     } catch (err) {
-      setError('Network error occurred');
-      console.error('Error updating profile:', err);
+      setError("Network error occurred");
+      console.error("Error updating profile:", err);
       return false;
     } finally {
       setLoading(false);
@@ -222,53 +235,54 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   };
 
   // Order management functions
-  const fetchOrders = useCallback(async (page: number = 1, limit: number = 10, filters: OrderFilters = {}) => {
-    if (!session?.user?.id) {
-      console.log('❌ fetchOrders: No session user ID');
-      return;
-    }
-
-    console.log('🔍 fetchOrders: Starting fetch for user:', session.user.id);
-    console.log('🔍 fetchOrders: Page:', page, 'Limit:', limit, 'Filters:', filters);
-    
-    setOrdersLoading(true);
-    setOrdersError(null);
-
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(filters.status && { status: filters.status }),
-        ...(filters.dateRange && { dateRange: filters.dateRange }),
-        ...(filters.sortBy && { sortBy: filters.sortBy }),
-        ...(filters.sortOrder && { sortOrder: filters.sortOrder })
-      });
-
-      const url = `/api/customer/orders?${params}`;
-      console.log('🔍 fetchOrders: Fetching from URL:', url);
-      
-      const response = await fetch(url);
-      const result = await response.json();
-
-      console.log('🔍 fetchOrders: Response:', result);
-
-      if (result.success) {
-        setOrders(result.data.orders);
-        setOrdersPagination(result.data.pagination);
-        console.log('✅ fetchOrders: Successfully fetched orders:', result.data.orders.length);
-      } else {
-        setOrdersError(result.error || 'Failed to fetch orders');
-        console.error('❌ fetchOrders: API error:', result.error);
+  const fetchOrders = useCallback(
+    async (
+      page: number = 1,
+      limit: number = 10,
+      filters: OrderFilters = {},
+    ) => {
+      if (!session?.user?.id) {
+        return;
       }
-    } catch (err) {
-      setOrdersError('Network error occurred');
-      console.error('❌ fetchOrders: Network error:', err);
-    } finally {
-      setOrdersLoading(false);
-    }
-  }, [session?.user?.id]);
 
-  const fetchOrderDetails = async (orderId: string): Promise<CustomerOrder | null> => {
+      setOrdersLoading(true);
+      setOrdersError(null);
+
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+          ...(filters.status && { status: filters.status }),
+          ...(filters.dateRange && { dateRange: filters.dateRange }),
+          ...(filters.sortBy && { sortBy: filters.sortBy }),
+          ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
+        });
+
+        const url = `/api/customer/orders?${params}`;
+
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success) {
+          setOrders(result.data.orders);
+          setOrdersPagination(result.data.pagination);
+        } else {
+          setOrdersError(result.error || "Failed to fetch orders");
+          console.error("❌ fetchOrders: API error:", result.error);
+        }
+      } catch (err) {
+        setOrdersError("Network error occurred");
+        console.error("❌ fetchOrders: Network error:", err);
+      } finally {
+        setOrdersLoading(false);
+      }
+    },
+    [session?.user?.id],
+  );
+
+  const fetchOrderDetails = async (
+    orderId: string,
+  ): Promise<CustomerOrder | null> => {
     if (!session?.user?.id) return null;
 
     try {
@@ -278,12 +292,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       if (result.success) {
         return result.data;
       } else {
-        setOrdersError(result.error || 'Failed to fetch order details');
+        setOrdersError(result.error || "Failed to fetch order details");
         return null;
       }
     } catch (err) {
-      setOrdersError('Network error occurred');
-      console.error('Error fetching order details:', err);
+      setOrdersError("Network error occurred");
+      console.error("Error fetching order details:", err);
       return null;
     }
   };
@@ -297,41 +311,40 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   // Address management functions
   const fetchAddresses = useCallback(async () => {
     if (!session?.user?.id) {
-      console.log('❌ fetchAddresses: No session user ID');
       return;
     }
 
-    console.log('🔍 fetchAddresses: Starting fetch for user:', session.user.id);
     setAddressesLoading(true);
     setAddressesError(null);
 
     try {
-      const response = await fetch('/api/customer/addresses');
+      const response = await fetch("/api/customer/addresses");
       const result = await response.json();
 
       if (result.success) {
         // Deduplicate addresses by ID to prevent duplicates
         const addressesData = result.data as CustomerAddress[];
         const uniqueAddresses = Array.from(
-          new Map(addressesData.map((addr) => [addr.id, addr])).values()
+          new Map(addressesData.map((addr) => [addr.id, addr])).values(),
         );
         setAddresses(uniqueAddresses);
-        console.log('✅ fetchAddresses: Successfully fetched addresses:', uniqueAddresses.length, '(deduplicated from', addressesData.length, ')');
       } else {
-        setAddressesError(result.error || 'Failed to fetch addresses');
-        console.error('❌ fetchAddresses: API error:', result.error);
+        setAddressesError(result.error || "Failed to fetch addresses");
+        console.error("❌ fetchAddresses: API error:", result.error);
       }
     } catch (err) {
-      setAddressesError('Network error occurred');
-      console.error('❌ fetchAddresses: Network error:', err);
+      setAddressesError("Network error occurred");
+      console.error("❌ fetchAddresses: Network error:", err);
     } finally {
       setAddressesLoading(false);
     }
   }, [session?.user?.id]);
 
-  const createAddress = async (addressData: Omit<CustomerAddress, 'id'>): Promise<boolean> => {
+  const createAddress = async (
+    addressData: Omit<CustomerAddress, "id">,
+  ): Promise<boolean> => {
     if (!session?.user?.id) {
-      setAddressesError('You must be logged in to create an address');
+      setAddressesError("You must be logged in to create an address");
       return false;
     }
 
@@ -339,10 +352,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     setAddressesError(null);
 
     try {
-      const response = await fetch('/api/customer/addresses', {
-        method: 'POST',
+      const response = await fetch("/api/customer/addresses", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(addressData),
       });
@@ -354,36 +367,40 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         return true;
       } else {
         // Handle detailed error messages from API
-        let errorMessage = result.error || 'Failed to create address';
-        
+        let errorMessage = result.error || "Failed to create address";
+
         // If API returns validation details, format them nicely
         if (result.details && Array.isArray(result.details)) {
-          errorMessage = result.details.join('. ');
-        } else if (result.details && typeof result.details === 'string') {
+          errorMessage = result.details.join(". ");
+        } else if (result.details && typeof result.details === "string") {
           errorMessage = result.details;
         }
-        
+
         setAddressesError(errorMessage);
-        console.error('❌ Address Creation Failed:', {
+        console.error("❌ Address Creation Failed:", {
           error: errorMessage,
           details: result.details,
-          status: response.status
+          status: response.status,
         });
         return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error 
-        ? `Network error: ${err.message}` 
-        : 'Network error occurred. Please check your connection and try again.';
+      const errorMessage =
+        err instanceof Error
+          ? `Network error: ${err.message}`
+          : "Network error occurred. Please check your connection and try again.";
       setAddressesError(errorMessage);
-      console.error('❌ Address Creation: Network error:', err);
+      console.error("❌ Address Creation: Network error:", err);
       return false;
     } finally {
       setAddressesLoading(false);
     }
   };
 
-  const updateAddress = async (id: string, addressData: Partial<CustomerAddress>): Promise<boolean> => {
+  const updateAddress = async (
+    id: string,
+    addressData: Partial<CustomerAddress>,
+  ): Promise<boolean> => {
     if (!session?.user?.id) return false;
 
     setAddressesLoading(true);
@@ -391,9 +408,9 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(`/api/customer/addresses/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(addressData),
       });
@@ -404,12 +421,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         await fetchAddresses(); // Refresh addresses
         return true;
       } else {
-        setAddressesError(result.error || 'Failed to update address');
+        setAddressesError(result.error || "Failed to update address");
         return false;
       }
     } catch (err) {
-      setAddressesError('Network error occurred');
-      console.error('Error updating address:', err);
+      setAddressesError("Network error occurred");
+      console.error("Error updating address:", err);
       return false;
     } finally {
       setAddressesLoading(false);
@@ -418,7 +435,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const deleteAddress = async (id: string): Promise<boolean> => {
     if (!session?.user?.id) {
-      setAddressesError('You must be logged in to delete an address');
+      setAddressesError("You must be logged in to delete an address");
       return false;
     }
 
@@ -428,7 +445,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(`/api/customer/addresses/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       const result = await response.json();
@@ -440,30 +457,31 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         return true;
       } else {
         // Handle detailed error messages from API
-        let errorMessage = result.error || 'Failed to delete address';
-        
+        let errorMessage = result.error || "Failed to delete address";
+
         // If API returns validation details, format them nicely
         if (result.details && Array.isArray(result.details)) {
-          errorMessage = result.details.join('. ');
-        } else if (result.details && typeof result.details === 'string') {
+          errorMessage = result.details.join(". ");
+        } else if (result.details && typeof result.details === "string") {
           errorMessage = result.details;
         }
-        
+
         // Set error but don't set loading state - let the component handle the error display
         setAddressesError(errorMessage);
-        console.error('❌ Address Deletion Failed:', {
+        console.error("❌ Address Deletion Failed:", {
           error: errorMessage,
           details: result.details,
-          status: response.status
+          status: response.status,
         });
         return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error 
-        ? `Network error: ${err.message}` 
-        : 'Network error occurred. Please check your connection and try again.';
+      const errorMessage =
+        err instanceof Error
+          ? `Network error: ${err.message}`
+          : "Network error occurred. Please check your connection and try again.";
       setAddressesError(errorMessage);
-      console.error('❌ Address Deletion: Network error:', err);
+      console.error("❌ Address Deletion: Network error:", err);
       return false;
     }
   };
@@ -476,7 +494,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(`/api/customer/addresses/${id}/default`, {
-        method: 'PUT',
+        method: "PUT",
       });
 
       const result = await response.json();
@@ -485,12 +503,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         await fetchAddresses(); // Refresh addresses
         return true;
       } else {
-        setAddressesError(result.error || 'Failed to set default address');
+        setAddressesError(result.error || "Failed to set default address");
         return false;
       }
     } catch (err) {
-      setAddressesError('Network error occurred');
-      console.error('Error setting default address:', err);
+      setAddressesError("Network error occurred");
+      console.error("Error setting default address:", err);
       return false;
     } finally {
       setAddressesLoading(false);
@@ -503,17 +521,13 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   // Fetch profile and orders when session changes
   useEffect(() => {
-    console.log('🔄 CustomerContext useEffect: status:', status, 'session user ID:', session?.user?.id);
-    
-    if (status === 'authenticated' && session?.user?.id) {
-      console.log('✅ CustomerContext: Session authenticated, fetching profile and orders');
+    if (status === "authenticated" && session?.user?.id) {
       fetchProfile();
       // Fetch initial orders with default parameters
       fetchOrders(1, 10, {});
       // Fetch initial addresses
       fetchAddresses();
-    } else if (status === 'unauthenticated') {
-      console.log('❌ CustomerContext: Session unauthenticated, clearing data');
+    } else if (status === "unauthenticated") {
       setProfile(null);
       setError(null);
       setOrders([]);
@@ -529,7 +543,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     error,
     refreshProfile,
     updateProfile,
-    
+
     // Order management
     orders,
     ordersLoading,
@@ -561,7 +575,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 export function useCustomer() {
   const context = useContext(CustomerContext);
   if (context === undefined) {
-    throw new Error('useCustomer must be used within a CustomerProvider');
+    throw new Error("useCustomer must be used within a CustomerProvider");
   }
   return context;
 }
