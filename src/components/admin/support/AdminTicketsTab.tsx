@@ -3,23 +3,26 @@
 import { FormEvent, useEffect, useState } from "react";
 import { TicketPriority, TicketStatus } from "@prisma/client";
 import { TicketView } from "@/types/ticket";
-
-const statusLabel: Record<string, string> = {
-  OPEN: "باز",
-  PENDING_ADMIN: "در انتظار پشتیبانی",
-  PENDING_USER: "در انتظار مشتری",
-  RESOLVED: "حل‌شده",
-  CLOSED: "بسته",
-};
-
-const priorityLabel: Record<string, string> = {
-  LOW: "کم",
-  NORMAL: "معمولی",
-  HIGH: "مهم",
-  URGENT: "فوری",
-};
+import { getAdminCopy } from "@/lib/admin-copy";
+import { useParams } from "next/navigation";
 
 export default function AdminTicketsTab() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fa";
+  const copy = getAdminCopy(locale);
+  const statusLabel: Record<string, string> = {
+    OPEN: copy.open,
+    PENDING_ADMIN: copy.pendingAdmin,
+    PENDING_USER: copy.pendingUser,
+    RESOLVED: copy.resolved,
+    CLOSED: copy.closed,
+  };
+  const priorityLabel: Record<string, string> = {
+    LOW: copy.low,
+    NORMAL: copy.normal,
+    HIGH: copy.high,
+    URGENT: copy.urgent,
+  };
   const [tickets, setTickets] = useState<TicketView[]>([]);
   const [activeTicket, setActiveTicket] = useState<TicketView | null>(null);
   const [search, setSearch] = useState("");
@@ -82,11 +85,11 @@ export default function AdminTicketsTab() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={locale === "en" ? "ltr" : "rtl"}>
       <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">مرکز پشتیبانی</h1>
-          <p className="mt-2 text-sm text-gray-300">مدیریت تیکت‌ها و گفتگو با مشتریان</p>
+          <h1 className="text-3xl font-bold text-white">{copy.supportCenter}</h1>
+          <p className="mt-2 text-sm text-gray-300">{copy.supportDescription}</p>
         </div>
         <div className="flex flex-col gap-2 md:flex-row">
           <input
@@ -94,20 +97,20 @@ export default function AdminTicketsTab() {
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && loadTickets()}
             className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-primary-orange"
-            placeholder="جستجو..."
+            placeholder={copy.searchPlaceholder}
           />
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value)}
             className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-primary-orange"
           >
-            <option value="">همه وضعیت‌ها</option>
+            <option value="">{copy.allStatuses}</option>
             {Object.values(TicketStatus).map((value) => (
               <option key={value} value={value}>{statusLabel[value]}</option>
             ))}
           </select>
           <button onClick={loadTickets} className="rounded-2xl bg-primary-orange px-5 py-3 font-semibold text-white">
-            اعمال
+            {copy.apply}
           </button>
         </div>
       </div>
@@ -115,9 +118,9 @@ export default function AdminTicketsTab() {
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         <aside className="rounded-3xl border border-white/10 bg-white/5 p-4">
           {isLoading ? (
-            <p className="p-4 text-gray-300">در حال بارگذاری...</p>
+            <p className="p-4 text-gray-300">{copy.loading}</p>
           ) : tickets.length === 0 ? (
-            <p className="p-4 text-gray-300">تیکتی یافت نشد.</p>
+            <p className="p-4 text-gray-300">{copy.noTickets}</p>
           ) : (
             <div className="space-y-2">
               {tickets.map((ticket) => (
@@ -144,7 +147,7 @@ export default function AdminTicketsTab() {
         <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
           {!activeTicket ? (
             <div className="flex min-h-96 items-center justify-center text-gray-300">
-              یک تیکت را انتخاب کنید.
+              {copy.selectTicket}
             </div>
           ) : (
             <div className="space-y-5">
@@ -154,7 +157,7 @@ export default function AdminTicketsTab() {
                   <p className="mt-2 text-sm text-gray-300">
                     {activeTicket.ticketNumber} · {activeTicket.user?.firstName} {activeTicket.user?.lastName} · {activeTicket.user?.email}
                   </p>
-                  {activeTicket.order && <p className="mt-1 text-sm text-primary-orange">سفارش: {activeTicket.order.orderNumber}</p>}
+                  {activeTicket.order && <p className="mt-1 text-sm text-primary-orange">{copy.order}: {activeTicket.order.orderNumber}</p>}
                 </div>
                 <div className="grid gap-2 md:grid-cols-2">
                   <select
@@ -208,14 +211,14 @@ export default function AdminTicketsTab() {
                   onChange={(event) => setReply(event.target.value)}
                   rows={4}
                   className="w-full resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-primary-orange"
-                  placeholder="پاسخ پشتیبانی..."
+                  placeholder={copy.replyPlaceholder}
                 />
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <label className="flex items-center gap-2 text-sm text-gray-300">
                     <input type="checkbox" checked={internal} onChange={(event) => setInternal(event.target.checked)} />
-                    یادداشت داخلی
+                    {copy.internalNote}
                   </label>
-                  <button className="rounded-2xl bg-primary-orange px-5 py-3 font-semibold text-white">ارسال پاسخ</button>
+                  <button className="rounded-2xl bg-primary-orange px-5 py-3 font-semibold text-white">{copy.sendReply}</button>
                 </div>
               </form>
             </div>

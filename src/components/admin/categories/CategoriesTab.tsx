@@ -5,18 +5,28 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
 import IconRenderer from "@/components/shared/IconRenderer";
-import { AdminCategory, CreateCategoryData, UpdateCategoryData } from "@/types/admin";
+import {
+  AdminCategory,
+  CreateCategoryData,
+  UpdateCategoryData,
+} from "@/types/admin";
 import CategoryForm from "./CategoryForm";
 import CategoryList from "./CategoryList";
+import { getAdminCopy } from "@/lib/admin-copy";
 
 export default function CategoriesTab() {
   const params = useParams();
   const locale = (params?.locale as string) || "fa";
+  const copy = getAdminCopy(locale);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
-  const [viewingCategory, setViewingCategory] = useState<AdminCategory | null>(null);
+  const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(
+    null,
+  );
+  const [viewingCategory, setViewingCategory] = useState<AdminCategory | null>(
+    null,
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchCategories = async () => {
@@ -64,7 +74,9 @@ export default function CategoriesTab() {
       setIsSaving(true);
 
       const isEditingItem = "id" in data;
-      const url = isEditingItem ? `/api/categories/${data.id}` : "/api/categories";
+      const url = isEditingItem
+        ? `/api/categories/${data.id}`
+        : "/api/categories";
       const method = isEditingItem ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -85,13 +97,19 @@ export default function CategoriesTab() {
 
       if (isEditingItem) {
         setCategories((prev) =>
-          prev.map((cat) => (cat.id === data.id ? { ...cat, ...result.data } : cat))
+          prev.map((cat) =>
+            cat.id === data.id ? { ...cat, ...result.data } : cat,
+          ),
         );
       } else {
         setCategories((prev) => [...prev, result.data]);
       }
 
-      alert(isEditingItem ? "دسته‌بندی با موفقیت بروزرسانی شد" : "دسته‌بندی با موفقیت ایجاد شد");
+      alert(
+        isEditingItem
+          ? "دسته‌بندی با موفقیت بروزرسانی شد"
+          : "دسته‌بندی با موفقیت ایجاد شد",
+      );
       setShowForm(false);
       setEditingCategory(null);
       await fetchCategories();
@@ -146,8 +164,18 @@ export default function CategoriesTab() {
               onClick={handleBackToList}
               className="rounded-lg p-2 text-white transition-colors hover:bg-white/10 hover:text-primary-orange"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
             <h1 className="text-2xl font-bold text-white">
@@ -177,8 +205,18 @@ export default function CategoriesTab() {
               onClick={handleBackToList}
               className="rounded-lg p-2 text-white transition-colors hover:bg-white/10 hover:text-primary-orange"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
             <h1 className="text-2xl font-bold text-white">مشاهده دسته‌بندی</h1>
@@ -208,7 +246,9 @@ export default function CategoriesTab() {
                   <IconRenderer
                     name={viewingCategory.icon}
                     className="h-14 w-14 text-white"
-                    fallback={<CategoryFallbackIcon className="h-14 w-14 text-white/70" />}
+                    fallback={
+                      <CategoryFallbackIcon className="h-14 w-14 text-white/70" />
+                    }
                   />
                 ) : (
                   <CategoryFallbackIcon className="h-14 w-14 text-white/70" />
@@ -218,27 +258,41 @@ export default function CategoriesTab() {
               <h3 className="text-xl font-bold text-white">اطلاعات اصلی</h3>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-400">نام</label>
+                <label className="mb-2 block text-sm font-medium text-gray-400">
+                  نام
+                </label>
                 <p className="text-lg text-white">{viewingCategory.name}</p>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-400">نامک</label>
+                <label className="mb-2 block text-sm font-medium text-gray-400">
+                  نامک
+                </label>
                 <p className="font-mono text-white">{viewingCategory.slug}</p>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-400">توضیحات</label>
-                <p className="text-white">{viewingCategory.description || "بدون توضیحات"}</p>
+                <label className="mb-2 block text-sm font-medium text-gray-400">
+                  توضیحات
+                </label>
+                <p className="text-white">
+                  {viewingCategory.description || "بدون توضیحات"}
+                </p>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-400">آیکون ذخیره‌شده</label>
-                <p className="text-white">{viewingCategory.icon || "بدون آیکون"}</p>
+                <label className="mb-2 block text-sm font-medium text-gray-400">
+                  آیکون ذخیره‌شده
+                </label>
+                <p className="text-white">
+                  {viewingCategory.icon || "بدون آیکون"}
+                </p>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-400">وضعیت</label>
+                <label className="mb-2 block text-sm font-medium text-gray-400">
+                  وضعیت
+                </label>
                 <span
                   className={`rounded-full px-3 py-1 text-sm font-medium ${
                     viewingCategory.isActive
@@ -251,7 +305,9 @@ export default function CategoriesTab() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-400">ترتیب نمایش</label>
+                <label className="mb-2 block text-sm font-medium text-gray-400">
+                  ترتیب نمایش
+                </label>
                 <p className="text-white">{viewingCategory.sortOrder}</p>
               </div>
             </div>
@@ -269,12 +325,20 @@ export default function CategoriesTab() {
 
                 <div className="space-y-3">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-400">نام</label>
-                    <p className="text-white">{viewingCategory.nameEn || "ترجمه نشده"}</p>
+                    <label className="mb-1 block text-sm font-medium text-gray-400">
+                      نام
+                    </label>
+                    <p className="text-white">
+                      {viewingCategory.nameEn || "ترجمه نشده"}
+                    </p>
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-400">توضیحات</label>
-                    <p className="text-white">{viewingCategory.descriptionEn || "ترجمه نشده"}</p>
+                    <label className="mb-1 block text-sm font-medium text-gray-400">
+                      توضیحات
+                    </label>
+                    <p className="text-white">
+                      {viewingCategory.descriptionEn || "ترجمه نشده"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -289,13 +353,17 @@ export default function CategoriesTab() {
 
                 <div className="space-y-3">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-400">نام</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-400">
+                      نام
+                    </label>
                     <p className="text-white" dir="rtl">
                       {viewingCategory.nameAr || "ترجمه نشده"}
                     </p>
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-400">توضیحات</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-400">
+                      توضیحات
+                    </label>
                     <p className="text-white" dir="rtl">
                       {viewingCategory.descriptionAr || "ترجمه نشده"}
                     </p>
@@ -322,7 +390,9 @@ export default function CategoriesTab() {
               </div>
               <div className="rounded-lg bg-white/5 p-4 text-center">
                 <div className="text-2xl font-bold text-green-400">
-                  {new Date(viewingCategory.createdAt).toLocaleDateString("fa-IR")}
+                  {new Date(viewingCategory.createdAt).toLocaleDateString(
+                    "fa-IR",
+                  )}
                 </div>
                 <div className="text-sm text-gray-400">تاریخ ایجاد</div>
               </div>
@@ -337,17 +407,27 @@ export default function CategoriesTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">مدیریت دسته‌بندی‌ها</h1>
-          <p className="mt-1 text-gray-400">مدیریت دسته‌بندی‌های محصولات و ترجمه‌ها</p>
+          <h1 className="text-2xl font-bold text-white">{copy.categories}</h1>
+          <p className="mt-1 text-gray-400">{copy.categoriesDescription}</p>
         </div>
         <button
           onClick={handleCreateNew}
           className="flex items-center gap-2 rounded-lg bg-primary-orange px-6 py-3 text-white transition-colors hover:bg-orange-600"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
-          <span>دسته‌بندی جدید</span>
+          <span>{copy.addCategory}</span>
         </button>
       </div>
 

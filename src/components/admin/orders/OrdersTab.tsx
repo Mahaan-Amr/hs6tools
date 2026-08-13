@@ -7,10 +7,12 @@ import { OrderStatus, PaymentStatus } from "@prisma/client";
 import OrderList from "./OrderList";
 import OrderForm from "./OrderForm";
 import { formatPrice } from "@/utils/format";
+import { getAdminCopy } from "@/lib/admin-copy";
 
 export default function OrdersTab() {
   const params = useParams();
   const locale = (params?.locale as string) || 'fa';
+  const copy = getAdminCopy(locale);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -263,22 +265,22 @@ export default function OrdersTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="glass rounded-2xl p-6 text-center">
           <div className="text-3xl font-bold text-white mb-2">{stats.totalOrders}</div>
-          <div className="text-gray-300">کل سفارشات</div>
+          <div className="text-gray-300">{copy.totalOrders}</div>
         </div>
         
         <div className="glass rounded-2xl p-6 text-center">
           <div className="text-3xl font-bold text-yellow-400 mb-2">{stats.pendingOrders}</div>
-          <div className="text-gray-300">در انتظار</div>
+          <div className="text-gray-300">{copy.pending}</div>
         </div>
         
         <div className="glass rounded-2xl p-6 text-center">
           <div className="text-3xl font-bold text-blue-400 mb-2">{stats.processingOrders}</div>
-          <div className="text-gray-300">در حال پردازش</div>
+          <div className="text-gray-300">{copy.processing}</div>
         </div>
         
         <div className="glass rounded-2xl p-6 text-center">
           <div className="text-3xl font-bold text-green-400 mb-2">{formatPrice(stats.totalRevenue)}</div>
-          <div className="text-gray-300">کل درآمد</div>
+          <div className="text-gray-300">{copy.totalRevenue}</div>
         </div>
       </div>
 
@@ -299,43 +301,43 @@ export default function OrdersTab() {
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">وضعیت سفارش</label>
+            <label className="block text-sm font-medium text-white mb-2">{copy.orderStatus}</label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange("status", e.target.value)}
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">همه وضعیت‌ها</option>
-              <option value="PENDING">در انتظار</option>
-              <option value="CONFIRMED">تأیید شده</option>
-              <option value="PROCESSING">در حال پردازش</option>
-              <option value="SHIPPED">ارسال شده</option>
-              <option value="DELIVERED">تحویل شده</option>
-              <option value="CANCELLED">لغو شده</option>
-              <option value="REFUNDED">بازپرداخت شده</option>
+              <option value="">{copy.allStatuses}</option>
+              <option value="PENDING">{copy.pending}</option>
+              <option value="CONFIRMED">{copy.confirmed}</option>
+              <option value="PROCESSING">{copy.processing}</option>
+              <option value="SHIPPED">{copy.shipped}</option>
+              <option value="DELIVERED">{copy.delivered}</option>
+              <option value="CANCELLED">{copy.cancelled}</option>
+              <option value="REFUNDED">{copy.refunded}</option>
             </select>
           </div>
 
           {/* Payment Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">وضعیت پرداخت</label>
+            <label className="block text-sm font-medium text-white mb-2">{copy.paymentStatus}</label>
             <select
               value={filters.paymentStatus}
               onChange={(e) => handleFilterChange("paymentStatus", e.target.value)}
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">همه وضعیت‌ها</option>
-              <option value="PENDING">در انتظار</option>
-              <option value="PAID">پرداخت شده</option>
-              <option value="FAILED">ناموفق</option>
-              <option value="REFUNDED">بازپرداخت شده</option>
-              <option value="PARTIALLY_REFUNDED">بازپرداخت جزئی</option>
+              <option value="">{copy.allStatuses}</option>
+              <option value="PENDING">{copy.pending}</option>
+              <option value="PAID">{copy.paid}</option>
+              <option value="FAILED">{copy.failed}</option>
+              <option value="REFUNDED">{copy.refunded}</option>
+              <option value="PARTIALLY_REFUNDED">{copy.partiallyRefunded}</option>
             </select>
           </div>
 
           {/* Date Range Filter */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">بازه زمانی</label>
+            <label className="block text-sm font-medium text-white mb-2">{copy.dateRange}</label>
             <input
               type="date"
               value={filters.dateRange}

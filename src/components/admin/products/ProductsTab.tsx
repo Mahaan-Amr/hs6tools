@@ -7,10 +7,12 @@ import { AdminProduct, AdminCategory, CreateProductData, UpdateProductData } fro
 import { formatPrice } from "@/utils/format";
 import ProductList from "./ProductList";
 import ProductForm from "./ProductForm";
+import { getAdminCopy } from "@/lib/admin-copy";
 
 export default function ProductsTab() {
   const params = useParams();
   const locale = (params?.locale as string) || 'fa';
+  const copy = getAdminCopy(locale);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -342,7 +344,7 @@ export default function ProductsTab() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">مدیریت محصولات</h2>
+        <h2 className="text-2xl font-bold text-white">{copy.products}</h2>
         <button
           onClick={handleCreateProduct}
           className="px-6 py-3 bg-primary-orange hover:bg-orange-600 text-white rounded-lg transition-colors flex items-center space-x-2 space-x-reverse"
@@ -350,7 +352,7 @@ export default function ProductsTab() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          <span>افزودن محصول</span>
+          <span>{copy.addProduct}</span>
         </button>
       </div>
 
@@ -359,25 +361,25 @@ export default function ProductsTab() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">جستجو</label>
+            <label className="block text-sm font-medium text-white mb-2">{copy.search}</label>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="جستجو در نام، SKU یا توضیحات..."
+              placeholder={copy.searchProducts}
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-orange"
             />
           </div>
 
           {/* Category Filter */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">دسته‌بندی</label>
+            <label className="block text-sm font-medium text-white mb-2">{copy.category}</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full pl-4 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="">همه دسته‌بندی‌ها</option>
+              <option value="">{copy.allCategories}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -388,17 +390,17 @@ export default function ProductsTab() {
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-white mb-2">وضعیت</label>
+            <label className="block text-sm font-medium text-white mb-2">{copy.status}</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full pl-4 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-orange"
             >
-              <option value="all">همه</option>
-              <option value="active">فعال</option>
-              <option value="inactive">غیرفعال</option>
-              <option value="outOfStock">ناموجود</option>
-              <option value="lowStock">کم موجودی</option>
+              <option value="all">{copy.all}</option>
+              <option value="active">{copy.active}</option>
+              <option value="inactive">{copy.inactive}</option>
+              <option value="outOfStock">{copy.outOfStock}</option>
+              <option value="lowStock">{copy.lowStock}</option>
             </select>
           </div>
         </div>
@@ -407,9 +409,9 @@ export default function ProductsTab() {
       {/* Products List */}
       <div className="glass rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-white">لیست محصولات</h3>
+          <h3 className="text-xl font-bold text-white">{copy.productList}</h3>
           <div className="text-sm text-gray-400">
-            {filteredProducts.length} محصول از {products.length}
+            {filteredProducts.length} {copy.product} {copy.of} {products.length}
           </div>
         </div>
 
