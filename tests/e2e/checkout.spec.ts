@@ -5,8 +5,8 @@ test("Customer receives accessible address errors before checkout can advance", 
   await page.getByRole("button", { name: /add to cart/i }).first().click();
 
   await page.goto("/en/auth/login");
-  await page.locator('input[type="email"]').fill("user@hs6tools.com");
-  await page.locator('input[type="password"]').fill("User123!");
+  await page.locator('input[type="email"]').fill(process.env.E2E_CUSTOMER_EMAIL || "user@hs6tools.com");
+  await page.locator('input[type="password"]').fill(process.env.E2E_CUSTOMER_PASSWORD || "User123!");
   await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/en$/);
 
