@@ -1,10 +1,24 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import BlogContent from "@/components/blog/BlogContent";
 import BlogSkeleton from "@/components/blog/BlogSkeleton";
 import { getMessages } from "@/lib/i18n";
+import { createPageMetadata } from "@/lib/seo";
 
 interface BlogPageProps {
   params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: BlogPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const messages = await getMessages(locale);
+
+  return createPageMetadata({
+    locale,
+    path: "/blog",
+    title: String(messages.blog?.title || "Blog"),
+    description: String(messages.blog?.subtitle || "HS6Tools articles and guides"),
+  });
 }
 
 export default async function BlogPage({ params }: BlogPageProps) {

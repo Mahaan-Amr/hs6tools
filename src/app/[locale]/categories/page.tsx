@@ -1,9 +1,23 @@
 import CategoryCard from "@/components/ecommerce/CategoryCard";
+import type { Metadata } from "next";
 import { getMessages } from "@/lib/i18n";
 import { getPublicCategories, PublicCategory } from "@/lib/catalog";
+import { createPageMetadata } from "@/lib/seo";
 
 interface CategoriesPageProps {
   params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: CategoriesPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const messages = await getMessages(locale);
+
+  return createPageMetadata({
+    locale,
+    path: "/categories",
+    title: messages.categories.pageTitle,
+    description: messages.categories.pageSubtitle,
+  });
 }
 
 export default async function CategoriesPage({ params }: CategoriesPageProps) {

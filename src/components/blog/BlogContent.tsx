@@ -1,22 +1,34 @@
 import { Article } from "@/types/content";
 import BlogCard from "./BlogCard";
+import { prisma } from "@/lib/prisma";
+import { normalizeUploadUrl } from "@/utils/image-url";
 
 async function getArticles(): Promise<Article[]> {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/content/articles?status=PUBLISHED&limit=6`, {
-      next: { revalidate: 3600 } // Revalidate every hour
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch articles');
-    }
-    
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Error fetching articles:', error);
-    return [];
-  }
+  const articles = await prisma.article.findMany({
+    where: { status: "PUBLISHED", deletedAt: null },
+    include: { category: { select: { id: true, name: true, slug: true } } },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    take: 6,
+  });
+
+  return articles.map((article) => ({
+    id: article.id,
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt ?? undefined,
+    content: article.content,
+    status: article.status,
+    isFeatured: article.isFeatured,
+    viewCount: article.viewCount,
+    createdAt: article.createdAt.toISOString(),
+    publishedAt: article.publishedAt?.toISOString(),
+    categoryId: article.categoryId ?? undefined,
+    featuredImage: normalizeUploadUrl(article.featuredImage) || undefined,
+    metaTitle: article.metaTitle ?? undefined,
+    metaDescription: article.metaDescription ?? undefined,
+    metaKeywords: article.metaKeywords ?? undefined,
+    category: article.category ?? undefined,
+  }));
 }
 
 export default async function BlogContent() {
@@ -44,13 +56,6 @@ export default async function BlogContent() {
             <BlogCard article={article} />
           </div>
         ))}
-      </div>
-      
-      {/* Load More Button */}
-      <div className="text-center mt-12" data-scroll-reveal style={{ transitionDelay: "0.3s" }}>
-        <button className="px-8 py-4 glass text-gray-900 dark:text-white font-semibold rounded-2xl border border-gray-300 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-300">
-          مشاهده مقالات بیشتر
-        </button>
       </div>
     </>
   );

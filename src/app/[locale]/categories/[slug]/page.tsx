@@ -1,4 +1,5 @@
 import { getMessages } from "@/lib/i18n";
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import ProductGrid from "@/components/ecommerce/ProductGrid";
@@ -6,9 +7,31 @@ import { notFound } from "next/navigation";
 import IconRenderer from "@/components/shared/IconRenderer";
 import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
 import { getCurrentWishlistProductIds, getPublicCategoryBySlug, getPublicProducts } from "@/lib/catalog";
+import { createPageMetadata } from "@/lib/seo";
 
 interface CategoryPageProps {
   params: Promise<{ locale: string; slug: string }>;
+}
+
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const category = await getPublicCategoryBySlug(slug);
+
+  if (!category) return {};
+
+  const title = locale === "en" ? category.nameEn || category.name : locale === "ar" ? category.nameAr || category.name : category.name;
+  const description = locale === "en"
+    ? category.descriptionEn || category.description
+    : locale === "ar"
+      ? category.descriptionAr || category.description
+      : category.description;
+
+  return createPageMetadata({
+    locale,
+    path: `/categories/${category.slug}`,
+    title,
+    description: description || `${title} - HS6Tools`,
+  });
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
@@ -29,6 +52,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       limit: 200,
       sortBy: "sortOrder",
       sortOrder: "asc",
+      locale,
     }),
     getCurrentWishlistProductIds(),
   ]);
@@ -168,7 +192,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         )}
 
         {/* Products Section */}
-        <div data-scroll-reveal style={{ transitionDelay: "0.2s" }}>
+        <div>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               {t.categories.products} {categoryName}

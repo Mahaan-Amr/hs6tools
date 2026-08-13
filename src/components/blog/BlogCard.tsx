@@ -15,6 +15,7 @@ export default function BlogCard({ article }: BlogCardProps) {
   const params = useParams();
   const locale = (params?.locale as string) || "fa";
   const [messages, setMessages] = useState<Messages | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -114,13 +115,14 @@ export default function BlogCard({ article }: BlogCardProps) {
     <article className="glass rounded-3xl overflow-hidden hover:scale-105 transition-transform duration-300">
                 {/* Featured Image or Icon */}
           <div className="aspect-video bg-gradient-to-br from-primary-orange/20 to-orange-500/20 flex items-center justify-center">
-            {article.featuredImage ? (
+            {article.featuredImage && !imageFailed ? (
               <Image 
                 src={article.featuredImage} 
                 alt={article.title}
                 width={400}
                 height={225}
                 className="w-full h-full object-cover"
+                onError={() => setImageFailed(true)}
               />
             ) : (
               getCategoryIcon(article.category?.name || "عمومی")
@@ -154,7 +156,7 @@ export default function BlogCard({ article }: BlogCardProps) {
         
         {/* Read More Button */}
         <Link 
-          href={`/blog/${article.slug}`}
+          href={`/${locale}/blog/${article.slug}`}
           className="text-primary-orange hover:text-orange-400 font-medium text-sm transition-colors duration-200 inline-flex items-center"
         >
           {messages?.blog?.readMore || "Read More →"}

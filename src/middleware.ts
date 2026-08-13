@@ -55,7 +55,14 @@ export function middleware(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
-  if (pathnameHasLocale) return;
+  if (pathnameHasLocale) {
+    const locale = locales.find(
+      (candidate) => pathname === `/${candidate}` || pathname.startsWith(`/${candidate}/`)
+    ) || defaultLocale;
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-hs6-locale', locale);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
 
   // Redirect to default locale if no locale is present
   const locale = defaultLocale;

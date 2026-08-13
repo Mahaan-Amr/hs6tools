@@ -121,8 +121,14 @@ interface CatalogProductRecord {
   id: string;
   slug: string;
   name: string;
+  nameEn: string | null;
+  nameAr: string | null;
   description: string | null;
+  descriptionEn: string | null;
+  descriptionAr: string | null;
   shortDescription: string | null;
+  shortDescriptionEn: string | null;
+  shortDescriptionAr: string | null;
   price: Prisma.Decimal;
   comparePrice: Prisma.Decimal | null;
   costPrice: Prisma.Decimal | null;
@@ -138,8 +144,12 @@ interface CatalogProductRecord {
   category: {
     id: string;
     name: string;
+    nameEn: string | null;
+    nameAr: string | null;
     slug: string;
     description: string | null;
+    descriptionEn: string | null;
+    descriptionAr: string | null;
   };
   images: Array<{
     id: string;
@@ -210,13 +220,19 @@ function normalizeAttributes(value: Prisma.JsonValue) {
   return value as Record<string, string | number>;
 }
 
-function mapProduct(product: CatalogProductRecord): PublicProduct {
+function localizedValue(locale: string, fa: string | null, en?: string | null, ar?: string | null) {
+  if (locale === "en" && en) return en;
+  if (locale === "ar" && ar) return ar;
+  return fa ?? undefined;
+}
+
+function mapProduct(product: CatalogProductRecord, locale = "fa"): PublicProduct {
   return {
     id: product.id,
     slug: product.slug,
-    name: product.name,
-    description: product.description ?? undefined,
-    shortDescription: product.shortDescription ?? undefined,
+    name: localizedValue(locale, product.name, product.nameEn, product.nameAr) || product.name,
+    description: localizedValue(locale, product.description, product.descriptionEn, product.descriptionAr),
+    shortDescription: localizedValue(locale, product.shortDescription, product.shortDescriptionEn, product.shortDescriptionAr),
     price: decimalToNumber(product.price) ?? 0,
     comparePrice: decimalToNumber(product.comparePrice),
     costPrice: decimalToNumber(product.costPrice),
@@ -231,9 +247,9 @@ function mapProduct(product: CatalogProductRecord): PublicProduct {
     isFeatured: product.isFeatured,
     category: {
       id: product.category.id,
-      name: product.category.name,
+      name: localizedValue(locale, product.category.name, product.category.nameEn, product.category.nameAr) || product.category.name,
       slug: product.category.slug,
-      description: product.category.description ?? undefined,
+      description: localizedValue(locale, product.category.description, product.category.descriptionEn, product.category.descriptionAr),
     },
     images: product.images.map((image) => ({
       id: image.id,
@@ -301,6 +317,7 @@ export async function getPublicProducts({
   excludeProductId,
   sortBy = "createdAt",
   sortOrder = "desc",
+  locale = "fa",
 }: {
   page?: number;
   limit?: number;
@@ -309,6 +326,7 @@ export async function getPublicProducts({
   excludeProductId?: string;
   sortBy?: string;
   sortOrder?: string;
+  locale?: string;
 } = {}): Promise<{ products: PublicProduct[]; pagination: ProductPagination }> {
   const where: Prisma.ProductWhereInput = { ...publicProductWhere };
 
@@ -340,8 +358,12 @@ export async function getPublicProducts({
           select: {
             id: true,
             name: true,
+            nameEn: true,
+            nameAr: true,
             slug: true,
             description: true,
+            descriptionEn: true,
+            descriptionAr: true,
           },
         },
         images: {
@@ -376,7 +398,7 @@ export async function getPublicProducts({
   const totalPages = Math.ceil(totalCount / safeLimit);
 
   return {
-    products: products.map(mapProduct),
+    products: products.map((product) => mapProduct(product, locale)),
     pagination: {
       page: safePage,
       limit: safeLimit,
@@ -462,7 +484,7 @@ export async function getPublicCategoryBySlug(slug: string): Promise<PublicCateg
   return category ? mapCategory(category) : null;
 }
 
-export async function getPublicProductBySlug(slug: string): Promise<PublicProductDetail | null> {
+export async function getPublicProductBySlug(slug: string, locale = "fa"): Promise<PublicProductDetail | null> {
   const product = await prisma.product.findFirst({
     where: {
       slug: { in: getSlugCandidates(slug) },
@@ -473,8 +495,12 @@ export async function getPublicProductBySlug(slug: string): Promise<PublicProduc
         select: {
           id: true,
           name: true,
+          nameEn: true,
+          nameAr: true,
           slug: true,
           description: true,
+          descriptionEn: true,
+          descriptionAr: true,
         },
       },
       images: {
@@ -517,7 +543,7 @@ export async function getPublicProductBySlug(slug: string): Promise<PublicProduc
   if (!product) return null;
 
   return {
-    ...mapProduct(product),
+    ...mapProduct(product, locale),
     reviews: product.reviews.map((review) => ({
       id: review.id,
       title: review.title ?? undefined,

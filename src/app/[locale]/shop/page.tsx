@@ -1,15 +1,34 @@
 import { getMessages } from "@/lib/i18n";
+import type { Metadata } from "next";
 import ShopProductsSection from "@/components/ecommerce/ShopProductsSection";
 import { getCurrentWishlistProductIds, getPublicCategories, getPublicProducts, PublicCategory } from "@/lib/catalog";
+import { createPageMetadata } from "@/lib/seo";
 
 interface ShopPageProps {
   params: Promise<{ locale: string }>;
 }
 
-async function getShopCategories(): Promise<PublicCategory[]> {
+export async function generateMetadata({ params }: ShopPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const messages = await getMessages(locale);
+
+  return createPageMetadata({
+    locale,
+    path: "/shop",
+    title: messages.products.shopTitle,
+    description: messages.products.shopSubtitle,
+  });
+}
+
+async function getShopCategories(locale: string): Promise<PublicCategory[]> {
   const categories = await getPublicCategories();
   return categories
     .filter((category) => category._count.products > 0)
+    .map((category) => ({
+      ...category,
+      name: locale === "en" ? category.nameEn || category.name : locale === "ar" ? category.nameAr || category.name : category.name,
+      description: locale === "en" ? category.descriptionEn || category.description : locale === "ar" ? category.descriptionAr || category.description : category.description,
+    }))
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
 }
 
@@ -17,8 +36,8 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const { locale } = await params;
   const t = await getMessages(locale);
   const [{ products, pagination }, shopCategories, wishlistProductIds] = await Promise.all([
-    getPublicProducts({ limit: 24, sortBy: "createdAt", sortOrder: "desc" }),
-    getShopCategories(),
+    getPublicProducts({ limit: 24, sortBy: "createdAt", sortOrder: "desc", locale }),
+    getShopCategories(locale),
     getCurrentWishlistProductIds(),
   ]);
   

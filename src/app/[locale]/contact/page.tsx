@@ -1,11 +1,21 @@
 import IconRenderer from "@/components/shared/IconRenderer";
+import type { Metadata } from "next";
 import { getMessages } from "@/lib/i18n";
 import { getPageContent } from "@/lib/page-cms";
 import { ContactPageContentPayload } from "@/types/page-cms";
 import ContactTicketForm from "@/components/support/ContactTicketForm";
+import { createPageMetadata } from "@/lib/seo";
 
 interface ContactPageProps {
   params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: ContactPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const messages = await getMessages(locale);
+  const page = (await getPageContent("contact", locale, messages)) as ContactPageContentPayload;
+
+  return createPageMetadata({ locale, path: "/contact", title: page.title, description: page.subtitle });
 }
 
 export default async function ContactPage({ params }: ContactPageProps) {

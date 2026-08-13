@@ -6,6 +6,7 @@ import ScrollEffects from "@/components/layout/ScrollEffects";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import SupportTicketWidget from "@/components/support/SupportTicketWidget";
 import { getSeoForLocale, getSystemSettings } from "@/lib/site-settings";
+import { SITE_URL } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -17,7 +18,7 @@ export async function generateMetadata({
 
   const settings = await getSystemSettings();
   const seo = getSeoForLocale(settings.siteSeo, locale);
-  const siteUrl = "https://hs6tools.com";
+  const siteUrl = SITE_URL;
 
   return {
     title: seo.title,
@@ -25,10 +26,12 @@ export async function generateMetadata({
     keywords: seo.keywords,
     metadataBase: new URL(siteUrl),
     alternates: {
+      canonical: `/${locale}`,
       languages: {
         fa: "/fa",
         en: "/en",
         ar: "/ar",
+        "x-default": "/fa",
       },
     },
     openGraph: {

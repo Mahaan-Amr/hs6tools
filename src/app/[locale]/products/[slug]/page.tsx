@@ -1,4 +1,5 @@
 import { getMessages } from "@/lib/i18n";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,16 +7,32 @@ import { formatPrice as formatPriceUtil } from "@/utils/format";
 import { getCurrentWishlistProductIds, getPublicProductBySlug, getPublicProducts } from "@/lib/catalog";
 import ProductDetailActions from "@/components/ecommerce/ProductDetailActions";
 import ProductImageGallery from "@/components/ecommerce/ProductImageGallery";
+import { createPageMetadata } from "@/lib/seo";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
+}
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const product = await getPublicProductBySlug(slug, locale);
+
+  if (!product) return {};
+
+  return createPageMetadata({
+    locale,
+    path: `/products/${product.slug}`,
+    title: product.name,
+    description: product.shortDescription || product.description || `${product.name} - HS6Tools`,
+    image: product.images.find((image) => image.isPrimary)?.url || product.images[0]?.url,
+  });
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { locale, slug } = await params;
   const t = await getMessages(locale);
   
-  const product = await getPublicProductBySlug(slug);
+  const product = await getPublicProductBySlug(slug, locale);
   
   if (!product) {
     notFound();
@@ -26,6 +43,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       categoryId: product.category.id,
       excludeProductId: product.id,
       limit: 4,
+      locale,
     }),
     getCurrentWishlistProductIds(),
   ]);

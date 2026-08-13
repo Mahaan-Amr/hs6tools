@@ -1,9 +1,23 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import EducationContent from "./EducationContent";
 import { getMessages } from "@/lib/i18n";
+import { createPageMetadata } from "@/lib/seo";
 
 interface EducationPageProps {
   params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: EducationPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const messages = await getMessages(locale);
+
+  return createPageMetadata({
+    locale,
+    path: "/education",
+    title: String(messages.education?.title || "Education"),
+    description: String(messages.education?.subtitle || "HS6Tools education and product guides"),
+  });
 }
 
 export default async function EducationPage({ params }: EducationPageProps) {
