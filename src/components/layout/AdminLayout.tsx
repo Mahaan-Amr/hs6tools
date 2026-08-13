@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getMessages, Messages } from "@/lib/i18n";
@@ -16,6 +17,11 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [messages, setMessages] = useState<Messages | null>(null);
+
+  useEffect(() => {
+    document.documentElement.classList.add('admin-panel-active');
+    return () => document.documentElement.classList.remove('admin-panel-active');
+  }, []);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -86,7 +92,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
 
   return (
     <div 
-      className="min-h-screen bg-gradient-to-br from-primary-black via-gray-900 to-primary-black relative bg-opacity-95 admin-panel-container"
+      className="min-h-screen overflow-x-hidden bg-gradient-to-br from-primary-black via-gray-900 to-primary-black relative bg-opacity-95 admin-panel-container"
       style={{ zIndex: 9999 }}
     >
       {/* Global CSS fixes to prevent conflicts */}
@@ -96,6 +102,11 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
           position: relative;
           z-index: 9999 !important;
           isolation: isolate;
+        }
+
+        html.admin-panel-active,
+        html.admin-panel-active body {
+          overflow-x: clip !important;
         }
         
         /* Hide any conflicting elements from main platform */
@@ -161,6 +172,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                 onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
                 className="lg:hidden p-2 text-white/80 hover:text-white transition-colors duration-200 flex-shrink-0"
                 title={String(messages?.admin?.crm?.adminLayout?.openMenu || "باز کردن منو")}
+                aria-label={String(messages?.admin?.crm?.adminLayout?.openMenu || "Open menu")}
               >
                 <svg 
                   className="w-6 h-6" 
@@ -174,7 +186,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               
               {/* Logo */}
               <Link href={`/${locale}`} className="flex items-center gap-2 flex-shrink-0">
-                <img
+                <Image
                   src="/logo.svg"
                   alt="HS6Tools"
                   width={48}
@@ -192,6 +204,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                 onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
                 className="hidden lg:block p-2 text-white/80 hover:text-white transition-colors duration-200"
                 title={`${isRightSidebarCollapsed ? String(messages?.admin?.crm?.adminLayout?.openMenu || 'باز کردن منو') : String(messages?.admin?.crm?.adminLayout?.closeMenu || 'بستن منو')} (Ctrl+M)`}
+                aria-label={isRightSidebarCollapsed ? String(messages?.admin?.crm?.adminLayout?.openMenu || 'Open menu') : String(messages?.admin?.crm?.adminLayout?.closeMenu || 'Close menu')}
               >
                 <svg 
                   className={`w-5 h-5 transition-transform duration-300 ${isRightSidebarCollapsed ? 'rotate-180' : ''}`} 
@@ -204,7 +217,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
               </button>
 
               {/* Notifications */}
-              <button className="p-2 text-white/80 hover:text-white relative">
+              <button className="p-2 text-white/80 hover:text-white relative" aria-label="Notifications">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
@@ -227,6 +240,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
                 onClick={handleSignOut}
                 className="p-2 text-white/80 hover:text-red-400 transition-colors duration-200"
                 title={String(messages?.admin?.crm?.adminLayout?.logout || messages?.common?.logout || "خروج")}
+                aria-label={String(messages?.admin?.crm?.adminLayout?.logout || messages?.common?.logout || "Sign out")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -275,6 +289,7 @@ export default function AdminLayout({ children, locale }: AdminLayoutProps) {
             <button
               onClick={() => setIsRightSidebarCollapsed(true)}
               className="p-1 text-white/60 hover:text-white transition-colors duration-200"
+              aria-label={String(messages?.admin?.crm?.adminLayout?.closeMenu || "Close menu")}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

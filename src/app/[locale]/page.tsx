@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getMessages } from "@/lib/i18n";
 import { getHomepageContent } from "@/lib/homepage";
 import HomepageSlider from "@/components/homepage/HomepageSlider";
@@ -25,7 +26,7 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="relative z-10">
               <div className="mb-8">
                 <div className="mb-4 flex flex-col items-center animate-fade-in">
-                  <img
+                  <Image
                     src="/logo.svg"
                     alt="HS6Tools"
                     width={240}

@@ -30,9 +30,8 @@ export function formatPrice(
     const formatted = new Intl.NumberFormat('ar-SA').format(tomanPrice);
     return `${formatted} تومان`;
   } else {
-    // For English, show in USD equivalent (very rough conversion)
     const formatted = new Intl.NumberFormat('en-US').format(tomanPrice);
-    return `${formatted} تومان`;
+    return `${formatted} Toman`;
   }
 }
 

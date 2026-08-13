@@ -322,12 +322,17 @@ option {
 }
 
 [data-scroll-reveal] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.scroll-reveal-ready [data-scroll-reveal] {
   opacity: 0;
   transform: translateY(32px) scale(0.98);
   transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-scroll-reveal].scroll-reveal-active {
+.scroll-reveal-ready [data-scroll-reveal].scroll-reveal-active {
   opacity: 1;
   transform: translateY(0) scale(1);
 }

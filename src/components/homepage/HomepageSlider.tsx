@@ -12,6 +12,38 @@ interface HomepageSliderProps {
   placeholderSubtitle: string;
 }
 
+function SlideArtwork({
+  src,
+  alt,
+  priority,
+  sizes,
+  failed,
+  onError,
+}: {
+  src: string;
+  alt: string;
+  priority: boolean;
+  sizes: string;
+  failed: boolean;
+  onError: () => void;
+}) {
+  if (failed) {
+    return <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.45),transparent_35%),linear-gradient(135deg,#27272a,#09090b)]" />;
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      priority={priority}
+      className="object-cover"
+      sizes={sizes}
+      onError={onError}
+    />
+  );
+}
+
 export default function HomepageSlider({
   slides,
   placeholderTitle,
@@ -19,6 +51,15 @@ export default function HomepageSlider({
 }: HomepageSliderProps) {
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
+
+  const markImageFailed = (url: string) => {
+    setFailedImages((current) => {
+      const next = new Set(current);
+      next.add(url);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -90,34 +131,34 @@ export default function HomepageSlider({
                 {slide.mobileImage ? (
                   <>
                     <div className="absolute inset-0 md:hidden">
-                      <Image
+                      <SlideArtwork
                         src={slide.mobileImage}
                         alt={slide.title}
-                        fill
                         priority={index === 0}
-                        className="object-cover"
                         sizes="(max-width: 768px) 100vw, 0vw"
+                        failed={failedImages.has(slide.mobileImage)}
+                        onError={() => markImageFailed(slide.mobileImage!)}
                       />
                     </div>
                     <div className="absolute inset-0 hidden md:block">
-                      <Image
+                      <SlideArtwork
                         src={slide.desktopImage}
                         alt={slide.title}
-                        fill
                         priority={index === 0}
-                        className="object-cover"
                         sizes="100vw"
+                        failed={failedImages.has(slide.desktopImage)}
+                        onError={() => markImageFailed(slide.desktopImage)}
                       />
                     </div>
                   </>
                 ) : (
-                  <Image
+                  <SlideArtwork
                     src={slide.desktopImage}
                     alt={slide.title}
-                    fill
                     priority={index === 0}
-                    className="object-cover"
                     sizes="100vw"
+                    failed={failedImages.has(slide.desktopImage)}
+                    onError={() => markImageFailed(slide.desktopImage)}
                   />
                 )}
 

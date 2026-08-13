@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Messages } from "@/lib/i18n";
 
 interface FooterProps {
@@ -17,7 +18,7 @@ export default function Footer({ locale, messages }: FooterProps) {
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-3 mb-6">
-              <img
+              <Image
                 src="/logo.svg"
                 alt="HS6Tools"
                 width={64}
@@ -99,14 +100,27 @@ export default function Footer({ locale, messages }: FooterProps) {
               {messages.footer.copyright}
             </div>
             
-            {/* E-Namad Trust Seal - Non-blocking load with error handling */}
-            {/* Note: e-namad logo may not load on localhost - it requires production domain */}
-            <div 
-              className="flex items-center justify-center min-h-[60px]"
-              dangerouslySetInnerHTML={{
-                __html: `<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf' alt='' style='cursor:pointer' code='uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf' loading='lazy' decoding='async' onerror='this.style.display=\"none\"; this.parentElement.style.display=\"none\";' onload='this.style.opacity=\"1\";'></img></a>`
-              }}
-            />
+            {/* The seal validates only on the production domain. JSX keeps hydration deterministic. */}
+            <div className="flex items-center justify-center min-h-[60px]">
+              <a
+                referrerPolicy="origin"
+                target="_blank"
+                rel="noopener noreferrer"
+                href="https://trustseal.enamad.ir/?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf"
+                aria-label="E-Namad trust seal"
+              >
+                {/* The remote seal is domain-bound and cannot use Next image optimization. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  referrerPolicy="origin"
+                  src="https://trustseal.enamad.ir/logo.aspx?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf"
+                  alt="E-Namad trust seal"
+                  className="cursor-pointer"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+            </div>
             
             <div className="flex space-x-6 text-sm">
               <Link href={`/${locale}/privacy`} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors duration-200">

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { signIn, getSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getMessages, Messages } from "@/lib/i18n";
 import { useForm } from "react-hook-form";
@@ -17,7 +16,6 @@ interface LoginPageProps {
 export default function LoginPage({ params }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const [messages, setMessages] = useState<Messages | null>(null);
   const [locale, setLocale] = useState<string>("fa");
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
@@ -76,13 +74,15 @@ export default function LoginPage({ params }: LoginPageProps) {
         const session = await getSession();
         
         // If callbackUrl is provided, redirect there (e.g., back to checkout)
-        if (callbackUrl) {
-          router.push(callbackUrl);
-        } else if (session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN") {
-          router.push(`/${locale}/admin`);
-        } else {
-          router.push(`/${locale}`);
-        }
+        const destination = callbackUrl
+          ? callbackUrl
+          : session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN"
+            ? `/${locale}/admin`
+            : `/${locale}`;
+
+        // A full navigation makes the new session cookie visible to every server
+        // component and middleware check on the destination request.
+        window.location.assign(destination);
       }
     } catch {
       setError(messages?.common?.error || "An unexpected error occurred");

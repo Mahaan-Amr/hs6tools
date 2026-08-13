@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getMessages, Messages } from "@/lib/i18n";
+import { formatPrice } from "@/utils/format";
 
 interface Order {
   id: string;
@@ -181,16 +182,6 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
     return statusMap[status as keyof typeof statusMap] || statusMap.pending;
   };
 
-  const formatCurrency = (amount: number) => {
-    const localeCode = locale === "fa" ? "fa-IR" : locale === "ar" ? "ar-SA" : "en-US";
-    return new Intl.NumberFormat(localeCode, {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
   // Show loading state while fetching orders (only if we haven't shown skeleton already)
   // This handles the case where messages are loaded but data is still fetching
   if (isLoading && messages && messages.admin?.recentOrders) {
@@ -250,7 +241,7 @@ export default function RecentOrders({ locale }: RecentOrdersProps) {
               
               <div className="text-right">
                 <p className="text-white font-medium mb-2">
-                  {formatCurrency(order.amount)}
+                  {formatPrice(order.amount, locale)}
                 </p>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                   {statusInfo.label}

@@ -148,28 +148,6 @@ export default function QuickActions({ locale }: QuickActionsProps) {
         ))}
       </div>
       
-      {/* Additional Quick Stats */}
-      <div className="mt-8 pt-6 border-t border-white/10">
-        <h3 className="text-lg font-semibold text-white mb-4">{String(messages.admin?.quickActions?.quickStats || "آمار سریع")}</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-white/5 rounded-xl">
-            <div className="text-2xl font-bold text-primary-orange mb-1">۱۲</div>
-            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.newOrders || "سفارشات جدید")}</div>
-          </div>
-          <div className="text-center p-4 bg-white/5 rounded-xl">
-            <div className="text-2xl font-bold text-primary-orange mb-1">۸</div>
-            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.lowStockProducts || "محصولات کم‌موجود")}</div>
-          </div>
-          <div className="text-center p-4 bg-white/5 rounded-xl">
-            <div className="text-2xl font-bold text-primary-orange mb-1">۲۴</div>
-            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.newReviews || "نظرات جدید")}</div>
-          </div>
-          <div className="text-center p-4 bg-white/5 rounded-xl">
-            <div className="text-2xl font-bold text-purple-400 mb-1">۵</div>
-            <div className="text-gray-400 text-sm">{String(messages.admin?.quickActions?.newMessages || "پیام‌های جدید")}</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

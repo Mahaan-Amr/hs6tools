@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getMessages, Messages } from "@/lib/i18n";
+import { formatPrice } from "@/utils/format";
 
 interface StatCardProps {
   title: string;
@@ -133,16 +134,6 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
     return num.toString();
   };
 
-  const formatCurrency = (num: number) => {
-    const localeCode = locale === "fa" ? "fa-IR" : locale === "ar" ? "ar-SA" : "en-US";
-    return new Intl.NumberFormat(localeCode, {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(num);
-  };
-
   // Don't block rendering - use fallbacks if messages aren't loaded
   const t = messages?.admin?.dashboardStats || {
     todayOrders: "سفارشات امروز",
@@ -190,7 +181,7 @@ export default function DashboardStats({ locale }: DashboardStatsProps) {
           {isLoading ? (
             <div className="w-16 sm:w-20 h-6 sm:h-8 bg-white/10 rounded animate-pulse mx-auto"></div>
           ) : (
-            title === String(t.monthlyRevenue) ? formatCurrency(value as number) : formatNumber(value as number)
+            title === String(t.monthlyRevenue) ? formatPrice(value as number, locale) : formatNumber(value as number)
           )}
         </h3>
         <p className="text-gray-300 text-sm sm:text-base">{title}</p>

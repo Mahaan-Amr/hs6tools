@@ -5,6 +5,7 @@ import { getMessages, Messages } from '@/lib/i18n';
 import { useCartStore } from '@/contexts/CartContext';
 import Image from 'next/image';
 import Link from 'next/link';
+import { formatPrice as formatPriceUtil } from '@/utils/format';
 
 interface WishlistItem {
   id: string;
@@ -104,12 +105,7 @@ export default function WishlistTab({ locale }: WishlistTabProps) {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
-      style: "currency",
-      currency: locale === "fa" ? "IRR" : "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
+    return formatPriceUtil(price, locale);
   };
 
   if (isLoading || !messages) {

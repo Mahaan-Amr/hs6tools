@@ -264,6 +264,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [addressErrors, setAddressErrors] = useState<Partial<Record<keyof Address, string>>>({});
 
   const formatPrice = (price: number) => {
     // Use centralized utility that converts Rials to Tomans
@@ -294,6 +295,7 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
 
   const handleAddressChange = (field: keyof Address, value: string) => {
     setAddress(prev => ({ ...prev, [field]: value }));
+    setAddressErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
   if (!messages?.checkout) {
@@ -320,10 +322,20 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
           return;
         }
       } else {
-        if (!isAddressValid()) {
-          alert(String(t.completeAddressFields));
+        const requiredMessage = String(messages.common?.requiredField || t.completeAddressFields);
+        const missingFields = (Object.keys(address) as Array<keyof Address>).filter(
+          (field) => !address[field].trim()
+        );
+        if (missingFields.length) {
+          setAddressErrors(
+            Object.fromEntries(missingFields.map((field) => [field, requiredMessage]))
+          );
+          requestAnimationFrame(() => {
+            document.querySelector<HTMLElement>(`[data-address-field="${missingFields[0]}"]`)?.focus();
+          });
           return;
         }
+        setAddressErrors({});
       }
     }
     if (currentStep < 3) {
@@ -335,10 +347,6 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
-  };
-
-  const isAddressValid = () => {
-    return Object.values(address).every(value => value.trim() !== "");
   };
 
   const handleAddressSelect = (address: CustomerAddress) => {
@@ -764,77 +772,112 @@ export default function CheckoutPageClient({ locale }: CheckoutPageClientProps) 
                     <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.firstName)}</label>
                     <input
                       type="text"
+                      data-address-field="firstName"
+                      required
+                      aria-invalid={Boolean(addressErrors.firstName)}
+                      aria-describedby={addressErrors.firstName ? "checkout-firstName-error" : undefined}
                       value={address.firstName}
                       onChange={(e) => handleAddressChange("firstName", e.target.value)}
                       className="readable-field"
                       placeholder={String(t.firstNamePlaceholder)}
                     />
+                    {addressErrors.firstName && <p id="checkout-firstName-error" role="alert" className="mt-2 text-sm text-red-600">{addressErrors.firstName}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.lastName)}</label>
                     <input
                       type="text"
+                      data-address-field="lastName"
+                      required
+                      aria-invalid={Boolean(addressErrors.lastName)}
+                      aria-describedby={addressErrors.lastName ? "checkout-lastName-error" : undefined}
                       value={address.lastName}
                       onChange={(e) => handleAddressChange("lastName", e.target.value)}
                       className="readable-field"
                       placeholder={String(t.lastNamePlaceholder)}
                     />
+                    {addressErrors.lastName && <p id="checkout-lastName-error" role="alert" className="mt-2 text-sm text-red-600">{addressErrors.lastName}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.phone)}</label>
                     <input
                       type="tel"
+                      data-address-field="phone"
+                      required
+                      aria-invalid={Boolean(addressErrors.phone)}
+                      aria-describedby={addressErrors.phone ? "checkout-phone-error" : undefined}
                       value={address.phone}
                       onChange={(e) => handleAddressChange("phone", e.target.value)}
                       className="readable-field"
                       placeholder={String(t.phonePlaceholder)}
                     />
+                    {addressErrors.phone && <p id="checkout-phone-error" role="alert" className="mt-2 text-sm text-red-600">{addressErrors.phone}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.postalCode)}</label>
                     <input
                       type="text"
+                      data-address-field="postalCode"
+                      required
+                      aria-invalid={Boolean(addressErrors.postalCode)}
+                      aria-describedby={addressErrors.postalCode ? "checkout-postalCode-error" : undefined}
                       value={address.postalCode}
                       onChange={(e) => handleAddressChange("postalCode", e.target.value)}
                       className="readable-field"
                       placeholder={String(t.postalCodePlaceholder)}
                     />
+                    {addressErrors.postalCode && <p id="checkout-postalCode-error" role="alert" className="mt-2 text-sm text-red-600">{addressErrors.postalCode}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.province)}</label>
                     <input
                       type="text"
+                      data-address-field="province"
+                      required
+                      aria-invalid={Boolean(addressErrors.province)}
+                      aria-describedby={addressErrors.province ? "checkout-province-error" : undefined}
                       value={address.province}
                       onChange={(e) => handleAddressChange("province", e.target.value)}
                       className="readable-field"
                       placeholder={String(t.provincePlaceholder)}
                     />
+                    {addressErrors.province && <p id="checkout-province-error" role="alert" className="mt-2 text-sm text-red-600">{addressErrors.province}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.city)}</label>
                     <input
                       type="text"
+                      data-address-field="city"
+                      required
+                      aria-invalid={Boolean(addressErrors.city)}
+                      aria-describedby={addressErrors.city ? "checkout-city-error" : undefined}
                       value={address.city}
                       onChange={(e) => handleAddressChange("city", e.target.value)}
                       className="readable-field"
                       placeholder={String(t.cityPlaceholder)}
                     />
+                    {addressErrors.city && <p id="checkout-city-error" role="alert" className="mt-2 text-sm text-red-600">{addressErrors.city}</p>}
                   </div>
                   
                   <div className="md:col-span-2">
                     <label className="block text-gray-900 dark:text-white font-medium mb-2">{String(t.fullAddress)}</label>
                     <textarea
+                      data-address-field="address"
+                      required
+                      aria-invalid={Boolean(addressErrors.address)}
+                      aria-describedby={addressErrors.address ? "checkout-address-error" : undefined}
                       value={address.address}
                       onChange={(e) => handleAddressChange("address", e.target.value)}
                       rows={3}
                       className="readable-field resize-none"
                       placeholder={String(t.fullAddressPlaceholder)}
                     />
+                    {addressErrors.address && <p id="checkout-address-error" role="alert" className="mt-2 text-sm text-red-600">{addressErrors.address}</p>}
                   </div>
                 </div>
                 ))}

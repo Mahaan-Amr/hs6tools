@@ -59,6 +59,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
             <button
               onClick={closeCart}
               className="p-2 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+              aria-label={messages?.common?.close || "Close cart"}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -97,6 +98,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
                         src={item.image}
                         alt={item.name}
                         fill
+                        sizes="64px"
                         className="object-cover"
                       />
                     ) : (
@@ -126,6 +128,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
                     <button
                       onClick={() => handleQuantityChange(item, item.quantity - 1)}
                       className="w-6 h-6 bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/20 transition-colors duration-200"
+                      aria-label={`${messages?.cart?.updateQuantity || "Update quantity"}: ${item.name} -`}
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
@@ -139,6 +142,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
                     <button
                       onClick={() => handleQuantityChange(item, item.quantity + 1)}
                       className="w-6 h-6 bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/20 transition-colors duration-200"
+                      aria-label={`${messages?.cart?.updateQuantity || "Update quantity"}: ${item.name} +`}
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -150,6 +154,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
                   <button
                     onClick={() => removeItem(item.id)}
                     className="p-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-200"
+                    aria-label={`${messages?.cart?.removeItem || "Remove"}: ${item.name}`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

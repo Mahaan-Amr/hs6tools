@@ -106,41 +106,6 @@ export default async function AdminDashboardPage({ params }: AdminDashboardPageP
             </div>
           </div>
 
-          {/* Performance Metrics */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <h3 className="text-lg font-semibold text-white mb-4">{String(t.performanceMetrics)}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-4 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 text-sm">{String(t.pageLoadSpeed)}</span>
-                  <span className="text-green-400 text-sm font-medium">1.2s</span>
-                </div>
-                <div className="w-full bg-white/10 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 text-sm">Core Web Vitals</span>
-                  <span className="text-yellow-400 text-sm font-medium">75</span>
-                </div>
-                <div className="w-full bg-white/10 rounded-full h-2">
-                  <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 text-sm">SEO Score</span>
-                  <span className="text-green-400 text-sm font-medium">92</span>
-                </div>
-                <div className="w-full bg-white/10 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '92%' }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Recent Activity */}

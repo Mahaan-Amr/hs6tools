@@ -128,7 +128,8 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
               <div className="space-y-4">
                 {items.map((item) => (
                   <div key={item.id} className="glass rounded-2xl p-4">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                      <div className="flex min-w-0 items-start gap-4 sm:flex-1">
                       {/* Product Image */}
                       <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
                         {item.image ? (
@@ -136,6 +137,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                             src={item.image}
                             alt={item.name}
                             fill
+                            sizes="80px"
                             className="object-cover"
                           />
                         ) : (
@@ -159,12 +161,15 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                           {formatPrice(item.price)}
                         </div>
                       </div>
+                      </div>
 
+                      <div className="flex items-center justify-between gap-4 sm:justify-end">
                       {/* Quantity Controls */}
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                           disabled={isUpdating === item.id}
+                          aria-label={`${t.updateQuantity}: ${item.name} (-)`}
                           className="w-8 h-8 bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/20 transition-colors duration-200 disabled:opacity-50"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,6 +188,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                         <button
                           onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                           disabled={isUpdating === item.id}
+                          aria-label={`${t.updateQuantity}: ${item.name} (+)`}
                           className="w-8 h-8 bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/20 transition-colors duration-200 disabled:opacity-50"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,6 +208,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                         >
                           {t.delete}
                         </button>
+                      </div>
                       </div>
                     </div>
                   </div>
