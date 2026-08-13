@@ -107,6 +107,7 @@ Scores reflect the verified local build and sampled production read-only checks.
 - The browser suite now contains 24 tests. Added coverage verifies localized English and Arabic Admin routes plus a buyer discovery/cart/auth/checkout-validation flow and database-backed Super Admin operational totals.
 - Admin route chrome, product/order/status filters, settings, support, categories, users, validation, access-denied, loading, and fallback copy now use locale-aware Persian, English, and Arabic text. Long-form legacy content/education/settings editors still contain embedded Persian literals and remain tracked localization debt.
 - The six production dependency advisories remain isolated to the framework/auth migration boundary. A sequenced Next.js 16/Auth.js migration, verification matrix, and rollback plan is recorded in `docs/NEXT16-AUTHJS-MIGRATION-PLAN.md`.
+- Final review found and closed a stored-XSS risk in public article HTML by applying a strict server-side allowlist sanitizer with a security regression test. External staging runs now fail closed unless all isolated test credentials are configured, and operational logging coverage includes checkout and phone verification.
 
 Release recommendation remains **staging only** until a staging target is provisioned, the 24-test suite passes against its URL, and the remaining legacy Admin editor localization plus six dependency advisories are closed.
 
