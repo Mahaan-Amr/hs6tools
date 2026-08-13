@@ -26,25 +26,32 @@ async function generateDatabaseStatusReport() {
     console.log('-------------------');
     try {
       const migrations = await prisma.$queryRaw`
-        SELECT 
+        SELECT DISTINCT ON (migration_name)
           migration_name,
           started_at,
           finished_at,
+          rolled_back_at,
           checksum
-        FROM _prisma_migrations 
-        ORDER BY started_at DESC
+        FROM _prisma_migrations
+        ORDER BY migration_name, COALESCE(finished_at, rolled_back_at, started_at) DESC
       `;
+
+      migrations.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
       
       if (migrations.length === 0) {
         console.log('❌ No migrations found');
       } else {
         migrations.forEach((migration, index) => {
-          const status = migration.finished_at ? '✅ Applied' : '🔄 In Progress';
+          const status = migration.finished_at
+            ? '✅ Applied'
+            : migration.rolled_back_at
+              ? '↩️ Rolled Back'
+              : '❌ Failed or Interrupted';
           const date = new Date(migration.started_at).toLocaleDateString();
           console.log(`${index + 1}. ${migration.migration_name} (${date}) - ${status}`);
         });
       }
-    } catch (error) {
+    } catch {
       console.log('❌ Migration table not accessible');
     }
     console.log('');
@@ -137,7 +144,7 @@ async function generateDatabaseStatusReport() {
         healthScore -= 25;
         issues.push('No migrations applied');
       }
-    } catch (error) {
+    } catch {
       healthScore -= 25;
       issues.push('Migration table inaccessible');
     }

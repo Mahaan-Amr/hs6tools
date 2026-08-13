@@ -23,7 +23,7 @@ async function ensureTable() {
       console.log('✅ shipping_methods table already exists');
       
       // Verify structure
-      const methods = await prisma.shippingMethodConfig.findMany({
+      await prisma.shippingMethodConfig.findMany({
         take: 1
       });
       console.log('✅ Table structure is correct');
