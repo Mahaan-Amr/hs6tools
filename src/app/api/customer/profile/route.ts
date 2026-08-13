@@ -7,45 +7,16 @@ import { prisma } from "@/lib/prisma";
 // GET /api/customer/profile - Get current customer profile
 export async function GET() {
   try {
-    console.log('🔍 API: /api/customer/profile - Starting request');
-    
     const session = await getServerSession(authOptions);
-    console.log('🔍 API: Session:', session ? 'exists' : 'null', 'User ID:', session?.user?.id);
     
     // Check if user is authenticated
     if (!session?.user?.id) {
-      console.log('❌ API: No session or user ID');
       return NextResponse.json(
         { success: false, error: "Authentication required" },
         { status: 401 }
       );
     }
 
-    console.log('🔍 API: Fetching user with ID:', session.user.id);
-    
-    // First, let's check if the user exists at all
-    const userExists = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, email: true, firstName: true, lastName: true }
-    });
-    
-    console.log('🔍 API: User exists check:', !!userExists, 'User data:', userExists);
-    
-    if (!userExists) {
-      console.log('❌ API: User not found in database with ID:', session.user.id);
-      
-      // Let's check what users exist in the database
-      const allUsers = await prisma.user.findMany({
-        select: { id: true, email: true, firstName: true, lastName: true }
-      });
-      console.log('🔍 API: All users in database:', allUsers);
-      
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 }
-      );
-    }
-    
     // Get user profile with addresses and recent orders
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -72,20 +43,12 @@ export async function GET() {
       }
     });
 
-    console.log('🔍 API: Database query result - User found:', !!user, 'User ID:', user?.id);
-
     if (!user) {
-      console.log('❌ API: User not found in database');
       return NextResponse.json(
         { success: false, error: "User not found" },
         { status: 404 }
       );
     }
-
-    console.log('🔍 API: User found, transforming data...');
-    console.log('🔍 API: User details - Email:', user.email, 'Name:', user.firstName, user.lastName);
-    console.log('🔍 API: Addresses count:', user.addresses.length);
-    console.log('🔍 API: Orders count:', user.orders.length);
 
     // Transform user data for response
     const profileData = {
@@ -134,9 +97,6 @@ export async function GET() {
         }))
       }))
     };
-
-    console.log('🔍 API: Profile data transformed successfully');
-    console.log('🔍 API: Sending response with profile data');
 
     return NextResponse.json({ success: true, data: profileData });
 

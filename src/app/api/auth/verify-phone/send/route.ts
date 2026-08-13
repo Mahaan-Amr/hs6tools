@@ -18,19 +18,10 @@ export async function POST(request: NextRequest) {
   try {
     // Check if SMS service is configured (SMS.ir takes priority, then Kavenegar)
     const smsirApiKey = getEnvValue('SMSIR_API_KEY');
-    const smsirTemplateId = getEnvValue('SMSIR_VERIFY_TEMPLATE_ID');
     const kavenegarApiKey =
       getEnvValue('KAVENEGAR_API_KEY') ||
       getEnvValue('NEXT_PUBLIC_KAVENEGAR_API_KEY') ||
       getEnvValue('KAVENEGAR_API_TOKEN');
-
-    // Enhanced logging for debugging
-    console.log('📱 [verify-phone/send] SMS Provider Detection:', {
-      smsirApiKey: smsirApiKey ? `SET (${smsirApiKey.length} chars)` : 'NOT SET',
-      smsirTemplateId: smsirTemplateId || 'NOT SET',
-      kavenegarApiKey: kavenegarApiKey ? `SET (${kavenegarApiKey.length} chars)` : 'NOT SET',
-      nodeEnv: process.env.NODE_ENV,
-    });
 
     if (!smsirApiKey && !kavenegarApiKey) {
       console.error('❌ [verify-phone/send] SMS API key is not set (SMSIR_API_KEY or KAVENEGAR_API_KEY)');
@@ -170,10 +161,6 @@ export async function POST(request: NextRequest) {
 
     // Send SMS with verification code
     // Try using template first, fallback to simple SMS
-    console.log(`📱 [verify-phone/send] Attempting to send verification code to ${phone}`);
-    console.log(`📱 [verify-phone/send] Generated code: ${verificationCode}`);
-    console.log(`📱 [verify-phone/send] Code expires at: ${expiresAt.toISOString()}`);
-    
     // Determine template based on SMS provider
     // SMS.ir uses Template ID (number), Kavenegar uses template name (string)
     const template = smsirApiKey 
@@ -248,7 +235,6 @@ export async function POST(request: NextRequest) {
         if (isAccountVerificationError) {
           warningMessage = `SMS sending failed: Account verification required. Please verify your Kavenegar account at https://console.kavenegar.com. Code is saved in database. You can request a new code after account verification.`;
           console.error('❌ [verify-phone/send] Account verification required:', {
-            phone,
             templateError: templateResult.error,
             fallbackError: fallbackResult.error,
             action: 'Please verify Kavenegar account at https://console.kavenegar.com',
@@ -256,8 +242,12 @@ export async function POST(request: NextRequest) {
         } else if (isTestAccountLimitation && isDevelopment) {
           // In development mode with test account, provide the code for testing
           warningMessage = `SMS sending failed (Test account limitation: SMS can only be sent to account owner's number). Your verification code is: ${verificationCode}. This code is valid for 5 minutes. In production, SMS will work normally.`;
-          console.log(`🔑 [verify-phone/send] Development mode - Verification code for ${phone}: ${verificationCode}`);
         }
+
+        const exposeDevelopmentCode =
+          isTestAccountLimitation &&
+          isDevelopment &&
+          process.env.HS6_EXPOSE_DEV_OTP === 'YES';
         
         return NextResponse.json({
           success: true,
@@ -265,7 +255,7 @@ export async function POST(request: NextRequest) {
           expiresIn: 300,
           warning: warningMessage,
           // In development mode with test account limitation, include code for testing
-          ...(isTestAccountLimitation && isDevelopment ? { devCode: verificationCode } : {}),
+          ...(exposeDevelopmentCode ? { devCode: verificationCode } : {}),
         });
       } else {
         console.log('✅ [verify-phone/send] Fallback SMS sent successfully:', fallbackResult.messageId);

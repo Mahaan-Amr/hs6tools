@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { hasRole } from "@/lib/authz";
+import { hasRole, requireAuth } from "@/lib/authz";
 import { normalizeUploadUrl } from "@/utils/image-url";
 
 const MAX_MONEY_VALUE = 999_999_999_999.99;
@@ -197,6 +197,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
+
     const body = await request.json();
     
     // Basic validation

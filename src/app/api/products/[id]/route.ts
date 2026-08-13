@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/authz";
 import { normalizeUploadUrl } from "@/utils/image-url";
 
 const MAX_MONEY_VALUE = 999_999_999_999.99;
@@ -113,6 +114,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -271,6 +275,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
+
     const { id } = await params;
 
     // Check if product exists

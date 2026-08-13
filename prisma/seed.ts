@@ -4,6 +4,20 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.HS6_ALLOW_DESTRUCTIVE_SEED !== 'YES') {
+    throw new Error(
+      'Refusing to clear and reseed the database. Set HS6_ALLOW_DESTRUCTIVE_SEED=YES only for an approved disposable environment.'
+    );
+  }
+
+  const adminSeedPassword = process.env.HS6_SEED_ADMIN_PASSWORD;
+  const customerSeedPassword = process.env.HS6_SEED_CUSTOMER_PASSWORD;
+  if (!adminSeedPassword || !customerSeedPassword) {
+    throw new Error(
+      'HS6_SEED_ADMIN_PASSWORD and HS6_SEED_CUSTOMER_PASSWORD are required.'
+    );
+  }
+
   console.log('🌱 Starting database seeding...');
 
   try {
@@ -31,7 +45,7 @@ async function main() {
 
     // Create Admin User
     console.log('👤 Creating admin user...');
-    const adminPassword = await bcrypt.hash('Admin123!', 12);
+    const adminPassword = await bcrypt.hash(adminSeedPassword, 12);
     
     const adminUser = await prisma.user.create({
       data: {
@@ -54,7 +68,7 @@ async function main() {
 
     // Create Regular User for Testing
     console.log('👤 Creating test user...');
-    const userPassword = await bcrypt.hash('User123!', 12);
+    const userPassword = await bcrypt.hash(customerSeedPassword, 12);
     
     const testUser = await prisma.user.create({
       data: {
@@ -1225,16 +1239,6 @@ async function main() {
     console.log(`- Products: ${products.length}`);
     console.log(`- Articles: ${articles.length}`);
     console.log(`- Education Lessons: ${educationLessons.length}`);
-    
-    console.log('\n🔑 Admin Account Credentials:');
-    console.log('Email: admin@hs6tools.com');
-    console.log('Password: Admin123!');
-    console.log('Role: SUPER_ADMIN');
-    
-    console.log('\n👤 Test User Account Credentials:');
-    console.log('Email: user@hs6tools.com');
-    console.log('Password: User123!');
-    console.log('Role: CUSTOMER');
     
     console.log('\n🌐 You can now test the platform with real data!');
     console.log('🚀 Admin Panel: https://hs6tools.com/fa/admin');
