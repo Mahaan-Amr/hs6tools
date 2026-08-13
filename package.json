@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "test:e2e": "playwright test",
+    "test:logs": "node scripts/check-verbose-logs.mjs",
     "lint": "eslint .",
     "ci:secure": "npm ci --ignore-scripts",
     "audit:prod": "npm audit --production",
@@ -30,6 +31,7 @@
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.4",
     "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.3",
     "jspdf": "^4.2.1",
     "kavenegar": "^1.1.4",
     "lucide-react": "^1.14.0",
@@ -64,8 +66,5 @@
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.4",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }

@@ -32,7 +32,7 @@
 - **Server IP**: 87.107.73.10
 - **OS**: Ubuntu 24.04 LTS
 - **User**: root
-- **Password**: OzyNIV29@hm4
+- **Authentication**: Use an SSH key or your secret manager. Never store server passwords in this repository.
 - **Application Directory**: `/var/www/hs6tools`
 
 ## 🚀 Quick Deployment (Recommended)
@@ -216,15 +216,9 @@ ssh root@87.107.73.10 'cd /var/www/hs6tools && ./backup.sh'
 - **Admin Panel**: http://87.107.73.10/fa/admin
 - **API Endpoints**: http://87.107.73.10/api/*
 
-### Admin Credentials
-- **Email**: admin@hs6tools.com
-- **Password**: Admin123!
-- **Role**: SUPER_ADMIN
+### Test Credentials
 
-### Test User Credentials
-- **Email**: user@hs6tools.com
-- **Password**: User123!
-- **Role**: CUSTOMER
+Create environment-specific QA accounts and store their credentials in the deployment platform's secret manager. Never reuse seed or production credentials.
 
 ## 🚨 Troubleshooting
 
