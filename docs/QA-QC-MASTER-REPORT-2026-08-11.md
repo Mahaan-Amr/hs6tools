@@ -98,6 +98,18 @@ Scores reflect the verified local build and sampled production read-only checks.
 
 ## Final change log
 
+## Release stabilization update — 2026-08-13
+
+- The original working tree was separated into five reviewable commits covering security, storefront/SEO, UI/UX, tests, and operational hardening.
+- Prisma seed execution now lives in `prisma.config.ts`; the deprecated `package.json` seed configuration is removed and `prisma validate` loads the new config successfully.
+- Verbose `console.log`, `console.info`, and `console.debug` statements were removed from order, payment, SMS, CRM, inventory, and supporting Admin paths. A static regression gate now protects those operational areas.
+- Playwright accepts `PLAYWRIGHT_BASE_URL`, and a manual staging workflow runs the suite with staging-scoped credentials. The GitHub repository currently has no staging environment, URL, variables, or secrets configured, so an actual remote staging deployment remains externally blocked.
+- The browser suite now contains 24 tests. Added coverage verifies localized English and Arabic Admin routes plus a buyer discovery/cart/auth/checkout-validation flow and database-backed Super Admin operational totals.
+- Admin route chrome, product/order/status filters, settings, support, categories, users, validation, access-denied, loading, and fallback copy now use locale-aware Persian, English, and Arabic text. Long-form legacy content/education/settings editors still contain embedded Persian literals and remain tracked localization debt.
+- The six production dependency advisories remain isolated to the framework/auth migration boundary. A sequenced Next.js 16/Auth.js migration, verification matrix, and rollback plan is recorded in `docs/NEXT16-AUTHJS-MIGRATION-PLAN.md`.
+
+Release recommendation remains **staging only** until a staging target is provisioned, the 24-test suite passes against its URL, and the remaining legacy Admin editor localization plus six dependency advisories are closed.
+
 - Hardened Product and Category mutation authorization.
 - Made product grids permanently visible without JavaScript/reveal dependencies.
 - Added route-aware locale semantics and localized catalog records.
