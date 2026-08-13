@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { SMSIRFastSendTemplates, sendSMS, sendVerificationCode } from "@/lib/sms";
+import {
+  SMSIRFastSendTemplates,
+  sendSMS,
+  sendVerificationCode,
+} from "@/lib/sms";
 import { rateLimitByIp } from "@/lib/rateLimit";
 import { isAllowedOrigin } from "@/utils/origin";
 import { VerificationType } from "@prisma/client";
 
 function getEnvValue(name: string): string | undefined {
-  const value = process.env[name]?.trim().replace(/^['"]|['"]$/g, '');
+  const value = process.env[name]?.trim().replace(/^['"]|['"]$/g, "");
   return value || undefined;
 }
 
@@ -17,26 +21,32 @@ function getEnvValue(name: string): string | undefined {
 export async function POST(request: NextRequest) {
   try {
     // Check if SMS service is configured (SMS.ir takes priority, then Kavenegar)
-    const smsirApiKey = getEnvValue('SMSIR_API_KEY');
+    const smsirApiKey = getEnvValue("SMSIR_API_KEY");
     const kavenegarApiKey =
-      getEnvValue('KAVENEGAR_API_KEY') ||
-      getEnvValue('NEXT_PUBLIC_KAVENEGAR_API_KEY') ||
-      getEnvValue('KAVENEGAR_API_TOKEN');
+      getEnvValue("KAVENEGAR_API_KEY") ||
+      getEnvValue("NEXT_PUBLIC_KAVENEGAR_API_KEY") ||
+      getEnvValue("KAVENEGAR_API_TOKEN");
 
     if (!smsirApiKey && !kavenegarApiKey) {
-      console.error('❌ [verify-phone/send] SMS API key is not set (SMSIR_API_KEY or KAVENEGAR_API_KEY)');
-      console.error('❌ [verify-phone/send] Environment check:', {
-        SMSIR_API_KEY: process.env.SMSIR_API_KEY ? 'SET' : 'NOT SET',
-        KAVENEGAR_API_KEY: process.env.KAVENEGAR_API_KEY ? 'SET' : 'NOT SET',
-        NEXT_PUBLIC_KAVENEGAR_API_KEY: process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY ? 'SET' : 'NOT SET',
-        KAVENEGAR_API_TOKEN: process.env.KAVENEGAR_API_TOKEN ? 'SET' : 'NOT SET',
+      console.error(
+        "❌ [verify-phone/send] SMS API key is not set (SMSIR_API_KEY or KAVENEGAR_API_KEY)",
+      );
+      console.error("❌ [verify-phone/send] Environment check:", {
+        SMSIR_API_KEY: process.env.SMSIR_API_KEY ? "SET" : "NOT SET",
+        KAVENEGAR_API_KEY: process.env.KAVENEGAR_API_KEY ? "SET" : "NOT SET",
+        NEXT_PUBLIC_KAVENEGAR_API_KEY: process.env.NEXT_PUBLIC_KAVENEGAR_API_KEY
+          ? "SET"
+          : "NOT SET",
+        KAVENEGAR_API_TOKEN: process.env.KAVENEGAR_API_TOKEN
+          ? "SET"
+          : "NOT SET",
       });
       return NextResponse.json(
-        { 
-          success: false, 
-          error: "SMS service is not configured. Please contact support." 
+        {
+          success: false,
+          error: "SMS service is not configured. Please contact support.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -46,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (!isAllowedOrigin(origin, host)) {
       return NextResponse.json(
         { success: false, error: "Invalid origin" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -56,11 +66,16 @@ export async function POST(request: NextRequest) {
       (forwarded && forwarded.split(",")[0]?.trim()) ||
       request.headers.get("x-real-ip") ||
       null;
-    const limitResult = rateLimitByIp(ip, "verify-phone-send", 5, 5 * 60 * 1000); // 5 requests / 5 min
+    const limitResult = rateLimitByIp(
+      ip,
+      "verify-phone-send",
+      5,
+      5 * 60 * 1000,
+    ); // 5 requests / 5 min
     if (!limitResult.allowed) {
       return NextResponse.json(
         { success: false, error: "Too many requests. Please try again later." },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -71,7 +86,7 @@ export async function POST(request: NextRequest) {
     if (!phone) {
       return NextResponse.json(
         { success: false, error: "Phone number is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,8 +94,11 @@ export async function POST(request: NextRequest) {
     const phoneRegex = /^09\d{9}$/;
     if (!phoneRegex.test(phone)) {
       return NextResponse.json(
-        { success: false, error: "Invalid phone number format. Use format: 09123456789" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Invalid phone number format. Use format: 09123456789",
+        },
+        { status: 400 },
       );
     }
 
@@ -92,15 +110,15 @@ export async function POST(request: NextRequest) {
           code,
           type: VerificationType.PHONE_VERIFICATION,
           used: false,
-          expiresAt: { gt: new Date() }
+          expiresAt: { gt: new Date() },
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: "desc" },
       });
 
       if (!verificationCode) {
         return NextResponse.json(
           { success: false, error: "Invalid or expired verification code" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -109,34 +127,36 @@ export async function POST(request: NextRequest) {
         where: { id: verificationCode.id },
         data: {
           used: true,
-          usedAt: new Date()
-        }
+          usedAt: new Date(),
+        },
       });
 
       return NextResponse.json({
         success: true,
-        message: "Code verified successfully"
+        message: "Code verified successfully",
       });
     }
 
     // Check if phone is already registered (excluding soft-deleted users)
     const existingUser = await prisma.user.findFirst({
-      where: { 
+      where: {
         phone,
-        deletedAt: null // Only check non-deleted users
+        deletedAt: null, // Only check non-deleted users
       },
-      select: { phoneVerified: true, email: true }
+      select: { phoneVerified: true, email: true },
     });
 
     if (existingUser) {
       return NextResponse.json(
         { success: false, error: "Phone number is already registered" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Generate 6-digit verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
 
     // Delete any existing unused codes for this phone
     await prisma.verificationCode.deleteMany({
@@ -144,8 +164,8 @@ export async function POST(request: NextRequest) {
         phone,
         type: VerificationType.PHONE_VERIFICATION,
         used: false,
-        expiresAt: { gt: new Date() }
-      }
+        expiresAt: { gt: new Date() },
+      },
     });
 
     // Create verification code (expires in 5 minutes)
@@ -155,18 +175,20 @@ export async function POST(request: NextRequest) {
         phone,
         code: verificationCode,
         type: VerificationType.PHONE_VERIFICATION,
-        expiresAt
-      }
+        expiresAt,
+      },
     });
 
     // Send SMS with verification code
     // Try using template first, fallback to simple SMS
     // Determine template based on SMS provider
     // SMS.ir uses Template ID (number), Kavenegar uses template name (string)
-    const template = smsirApiKey 
-      ? (getEnvValue('SMSIR_SIGNUP_VERIFY_TEMPLATE_ID') || getEnvValue('SMSIR_VERIFY_TEMPLATE_ID') || '280627') // Use Template ID for SMS.ir
-      : 'verify'; // Template name for Kavenegar
-    
+    const template = smsirApiKey
+      ? getEnvValue("SMSIR_SIGNUP_VERIFY_TEMPLATE_ID") ||
+        getEnvValue("SMSIR_VERIFY_TEMPLATE_ID") ||
+        "280627" // Use Template ID for SMS.ir
+      : "verify"; // Template name for Kavenegar
+
     const templateResult = await sendVerificationCode({
       receptor: phone,
       token: verificationCode,
@@ -176,69 +198,66 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(`📱 [verify-phone/send] Template SMS result:`, {
-      success: templateResult.success,
-      error: templateResult.error,
-      status: templateResult.status,
-      messageId: templateResult.messageId,
-    });
-
     if (!templateResult.success) {
       // Fallback to simple SMS if template doesn't exist or fails
-      console.warn('📱 [verify-phone/send] Template SMS failed, using simple SMS fallback:', {
-        error: templateResult.error,
-        status: templateResult.status,
-      });
-      
+      console.warn(
+        "📱 [verify-phone/send] Template SMS failed, using simple SMS fallback:",
+        {
+          error: templateResult.error,
+          status: templateResult.status,
+        },
+      );
+
       const fallbackResult = await sendSMS({
         receptor: phone,
         message: SMSIRFastSendTemplates.SIGNUP_VERIFY(verificationCode),
       });
 
-      console.log(`📱 [verify-phone/send] Fallback SMS result:`, {
-        success: fallbackResult.success,
-        error: fallbackResult.error,
-        status: fallbackResult.status,
-        messageId: fallbackResult.messageId,
-      });
-
       if (!fallbackResult.success) {
         // Check if it's a test account limitation
-        const isTestAccountLimitation = fallbackResult.isTestAccountLimitation || templateResult.isTestAccountLimitation;
-        const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-        
-        console.error('❌ [verify-phone/send] Both template and fallback SMS failed:', {
-          templateError: templateResult.error,
-          templateStatus: templateResult.status,
-          fallbackError: fallbackResult.error,
-          fallbackStatus: fallbackResult.status,
-          isTestAccountLimitation,
-        });
-        
+        const isTestAccountLimitation =
+          fallbackResult.isTestAccountLimitation ||
+          templateResult.isTestAccountLimitation;
+        const isDevelopment =
+          process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+
+        console.error(
+          "❌ [verify-phone/send] Both template and fallback SMS failed:",
+          {
+            templateError: templateResult.error,
+            templateStatus: templateResult.status,
+            fallbackError: fallbackResult.error,
+            fallbackStatus: fallbackResult.status,
+            isTestAccountLimitation,
+          },
+        );
+
         // Check if it's an account verification error
-        const isAccountVerificationError = 
-          (fallbackResult.error && (
-            fallbackResult.error.includes('verification required') ||
-            fallbackResult.error.includes('احراز هویت') ||
-            fallbackResult.error.includes('verify your account')
-          )) ||
-          (templateResult.error && (
-            templateResult.error.includes('verification required') ||
-            templateResult.error.includes('احراز هویت') ||
-            templateResult.error.includes('verify your account')
-          ));
-        
+        const isAccountVerificationError =
+          (fallbackResult.error &&
+            (fallbackResult.error.includes("verification required") ||
+              fallbackResult.error.includes("احراز هویت") ||
+              fallbackResult.error.includes("verify your account"))) ||
+          (templateResult.error &&
+            (templateResult.error.includes("verification required") ||
+              templateResult.error.includes("احراز هویت") ||
+              templateResult.error.includes("verify your account")));
+
         // Still return success because code is saved in database
         // User can request a new code if SMS fails
         let warningMessage = `SMS sending failed: ${fallbackResult.error || templateResult.error}. Code is saved in database. You can request a new code.`;
-        
+
         if (isAccountVerificationError) {
           warningMessage = `SMS sending failed: Account verification required. Please verify your Kavenegar account at https://console.kavenegar.com. Code is saved in database. You can request a new code after account verification.`;
-          console.error('❌ [verify-phone/send] Account verification required:', {
-            templateError: templateResult.error,
-            fallbackError: fallbackResult.error,
-            action: 'Please verify Kavenegar account at https://console.kavenegar.com',
-          });
+          console.error(
+            "❌ [verify-phone/send] Account verification required:",
+            {
+              templateError: templateResult.error,
+              fallbackError: fallbackResult.error,
+              action:
+                "Please verify Kavenegar account at https://console.kavenegar.com",
+            },
+          );
         } else if (isTestAccountLimitation && isDevelopment) {
           // In development mode with test account, provide the code for testing
           warningMessage = `SMS sending failed (Test account limitation: SMS can only be sent to account owner's number). Your verification code is: ${verificationCode}. This code is valid for 5 minutes. In production, SMS will work normally.`;
@@ -247,34 +266,30 @@ export async function POST(request: NextRequest) {
         const exposeDevelopmentCode =
           isTestAccountLimitation &&
           isDevelopment &&
-          process.env.HS6_EXPOSE_DEV_OTP === 'YES';
-        
+          process.env.HS6_EXPOSE_DEV_OTP === "YES";
+
         return NextResponse.json({
           success: true,
-          message: "Verification code generated. SMS may not have been sent. Please try requesting a new code if you don't receive it.",
+          message:
+            "Verification code generated. SMS may not have been sent. Please try requesting a new code if you don't receive it.",
           expiresIn: 300,
           warning: warningMessage,
           // In development mode with test account limitation, include code for testing
           ...(exposeDevelopmentCode ? { devCode: verificationCode } : {}),
         });
-      } else {
-        console.log('✅ [verify-phone/send] Fallback SMS sent successfully:', fallbackResult.messageId);
       }
-    } else {
-      console.log('✅ [verify-phone/send] Template SMS sent successfully:', templateResult.messageId);
     }
 
     return NextResponse.json({
       success: true,
       message: "Verification code sent successfully",
-      expiresIn: 300 // 5 minutes in seconds
+      expiresIn: 300, // 5 minutes in seconds
     });
-
   } catch (error) {
     console.error("Error sending phone verification code:", error);
     return NextResponse.json(
       { success: false, error: "Failed to send verification code" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

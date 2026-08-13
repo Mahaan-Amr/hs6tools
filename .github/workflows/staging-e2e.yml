@@ -34,6 +34,11 @@ jobs:
             echo "Configure the STAGING_BASE_URL environment variable in the staging environment."
             exit 1
           }
+          test -n "$E2E_CUSTOMER_EMAIL" && test -n "$E2E_CUSTOMER_PASSWORD" && \
+          test -n "$E2E_ADMIN_EMAIL" && test -n "$E2E_ADMIN_PASSWORD" || {
+            echo "Configure all four staging E2E credential secrets."
+            exit 1
+          }
 
       - run: npm ci
       - run: npx playwright install --with-deps chrome

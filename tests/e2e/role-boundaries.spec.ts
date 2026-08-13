@@ -1,14 +1,15 @@
 import { expect, test } from "@playwright/test";
+import { adminCredentials, customerCredentials } from "./credentials";
 
 test("Customer cannot enter the Admin product workspace", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/fa/auth/login");
   await page
     .getByLabel("ایمیل", { exact: true })
-    .fill(process.env.E2E_CUSTOMER_EMAIL || "user@hs6tools.com");
+    .fill(customerCredentials.email);
   await page
     .getByLabel("رمز عبور", { exact: true })
-    .fill(process.env.E2E_CUSTOMER_PASSWORD || "User123!");
+    .fill(customerCredentials.password);
   await page.getByRole("button", { name: "ورود", exact: true }).click();
   await expect(page).toHaveURL(/\/fa$/);
 
@@ -49,12 +50,8 @@ test("Super Admin dashboard does not present fabricated operational metrics", as
   page,
 }) => {
   await page.goto("/en/auth/login");
-  await page
-    .locator('input[type="email"]')
-    .fill(process.env.E2E_ADMIN_EMAIL || "admin@hs6tools.com");
-  await page
-    .locator('input[type="password"]')
-    .fill(process.env.E2E_ADMIN_PASSWORD || "Admin123!");
+  await page.locator('input[type="email"]').fill(adminCredentials.email);
+  await page.locator('input[type="password"]').fill(adminCredentials.password);
   await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/en\/admin$/);
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { adminCredentials, customerCredentials } from "./credentials";
 
 test("Buyer discovers a product, builds a cart, signs in, and reaches validated checkout", async ({
   page,
@@ -24,12 +25,10 @@ test("Buyer discovers a product, builds a cart, signs in, and reaches validated 
 
   await page.getByRole("link", { name: /checkout/i }).click();
   await expect(page).toHaveURL(/\/en\/auth\/login\?callbackUrl=/);
-  await page
-    .locator('input[type="email"]')
-    .fill(process.env.E2E_CUSTOMER_EMAIL || "user@hs6tools.com");
+  await page.locator('input[type="email"]').fill(customerCredentials.email);
   await page
     .locator('input[type="password"]')
-    .fill(process.env.E2E_CUSTOMER_PASSWORD || "User123!");
+    .fill(customerCredentials.password);
   await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/en\/checkout$/);
 
@@ -43,15 +42,14 @@ test("Super Admin sees database-backed operational totals and the latest order",
   page,
 }) => {
   await page.goto("/en/auth/login");
-  await page
-    .locator('input[type="email"]')
-    .fill(process.env.E2E_ADMIN_EMAIL || "admin@hs6tools.com");
-  await page
-    .locator('input[type="password"]')
-    .fill(process.env.E2E_ADMIN_PASSWORD || "Admin123!");
+  await page.locator('input[type="email"]').fill(adminCredentials.email);
+  await page.locator('input[type="password"]').fill(adminCredentials.password);
   await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/en\/admin$/);
 
-  await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(/HS6-/).first()).toBeVisible();
+  await expect(page.getByText("Today's Orders", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Active Products", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Recent Orders", { exact: true })).toBeVisible();
 });

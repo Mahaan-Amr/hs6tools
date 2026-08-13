@@ -7,6 +7,7 @@ const protectedAreas = [
   "src/app/api/customer/orders",
   "src/app/api/payment",
   "src/app/api/sms",
+  "src/app/api/auth/verify-phone",
   "src/components/admin",
   "src/contexts/CustomerContext.tsx",
   "src/lib/admin-auth.ts",
@@ -15,6 +16,7 @@ const protectedAreas = [
   "src/lib/sms.ts",
   "src/lib/zarinpal.ts",
   "src/components/layout/AdminLayoutWrapper.tsx",
+  "src/app/[locale]/checkout/CheckoutPageClient.tsx",
 ];
 
 const files = execFileSync("git", ["ls-files", ...protectedAreas], {
@@ -25,10 +27,12 @@ const files = execFileSync("git", ["ls-files", ...protectedAreas], {
 
 const violations = files.flatMap((file) => {
   const source = readFileSync(file, "utf8");
-  return [...source.matchAll(/console\.(?:log|info|debug)\s*\(/g)].map((match) => {
-    const line = source.slice(0, match.index).split(/\r?\n/).length;
-    return `${file}:${line}`;
-  });
+  return [...source.matchAll(/console\.(?:log|info|debug)\s*\(/g)].map(
+    (match) => {
+      const line = source.slice(0, match.index).split(/\r?\n/).length;
+      return `${file}:${line}`;
+    },
+  );
 });
 
 if (violations.length > 0) {

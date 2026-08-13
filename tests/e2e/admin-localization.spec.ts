@@ -1,13 +1,10 @@
 import { expect, Page, test } from "@playwright/test";
+import { adminCredentials } from "./credentials";
 
 async function loginAsAdmin(page: Page, locale: "en" | "ar") {
   await page.goto(`/${locale}/auth/login`);
-  await page
-    .locator('input[type="email"]')
-    .fill(process.env.E2E_ADMIN_EMAIL || "admin@hs6tools.com");
-  await page
-    .locator('input[type="password"]')
-    .fill(process.env.E2E_ADMIN_PASSWORD || "Admin123!");
+  await page.locator('input[type="email"]').fill(adminCredentials.email);
+  await page.locator('input[type="password"]').fill(adminCredentials.password);
   await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(new RegExp(`/${locale}/admin$`));
 }
