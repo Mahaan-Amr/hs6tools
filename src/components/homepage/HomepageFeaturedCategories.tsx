@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { HomepageCategoryCard } from "@/types/homepage";
@@ -16,7 +16,7 @@ function CategoryCard({ locale, card }: { locale: string; card: HomepageCategory
       <div className="relative aspect-[4/4.6] overflow-hidden">
         {card.image ? (
           <>
-            <Image
+            <ResilientImage
               src={card.image}
               alt={card.title}
               fill

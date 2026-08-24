@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin-auth";
 import { ArticleStatus, LessonContentType, LessonDifficulty } from "@prisma/client";
+import { sanitizeOptionalRichContent } from "@/lib/rich-content";
+import { validateLessonVideoInput } from "@/lib/lesson-video-request";
 
 /**
  * GET /api/education/lessons/[id]
@@ -115,6 +117,12 @@ export async function PUT(
       );
     }
 
+    const videoResult = validateLessonVideoInput(
+      videoUrl !== undefined ? videoUrl : existingLesson.videoUrl,
+    );
+    if (!videoResult.ok) return videoResult.response;
+    const normalizedVideo = videoResult.video;
+
     // Validate content based on type
     const finalContentType = contentType || existingLesson.contentType;
     if (finalContentType === "TEXT" && !content) {
@@ -124,7 +132,7 @@ export async function PUT(
       );
     }
 
-    if (finalContentType === "VIDEO" && !videoUrl) {
+    if (finalContentType === "VIDEO" && !normalizedVideo) {
       return NextResponse.json(
         { error: "برای دروس ویدیویی، آدرس ویدیو الزامی است" },
         { status: 400 }
@@ -154,8 +162,8 @@ export async function PUT(
     if (title !== undefined) updateData.title = title;
     if (slug !== undefined) updateData.slug = slug;
     if (excerpt !== undefined) updateData.excerpt = excerpt;
-    if (content !== undefined) updateData.content = content;
-    if (videoUrl !== undefined) updateData.videoUrl = videoUrl;
+    if (content !== undefined) updateData.content = sanitizeOptionalRichContent(content);
+    if (videoUrl !== undefined) updateData.videoUrl = normalizedVideo?.url ?? null;
     if (videoDuration !== undefined) updateData.videoDuration = videoDuration;
     if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
     if (contentType !== undefined) updateData.contentType = contentType;

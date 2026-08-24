@@ -1,7 +1,7 @@
 "use client";
 
 import { useCartStore } from "@/contexts/CartContext";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getMessages, Messages } from "@/lib/i18n";
@@ -133,7 +133,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                       {/* Product Image */}
                       <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
                         {item.image ? (
-                          <Image
+                          <ResilientImage
                             src={item.image}
                             alt={item.name}
                             fill

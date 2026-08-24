@@ -9,7 +9,7 @@
     "test:e2e": "playwright test",
     "test:logs": "node scripts/check-verbose-logs.mjs",
     "test:production-hardening": "node --test tests/production-hardening.test.mjs",
-    "test:security": "tsx --test tests/sanitize-article-html.test.ts tests/external-effects.test.ts",
+    "test:security": "tsx --test tests/rich-content.test.ts tests/lesson-video.test.ts tests/image-source.test.ts tests/external-effects.test.ts",
     "test:recovery": "node --test tests/recovery-workflow.test.mjs",
     "lint": "eslint .",
     "ci:secure": "npm ci --ignore-scripts",

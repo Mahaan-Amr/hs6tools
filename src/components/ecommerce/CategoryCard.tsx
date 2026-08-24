@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getMessages, Messages } from "@/lib/i18n";
@@ -53,7 +53,7 @@ export default function CategoryCard({
         {/* Background Image or Icon */}
         <div className="relative aspect-[4/3] overflow-hidden">
           {image ? (
-            <Image
+            <ResilientImage
               src={image}
               alt={name}
               fill

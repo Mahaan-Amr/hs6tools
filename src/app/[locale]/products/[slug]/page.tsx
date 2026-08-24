@@ -1,13 +1,14 @@
 import { getMessages } from "@/lib/i18n";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { formatPrice as formatPriceUtil } from "@/utils/format";
 import { getCurrentWishlistProductIds, getPublicProductBySlug, getPublicProducts } from "@/lib/catalog";
 import ProductDetailActions from "@/components/ecommerce/ProductDetailActions";
 import ProductImageGallery from "@/components/ecommerce/ProductImageGallery";
 import { createPageMetadata } from "@/lib/seo";
+import { sanitizeRichContent } from "@/lib/rich-content";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -208,7 +209,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.products.productDescription}</h2>
             <div className="glass rounded-3xl p-8">
               <div className="prose prose-invert max-w-none">
-                <div dangerouslySetInnerHTML={{ __html: product.description }} />
+                <div
+                  data-testid="product-rich-content"
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichContent(product.description) }}
+                />
               </div>
             </div>
           </div>
@@ -267,7 +271,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   <div className="glass rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-200">
                     <div className="aspect-square relative">
                       {relatedProduct.images[0] && (
-                        <Image
+                        <ResilientImage
                           src={relatedProduct.images[0].url}
                           alt={relatedProduct.images[0].alt || relatedProduct.name}
                           fill

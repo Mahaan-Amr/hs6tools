@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import { getMessages, Messages } from "@/lib/i18n";
 import { formatCurrency, formatDateTime } from "@/utils/format";
 import { useSession } from "next-auth/react";
@@ -239,7 +239,7 @@ export default function CheckoutSuccessPage({ params, searchParams }: CheckoutSu
                   <div key={item.id} className="flex gap-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
                     {item.image && (
                       <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
-                        <Image
+                        <ResilientImage
                           src={item.image}
                           alt={item.name}
                           fill

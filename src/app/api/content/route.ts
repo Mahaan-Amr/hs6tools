@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin-auth";
 import { ArticleStatus } from "@prisma/client";
+import { sanitizeRichContent } from "@/lib/rich-content";
 
 /**
  * GET /api/content
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
           title: data.title,
           slug: data.slug,
           excerpt: data.excerpt,
-          content: data.content,
+          content: sanitizeRichContent(String(data.content || "")),
           categoryId: data.categoryId || null,
           featuredImage: data.featuredImage || null,
           authorId: session.user.id,

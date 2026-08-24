@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Article } from "@/types/content";
 import Link from "next/link";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import { useParams } from "next/navigation";
 import { getMessages, Messages } from "@/lib/i18n";
 
@@ -116,7 +116,7 @@ export default function BlogCard({ article }: BlogCardProps) {
                 {/* Featured Image or Icon */}
           <div className="aspect-video bg-gradient-to-br from-primary-orange/20 to-orange-500/20 flex items-center justify-center">
             {article.featuredImage && !imageFailed ? (
-              <Image 
+              <ResilientImage
                 src={article.featuredImage} 
                 alt={article.title}
                 width={400}

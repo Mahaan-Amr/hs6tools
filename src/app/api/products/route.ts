@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { hasRole, requireAuth } from "@/lib/authz";
 import { normalizeUploadUrl } from "@/utils/image-url";
+import { sanitizeCatalogProductDescriptions } from "@/lib/rich-content";
 
 const MAX_MONEY_VALUE = 999_999_999_999.99;
 
@@ -254,7 +255,7 @@ export async function POST(request: NextRequest) {
           sku: body.sku,
           name: body.name,
           slug: body.slug,
-          description: body.description,
+          ...sanitizeCatalogProductDescriptions(body),
           shortDescription: body.shortDescription,
           price: body.price,
           comparePrice: body.comparePrice,
@@ -278,8 +279,6 @@ export async function POST(request: NextRequest) {
           // Multilingual fields
           nameEn: body.nameEn,
           nameAr: body.nameAr,
-          descriptionEn: body.descriptionEn,
-          descriptionAr: body.descriptionAr,
           shortDescriptionEn: body.shortDescriptionEn,
           shortDescriptionAr: body.shortDescriptionAr
         }

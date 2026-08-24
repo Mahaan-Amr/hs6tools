@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { useCartStore } from "@/contexts/CartContext";
 import type { Messages } from "@/lib/i18n";
@@ -56,7 +56,7 @@ export default function ProductCard({
     <div className="group glass rounded-3xl overflow-hidden hover:scale-105 transition-all duration-300 hover:shadow-glass-orange">
       <div className="relative aspect-square overflow-hidden">
         {primaryImage ? (
-          <Image
+          <ResilientImage
             src={primaryImage.url}
             alt={primaryImage.alt || product.name}
             fill

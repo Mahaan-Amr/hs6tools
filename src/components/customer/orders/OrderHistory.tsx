@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+import ResilientImage from '@/components/shared/ResilientImage';
 import { useCustomer } from '@/contexts/CustomerContext';
 import { useRouter } from 'next/navigation';
 import { getMessages, Messages } from '@/lib/i18n';
@@ -465,7 +465,7 @@ export default function OrderHistory({ locale }: OrderHistoryProps) {
                       {order.items.slice(0, 3).map((item) => (
                         <div key={item.id} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
                           {item.image && (
-                            <Image 
+                            <ResilientImage
                               src={item.image} 
                               alt={item.name}
                               width={32}

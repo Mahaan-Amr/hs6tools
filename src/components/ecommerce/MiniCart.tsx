@@ -3,7 +3,7 @@
 import { useCartStore, CartItem } from "@/contexts/CartContext";
 import { getMessages, Messages } from "@/lib/i18n";
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { formatPrice as formatPriceUtil } from "@/utils/format";
 
@@ -94,7 +94,7 @@ export default function MiniCart({ locale }: MiniCartProps) {
                   {/* Product Image */}
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
                     {item.image ? (
-                      <Image
+                      <ResilientImage
                         src={item.image}
                         alt={item.name}
                         fill

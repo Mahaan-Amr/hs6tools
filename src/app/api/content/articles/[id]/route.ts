@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin-auth";
 import { ArticleStatus } from "@prisma/client";
+import { sanitizeRichContent } from "@/lib/rich-content";
 
 /**
  * GET /api/content/articles/[id]
@@ -121,7 +122,7 @@ export async function PUT(
         title: title || existingArticle.title,
         slug: slug || existingArticle.slug,
         excerpt: excerpt !== undefined ? excerpt : existingArticle.excerpt,
-        content: content || existingArticle.content,
+        content: content ? sanitizeRichContent(content) : existingArticle.content,
         categoryId: categoryId !== undefined ? categoryId : existingArticle.categoryId,
         featuredImage: featuredImage !== undefined ? featuredImage : existingArticle.featuredImage,
         metaTitle: metaTitle || existingArticle.metaTitle,

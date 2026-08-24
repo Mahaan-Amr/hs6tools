@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import { EducationLesson, EducationCategory } from "@/types/education";
 import { LessonContentType, LessonDifficulty } from "@prisma/client";
 import { getMessages, Messages } from "@/lib/i18n";
@@ -222,7 +222,7 @@ export default function EducationContent({ locale }: EducationContentProps) {
               {/* Thumbnail/Image */}
               <div className="relative aspect-video bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800">
                 {lesson.thumbnail ? (
-                  <Image
+                  <ResilientImage
                     src={lesson.thumbnail}
                     alt={lesson.title}
                     fill

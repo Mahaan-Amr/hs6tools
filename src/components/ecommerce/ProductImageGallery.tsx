@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 
 interface ProductGalleryImage {
   id: string;
@@ -34,7 +34,7 @@ export default function ProductImageGallery({
     <div className="space-y-4">
       <div className="relative aspect-square overflow-hidden rounded-3xl glass">
         {selectedImage ? (
-          <Image
+          <ResilientImage
             key={selectedImage.id}
             src={selectedImage.url}
             alt={selectedImage.alt || productName}
@@ -75,7 +75,7 @@ export default function ProductImageGallery({
                   isSelected ? "ring-2 ring-primary-orange" : "hover:ring-2 hover:ring-primary-orange"
                 }`}
               >
-                <Image
+                <ResilientImage
                   src={image.url}
                   alt={image.alt || productName}
                   fill

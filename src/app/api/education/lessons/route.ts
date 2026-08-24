@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin-auth";
 import { ArticleStatus, LessonContentType, LessonDifficulty } from "@prisma/client";
+import { sanitizeOptionalRichContent } from "@/lib/rich-content";
+import { validateLessonVideoInput } from "@/lib/lesson-video-request";
 
 /**
  * GET /api/education/lessons
@@ -152,6 +154,9 @@ export async function POST(request: NextRequest) {
       estimatedTime,
       sortOrder,
     } = body;
+    const videoResult = validateLessonVideoInput(videoUrl);
+    if (!videoResult.ok) return videoResult.response;
+    const normalizedVideo = videoResult.video;
 
     // Validate required fields
     if (!title || !slug) {
@@ -169,14 +174,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (contentType === "VIDEO" && !videoUrl) {
+    if (contentType === "VIDEO" && !normalizedVideo) {
       return NextResponse.json(
         { error: "برای دروس ویدیویی، آدرس ویدیو الزامی است" },
         { status: 400 }
       );
     }
 
-    if (contentType === "MIXED" && !content && !videoUrl) {
+    if (contentType === "MIXED" && !content && !normalizedVideo) {
       return NextResponse.json(
         { error: "برای دروس ترکیبی، حداقل یکی از محتوا یا ویدیو الزامی است" },
         { status: 400 }
@@ -216,8 +221,8 @@ export async function POST(request: NextRequest) {
         title,
         slug,
         excerpt: excerpt || null,
-        content: content || null,
-        videoUrl: videoUrl || null,
+        content: sanitizeOptionalRichContent(content) || null,
+        videoUrl: normalizedVideo?.url || null,
         videoDuration: videoDuration || null,
         thumbnail: thumbnail || null,
         contentType: (contentType as LessonContentType) || "TEXT",

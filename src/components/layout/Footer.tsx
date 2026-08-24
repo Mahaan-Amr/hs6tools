@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Messages } from "@/lib/i18n";
+import TrustSeal from "./TrustSeal";
 
 interface FooterProps {
   locale: string;
@@ -100,26 +101,8 @@ export default function Footer({ locale, messages }: FooterProps) {
               {messages.footer.copyright}
             </div>
             
-            {/* The seal validates only on the production domain. JSX keeps hydration deterministic. */}
             <div className="flex items-center justify-center min-h-[60px]">
-              <a
-                referrerPolicy="origin"
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://trustseal.enamad.ir/?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf"
-                aria-label="E-Namad trust seal"
-              >
-                {/* The remote seal is domain-bound and cannot use Next image optimization. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  referrerPolicy="origin"
-                  src="https://trustseal.enamad.ir/logo.aspx?id=672815&Code=uTJMZOh3491RFLi2w3AvM2s9AmsVM5tf"
-                  alt="E-Namad trust seal"
-                  className="cursor-pointer"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </a>
+              <TrustSeal />
             </div>
             
             <div className="flex space-x-6 text-sm">

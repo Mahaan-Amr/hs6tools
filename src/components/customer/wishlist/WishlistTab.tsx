@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMessages, Messages } from '@/lib/i18n';
 import { useCartStore } from '@/contexts/CartContext';
-import Image from 'next/image';
+import ResilientImage from '@/components/shared/ResilientImage';
 import Link from 'next/link';
 import { formatPrice as formatPriceUtil } from '@/utils/format';
 
@@ -166,7 +166,7 @@ export default function WishlistTab({ locale }: WishlistTabProps) {
               <div className="flex-shrink-0">
                 {item.product.images[0] && (
                   <div className="w-20 h-20 rounded-lg overflow-hidden bg-white/5">
-                    <Image
+                    <ResilientImage
                       src={item.product.images[0].url}
                       alt={item.product.name}
                       width={80}

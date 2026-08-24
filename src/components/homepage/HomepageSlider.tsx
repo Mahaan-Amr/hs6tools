@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ function SlideArtwork({
   }
 
   return (
-    <Image
+    <ResilientImage
       src={src}
       alt={alt}
       fill

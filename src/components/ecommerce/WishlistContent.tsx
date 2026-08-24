@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useCartStore } from "@/contexts/CartContext";
 import { getMessages, Messages } from "@/lib/i18n";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 
 interface WishlistItem {
@@ -197,7 +197,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
           {/* Product Image */}
           <div className="relative aspect-square overflow-hidden">
             {item.product.images[0] ? (
-              <Image
+              <ResilientImage
                 src={item.product.images[0].url}
                 alt={item.product.images[0].alt || item.product.name}
                 fill

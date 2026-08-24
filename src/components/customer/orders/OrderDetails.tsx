@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+import ResilientImage from '@/components/shared/ResilientImage';
 import { useCustomer } from '@/contexts/CustomerContext';
 import { useRouter } from 'next/navigation';
 import { getMessages, Messages } from '@/lib/i18n';
@@ -605,7 +605,7 @@ export default function OrderDetails({ orderId, locale }: OrderDetailsProps) {
           {order.items.map((item: OrderItem) => (
             <div key={item.id} className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
               {item.image && (
-                <Image 
+                <ResilientImage
                   src={item.image} 
                   alt={item.name}
                   width={64}

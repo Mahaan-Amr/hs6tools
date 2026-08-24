@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createPageMetadata } from "@/lib/seo";
 import { normalizeUploadUrl } from "@/utils/image-url";
-import { sanitizeArticleHtml } from "@/lib/sanitize-article-html";
+import { sanitizeRichContent } from "@/lib/rich-content";
 
 interface ArticlePageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -78,7 +78,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
         {featuredImage && (
           <div className="relative mb-10 aspect-video overflow-hidden rounded-3xl bg-gray-200 dark:bg-gray-800">
-            <Image
+            <ResilientImage
               src={featuredImage}
               alt={article.title}
               fill
@@ -92,7 +92,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <div
           className="rounded-3xl border border-gray-200 bg-white/85 p-7 leading-8 text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 md:p-10 [&_h2]:mb-4 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 dark:[&_h2]:text-white [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:mb-2 [&_p]:mb-5 [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:px-6"
           dangerouslySetInnerHTML={{
-            __html: sanitizeArticleHtml(article.content),
+            __html: sanitizeRichContent(article.content),
           }}
         />
       </article>

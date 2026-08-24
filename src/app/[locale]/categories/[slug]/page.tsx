@@ -1,7 +1,7 @@
 import { getMessages } from "@/lib/i18n";
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import ProductGrid from "@/components/ecommerce/ProductGrid";
 import { notFound } from "next/navigation";
 import IconRenderer from "@/components/shared/IconRenderer";
@@ -113,7 +113,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               <div className="flex-shrink-0">
                 {category.image ? (
                   <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden">
-                    <Image
+                    <ResilientImage
                       src={category.image}
                       alt={categoryName}
                       fill

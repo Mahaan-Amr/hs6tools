@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import ResilientImage from "@/components/shared/ResilientImage";
 import { EducationLesson } from "@/types/education";
 import { LessonDifficulty } from "@prisma/client";
 import { getMessages, Messages } from "@/lib/i18n";
+import { normalizeLessonVideo } from "@/lib/lesson-video";
 
 interface LessonContentProps {
   lesson: EducationLesson;
@@ -65,28 +66,7 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const getVideoEmbedUrl = (url: string) => {
-    // YouTube
-    if (url.includes("youtube.com/watch") || url.includes("youtu.be/")) {
-      const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-      if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-    }
-    // Vimeo
-    if (url.includes("vimeo.com/")) {
-      const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
-      if (videoId) {
-        return `https://player.vimeo.com/video/${videoId}`;
-      }
-    }
-    // Return original URL if not recognized
-    return url;
-  };
-
-  const isUploadedVideo = (url: string) => {
-    return url.startsWith('/uploads/videos/') || url.startsWith('/api/uploads/videos/');
-  };
+  const video = normalizeLessonVideo(lesson.videoUrl);
 
   if (!messages || !messages.education) {
     return (
@@ -196,13 +176,13 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
           </div>
 
           {/* Video Content */}
-          {lesson.videoUrl && (
+          {video && (
             <div className="glass rounded-3xl overflow-hidden">
               <div className="aspect-video bg-black">
-                {isUploadedVideo(lesson.videoUrl) ? (
+                {video.kind === "upload" ? (
                   // Direct video playback for uploaded videos
                   <video
-                    src={lesson.videoUrl}
+                    src={video.url}
                     controls
                     className="w-full h-full"
                     preload="metadata"
@@ -212,7 +192,7 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
                 ) : (
                   // Embedded video for external URLs (YouTube, Vimeo, etc.)
                   <iframe
-                    src={getVideoEmbedUrl(lesson.videoUrl)}
+                    src={video.url}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -234,10 +214,16 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
           )}
 
           {/* Thumbnail if no video */}
-          {!lesson.videoUrl && lesson.thumbnail && (
+          {lesson.videoUrl && !video && (
+            <div className="glass flex aspect-video items-center justify-center rounded-3xl text-gray-600 dark:text-gray-300">
+              {String(t.lesson.browserNotSupported)}
+            </div>
+          )}
+
+          {!video && lesson.thumbnail && (
             <div className="glass rounded-3xl overflow-hidden">
               <div className="relative aspect-video">
-                <Image
+                <ResilientImage
                   src={lesson.thumbnail}
                   alt={lesson.title}
                   fill
@@ -304,7 +290,7 @@ export default function LessonContent({ lesson, relatedLessons, locale }: Lesson
                     <div className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors duration-200">
                       {relatedLesson.thumbnail ? (
                         <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                          <Image
+                          <ResilientImage
                             src={relatedLesson.thumbnail}
                             alt={relatedLesson.title}
                             fill
