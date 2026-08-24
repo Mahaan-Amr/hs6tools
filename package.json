@@ -12,6 +12,7 @@
     "test:security": "tsx --test tests/rich-content.test.ts tests/lesson-video.test.ts tests/image-source.test.ts tests/external-effects.test.ts",
     "test:staff-authority": "tsx --test tests/staff-authority.test.ts tests/staff-session.integration.test.ts",
     "test:recovery": "node --test tests/recovery-workflow.test.mjs",
+    "test:migrations": "node --test tests/migration-baseline.test.mjs",
     "lint": "eslint .",
     "ci:secure": "npm ci --ignore-scripts",
     "audit:prod": "npm audit --production",
@@ -23,7 +24,8 @@
     "db:migrate:status": "prisma migrate status",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
-    "db:status": "node scripts/database-status-report.js"
+    "db:status": "node scripts/database-status-report.js",
+    "db:verify-migrations": "node scripts/verify-migration-baseline.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

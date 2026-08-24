@@ -44,16 +44,9 @@ DATABASE_URL="postgresql://postgres:hiddenitch1739@localhost:5432/hs6tools"
 
 ### Step 3: Run Prisma Migrations
 
-```bash
-# Generate Prisma client
-npx prisma generate
-
-# Create and run initial migration
-npx prisma migrate dev --name init
-
-# Verify database schema
-npx prisma studio
-```
+Follow [the database migration policy](docs/database-migrations.md). A fresh
+database must use the verified baseline; replaying the historical migration
+directories in filename order is unsupported.
 
 ### Step 4: Seed Database (Optional)
 

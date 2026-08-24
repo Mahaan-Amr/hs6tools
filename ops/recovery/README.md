@@ -4,6 +4,9 @@ This package establishes a fifteen-minute **logical-failure RPO** and a sixty-mi
 
 Nothing in this package deploys, restarts, migrates, restores, deletes, or reconfigures Production automatically. Production enablement is a separate release operation after a Staging rehearsal and rollback plan.
 
+Database creation and forward evolution follow the
+[immutable baseline and expand–migrate–contract policy](../../docs/database-migrations.md).
+
 ## Recovery inventory and retention
 
 | Content | Mechanism | Cadence / bound | Retention |

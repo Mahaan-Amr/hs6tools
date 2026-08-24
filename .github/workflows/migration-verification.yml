@@ -1,0 +1,58 @@
+name: Migration baseline verification
+
+on:
+  pull_request:
+    paths:
+      - "prisma/**"
+      - "scripts/verify-migration-baseline.mjs"
+      - "tests/migration-baseline.test.mjs"
+      - "docs/database-migrations.md"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/migration-verification.yml"
+  push:
+    branches: [master, main]
+    paths:
+      - "prisma/**"
+      - "scripts/verify-migration-baseline.mjs"
+      - "tests/migration-baseline.test.mjs"
+      - "docs/database-migrations.md"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/migration-verification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  migration-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: migration-test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:migration-test@127.0.0.1:5432/postgres
+      MIGRATION_VERIFY_ADMIN_URL: postgresql://postgres:migration-test@127.0.0.1:5432/postgres
+      MIGRATION_VERIFY_ISOLATED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.9.0
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Test migration file contract
+        run: npm run test:migrations
+      - name: Rehearse fresh and existing database paths
+        run: npm run db:verify-migrations
+      - name: Typecheck
+        run: npx tsc --noEmit

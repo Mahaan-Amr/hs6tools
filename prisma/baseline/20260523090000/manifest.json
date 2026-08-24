@@ -1,0 +1,81 @@
+{
+  "baseline": {
+    "migration": "20260523090000_expand_money_and_site_seo",
+    "schema": "prisma/baseline/20260523090000/schema.sql",
+    "sha256": "bf93e8129fd523ed331d1fe3a99f0439856f512a8fbcdcd5014ecd91a2cf434f"
+  },
+  "productionExecutionOrder": [
+    {
+      "migration": "20250815182730_init",
+      "sha256": "9f45167108b84cc7a8f6417c0dde5e7aac111274db98e1bf97e6c7e4bd94d967"
+    },
+    {
+      "migration": "20250815183000_add_multilingual_category_fields",
+      "sha256": "fd688fd9b6f8cde6a6ea07c4316db553d90daa899bbcdf7fb84f8b70e26d4fd7"
+    },
+    {
+      "migration": "20250817185534_add_multilingual_product_fields",
+      "sha256": "c5f9b77ca4d071127773099793301a3f0917284fa85dac495e4f558ef542c86e"
+    },
+    {
+      "migration": "20251009122421_add_crm_models",
+      "sha256": "5c7d9e43c5c7bec8c8a03415fcf92f6b5155d01d52b21a752be7bacf440c54e2"
+    },
+    {
+      "migration": "20251009141439_add_lead_management_models",
+      "sha256": "9d46a2e92c7a2140e7b0f5fe4af93892bee83e70cb6d852268215a096ebc25b0"
+    },
+    {
+      "migration": "20251109121935_add_education_system",
+      "sha256": "7814740291ba761eccd70115e2a2027b96e8f1ca92477c320acb1fd58b6033b9"
+    },
+    {
+      "migration": "20251201140054_add_verification_codes",
+      "sha256": "16f96d976ad54c85f4e79c23dbcca26e709cb7ce52355cd98508bb1079f521df"
+    },
+    {
+      "migration": "20251201143342_add_coupon_system",
+      "sha256": "bbb2b90ca90c9203d6a0bc98c55394cae76f775746c7f5b02f8baa95b980841c"
+    },
+    {
+      "migration": "20251201150000_simplify_crm_system",
+      "sha256": "26b7f9c1223fd20ec856477cb5055f3f4e10418fdb0fef175e2ddb9691c9cc31"
+    },
+    {
+      "migration": "20250101000000_remove_billing_address",
+      "sha256": "b5c187eec92ea864f8a854d25e7ea1346a1743276615c06a7d170a22036f2075"
+    },
+    {
+      "migration": "20251208000000_add_order_expiry",
+      "sha256": "9a8728e3dad90cf66584d36108f9237cb6686639058e552a74620b58eb429679"
+    },
+    {
+      "migration": "20250121000000_add_shipping_method_config",
+      "sha256": "6626c5313a1570943be3b95b5de6ea1cd83b8bd3e31cc744d32958dbaaa1d1e2"
+    },
+    {
+      "migration": "20250121140000_add_shipping_method_id_to_orders",
+      "sha256": "46798ed80d457024b2091ea995b8f3ff8bd0a740a1c7972078579af7fb206009"
+    },
+    {
+      "migration": "20260505120000_add_homepage_cms",
+      "sha256": "3c5e16682748441da5010277dd23e6daf7af5f59610691f18dc8f160b0369e93"
+    },
+    {
+      "migration": "20260513120000_add_dynamic_homepage_featured_categories",
+      "sha256": "e9e1d8681747d440df6c0ace0bc19395eed2d1271def1105f20180ddda271ab9"
+    },
+    {
+      "migration": "20260513143000_add_page_cms_content",
+      "sha256": "85c64d05690834bf390861f1a558733ff7091d59ac0d0cc9de88e7e4d638dfc7"
+    },
+    {
+      "migration": "20260513170000_add_ticketing_system",
+      "sha256": "fb1c59b1b2133bf683d0877de059edd6604606f1876feadb738acf8f202d36d1"
+    },
+    {
+      "migration": "20260523090000_expand_money_and_site_seo",
+      "sha256": "9b4e3e1e14984c8ce27596940767b00a12aaa4e786bc24a05c5564888fcbee57"
+    }
+  ]
+}
