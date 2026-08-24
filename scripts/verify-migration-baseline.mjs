@@ -1,10 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const migrationsDirectory = resolve(root, "prisma/migrations");
 const manifestPath = resolve(
   root,

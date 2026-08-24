@@ -50,6 +50,7 @@ jobs:
           node-version: 20.9.0
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npx prisma generate
       - name: Test migration file contract
         run: npm run test:migrations
       - name: Rehearse fresh and existing database paths

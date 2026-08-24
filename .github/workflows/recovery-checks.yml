@@ -51,6 +51,7 @@ jobs:
           node-version: 20.9.0
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npx prisma generate
       - name: Validate recovery shell syntax
         run: bash -n ops/recovery/*.sh
       - name: Test recovery safety contract
