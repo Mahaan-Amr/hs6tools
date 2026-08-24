@@ -446,6 +446,28 @@ model PaymentSettings {
   @@map("payment_settings")
 }
 
+model SettingsAuditLog {
+  id            String   @id @default(cuid())
+  actorId       String
+  settingsGroup SettingsGroup
+  action        SettingsAuditAction
+  createdAt     DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@map("settings_audit_logs")
+}
+
+enum SettingsGroup {
+  SYSTEM
+  PAYMENT
+  EMAIL
+}
+
+enum SettingsAuditAction {
+  INITIALIZED
+  CONFIGURED
+}
+
 model HomepageContent {
   id                         String   @id @default(cuid())
   locale                     String   @unique

@@ -54,7 +54,11 @@ export default function PaymentSettingsForm({
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          setFormData(result.data);
+          setFormData((previous) => ({
+            ...previous,
+            ...result.data,
+            zarinpalApiKey: "",
+          }));
         }
       }
     } catch (error) {

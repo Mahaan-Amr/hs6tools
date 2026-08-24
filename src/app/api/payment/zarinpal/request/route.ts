@@ -82,47 +82,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get payment settings or create default if not exists
-    let paymentSettings = await prisma.paymentSettings.findFirst();
-
-    if (!paymentSettings) {
-      // Create default payment settings if not exists
-      paymentSettings = await prisma.paymentSettings.create({
-        data: {
-          zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || "",
-          zarinpalApiKey: process.env.ZARINPAL_API_KEY || "",
-          zarinpalSandbox: parseZarinpalSandbox(process.env.ZARINPAL_SANDBOX),
-          allowBankTransfer: true,
-          allowCashOnDelivery: true,
+    const paymentSettings = await prisma.paymentSettings.findFirst();
+    const configuredMerchantId =
+      paymentSettings?.zarinpalMerchantId || process.env.ZARINPAL_MERCHANT_ID || "";
+    if (!configuredMerchantId.trim()) {
+      console.error(
+        "❌ [Payment Request] Zarinpal Merchant ID is not configured",
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Payment gateway is not configured. Please configure Zarinpal Merchant ID in admin settings or environment variables.",
         },
-      });
-    }
-
-    if (
-      !paymentSettings.zarinpalMerchantId ||
-      paymentSettings.zarinpalMerchantId.trim() === ""
-    ) {
-      // Try to get from environment variable as fallback
-      const envMerchantId = process.env.ZARINPAL_MERCHANT_ID;
-      if (envMerchantId) {
-        paymentSettings.zarinpalMerchantId = envMerchantId;
-      } else {
-        console.error(
-          "❌ [Payment Request] Zarinpal Merchant ID is not configured",
-        );
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Payment gateway is not configured. Please configure Zarinpal Merchant ID in admin settings or environment variables.",
-          },
-          { status: 500 },
-        );
-      }
+        { status: 500 },
+      );
     }
 
     // Validate merchant ID format (Zarinpal requires at least 36 characters)
-    const merchantId = paymentSettings.zarinpalMerchantId.trim();
+    const merchantId = configuredMerchantId.trim();
     if (merchantId.length < 36) {
       console.error("❌ [Payment Request] Invalid merchant ID length:", {
         length: merchantId.length,
@@ -237,7 +215,9 @@ export async function POST(request: NextRequest) {
       callbackUrl,
       mobile: mobileFormatted,
       email: emailFormatted,
-      sandbox: paymentSettings.zarinpalSandbox,
+      sandbox:
+        paymentSettings?.zarinpalSandbox ??
+        parseZarinpalSandbox(process.env.ZARINPAL_SANDBOX),
     });
 
     if (

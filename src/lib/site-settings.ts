@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { defaultLocale, Locale, locales } from "@/lib/i18n";
 
 export interface LocaleSeoSettings {
@@ -11,7 +10,7 @@ export interface LocaleSeoSettings {
 
 export type SiteSeoSettings = Record<Locale, LocaleSeoSettings>;
 
-const defaultSeo: SiteSeoSettings = {
+export const defaultSeo: SiteSeoSettings = {
   fa: {
     title: "HS6Tools",
     description: "تولید کننده ابزارآلات صنعتی و نجاری با کیفیت بالا.",
@@ -30,6 +29,24 @@ const defaultSeo: SiteSeoSettings = {
     keywords: "أدوات صناعية, أدوات نجارة, أقراص ألماسية, قواطع, مشابك",
     socialImage: "/logo.svg",
   },
+};
+
+export const defaultSystemSettings = {
+  id: "default",
+  siteName: "HS6Tools",
+  siteDescription: "Industrial E-Commerce Platform",
+  siteUrl: "https://hs6tools.com",
+  siteSeo: defaultSeo,
+  contactEmail: "support@hs6tools.com",
+  contactPhone: "+98-21-12345678",
+  businessAddress: "Tehran, Iran",
+  currency: "IRR",
+  language: "fa",
+  timezone: "Asia/Tehran",
+  maintenanceMode: false,
+  allowRegistration: true,
+  requireEmailVerification: false,
+  requirePhoneVerification: false,
 };
 
 export function normalizeSiteSeo(value: unknown): SiteSeoSettings {
@@ -74,28 +91,8 @@ export async function getSystemSettings() {
     };
   }
 
-  const created = await prisma.systemSettings.create({
-    data: {
-      id: "default",
-      siteName: "HS6Tools",
-      siteDescription: "Industrial E-Commerce Platform",
-      siteUrl: "https://hs6tools.com",
-      siteSeo: defaultSeo as unknown as Prisma.InputJsonValue,
-      contactEmail: "support@hs6tools.com",
-      contactPhone: "+98-21-12345678",
-      businessAddress: "Tehran, Iran",
-      currency: "IRR",
-      language: "fa",
-      timezone: "Asia/Tehran",
-      maintenanceMode: false,
-      allowRegistration: true,
-      requireEmailVerification: false,
-      requirePhoneVerification: false,
-    },
-  });
-
   return {
-    ...created,
-    siteSeo: normalizeSiteSeo(created.siteSeo),
+    ...defaultSystemSettings,
+    siteSeo: normalizeSiteSeo(defaultSystemSettings.siteSeo),
   };
 }

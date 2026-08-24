@@ -1,96 +1,100 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { Prisma } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { Prisma, SettingsAuditAction, SettingsGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getSystemSettings, normalizeSiteSeo } from "@/lib/site-settings";
+import {
+  defaultSystemSettings,
+  normalizeSiteSeo,
+} from "@/lib/site-settings";
+import {
+  configureSettings,
+  createRestrictedSettingsHandlers,
+  initializeSettings,
+} from "@/lib/settings-api";
+import {
+  getSettingsPrincipal,
+  recordSettingsInitialization,
+} from "@/lib/settings-store";
 
-export async function GET() {
-  try {
-    const settings = await getSystemSettings();
+type SystemSettingsInput = Omit<
+  typeof defaultSystemSettings,
+  "id" | "siteSeo"
+> & { siteSeo: unknown };
 
-    return NextResponse.json({ success: true, data: settings });
-  } catch (error) {
-    console.error("Error fetching system settings:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+function validateSystemSettings(input: unknown) {
+  if (!input || typeof input !== "object") {
+    return { ok: false as const, error: "Invalid settings" };
   }
+
+  const value = input as SystemSettingsInput;
+  if (!value.siteName || !value.siteUrl || !value.contactEmail) {
+    return { ok: false as const, error: "Missing required fields" };
+  }
+
+  return { ok: true as const, value };
 }
 
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+const handlers = createRestrictedSettingsHandlers({
+  getPrincipal: getSettingsPrincipal,
+  read: () => prisma.systemSettings.findFirst(),
+  initialize: (actorId) =>
+    prisma.$transaction((transaction) =>
+      initializeSettings({
+        read: () =>
+          transaction.systemSettings.findFirst(),
+        create: async () => {
+          const creation = await transaction.systemSettings.createMany({
+            data: [{
+              ...defaultSystemSettings,
+              siteSeo:
+                defaultSystemSettings.siteSeo as unknown as Prisma.InputJsonValue,
+            }],
+            skipDuplicates: true,
+          });
+          const settings = await transaction.systemSettings.findUniqueOrThrow({
+            where: { id: "default" },
+          });
+          return { settings, created: creation.count === 1 };
+        },
+        audit: () =>
+          recordSettingsInitialization(
+            transaction,
+            SettingsGroup.SYSTEM,
+            actorId,
+          ),
+      }),
+    ),
+  update: (input: SystemSettingsInput, actorId) =>
+    prisma.$transaction((transaction) => {
+      const data = {
+        ...input,
+        siteSeo: normalizeSiteSeo(
+          input.siteSeo,
+        ) as unknown as Prisma.InputJsonValue,
+      };
+      return configureSettings({
+        read: () => transaction.systemSettings.findFirst(),
+        write: (existing) =>
+          existing
+            ? transaction.systemSettings.update({
+                where: { id: existing.id },
+                data,
+              })
+            : transaction.systemSettings.create({
+                data: { id: "default", ...data },
+              }),
+        audit: () =>
+          recordSettingsInitialization(
+            transaction,
+            SettingsGroup.SYSTEM,
+            actorId,
+            SettingsAuditAction.CONFIGURED,
+          ),
+      });
+    }),
+  sanitize: (settings) => ({
+    ...settings,
+    siteSeo: normalizeSiteSeo(settings.siteSeo),
+  }),
+  validate: validateSystemSettings,
+});
 
-    const body = await request.json();
-    const {
-      siteName,
-      siteDescription,
-      siteUrl,
-      siteSeo,
-      contactEmail,
-      contactPhone,
-      businessAddress,
-      currency,
-      language,
-      timezone,
-      maintenanceMode,
-      allowRegistration,
-      requireEmailVerification,
-      requirePhoneVerification,
-    } = body;
-
-    // Validate required fields
-    if (!siteName || !siteUrl || !contactEmail) {
-      return NextResponse.json(
-        { success: false, error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const existingSettings = await prisma.systemSettings.findFirst({ select: { id: true } });
-    const settingsData = {
-      siteName,
-      siteDescription,
-      siteUrl,
-      siteSeo: normalizeSiteSeo(siteSeo) as unknown as Prisma.InputJsonValue,
-      contactEmail,
-      contactPhone,
-      businessAddress,
-      currency,
-      language,
-      timezone,
-      maintenanceMode,
-      allowRegistration,
-      requireEmailVerification,
-      requirePhoneVerification,
-    };
-
-    const settings = existingSettings
-      ? await prisma.systemSettings.update({
-          where: { id: existingSettings.id },
-          data: settingsData,
-        })
-      : await prisma.systemSettings.create({
-          data: {
-            id: "default",
-            ...settingsData,
-          },
-        });
-
-    return NextResponse.json({ success: true, data: settings });
-  } catch (error) {
-    console.error("Error updating system settings:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+export const { GET, POST, PUT } = handlers;

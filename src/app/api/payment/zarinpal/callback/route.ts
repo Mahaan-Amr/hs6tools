@@ -82,39 +82,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(successUrl);
     }
 
-    // Get payment settings or create default if not exists (same logic as request route)
-    let paymentSettings = await prisma.paymentSettings.findFirst();
-
-    if (!paymentSettings) {
-      // Create default payment settings if not exists
-      paymentSettings = await prisma.paymentSettings.create({
-        data: {
-          zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || "",
-          zarinpalApiKey: process.env.ZARINPAL_API_KEY || "",
-          zarinpalSandbox: parseZarinpalSandbox(process.env.ZARINPAL_SANDBOX),
-          allowBankTransfer: true,
-          allowCashOnDelivery: true,
-        },
-      });
-    }
-
-    // Fallback to environment variable if merchant ID is empty
-    if (
-      !paymentSettings.zarinpalMerchantId ||
-      paymentSettings.zarinpalMerchantId.trim() === ""
-    ) {
-      const envMerchantId = process.env.ZARINPAL_MERCHANT_ID;
-      if (envMerchantId) {
-        paymentSettings.zarinpalMerchantId = envMerchantId;
-      } else {
-        console.error(
-          "❌ [Payment Callback] Zarinpal Merchant ID is not configured",
-        );
-        const origin = getSiteOrigin(request);
-        return NextResponse.redirect(
-          new URL("/fa/checkout?error=payment_config_error", origin),
-        );
-      }
+    const paymentSettings = await prisma.paymentSettings.findFirst();
+    const merchantId =
+      paymentSettings?.zarinpalMerchantId || process.env.ZARINPAL_MERCHANT_ID || "";
+    if (!merchantId.trim()) {
+      console.error(
+        "❌ [Payment Callback] Zarinpal Merchant ID is not configured",
+      );
+      const origin = getSiteOrigin(request);
+      return NextResponse.redirect(
+        new URL("/fa/checkout?error=payment_config_error", origin),
+      );
     }
 
     // Check if payment was cancelled (Status = NOK)
@@ -171,10 +149,12 @@ export async function GET(request: NextRequest) {
     const amountInRials = Number(order.totalAmount);
 
     const verifyResult = await verifyPayment({
-      merchantId: paymentSettings.zarinpalMerchantId,
+      merchantId: merchantId.trim(),
       authority,
       amount: amountInRials,
-      sandbox: paymentSettings.zarinpalSandbox,
+      sandbox:
+        paymentSettings?.zarinpalSandbox ??
+        parseZarinpalSandbox(process.env.ZARINPAL_SANDBOX),
     });
 
     if (!verifyResult.success || !verifyResult.refId) {

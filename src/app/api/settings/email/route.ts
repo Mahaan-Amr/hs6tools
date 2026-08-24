@@ -1,115 +1,105 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { SettingsAuditAction, SettingsGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  configureSettings,
+  createRestrictedSettingsHandlers,
+  initializeSettings,
+} from "@/lib/settings-api";
+import {
+  getSettingsPrincipal,
+  recordSettingsInitialization,
+} from "@/lib/settings-store";
+import { sanitizeEmailSettings } from "@/lib/settings-redaction";
 
-export async function GET() {
-  try {
-    // Get email settings (create default if none exist)
-    let settings = await prisma.emailSettings.findFirst();
-    
-    if (!settings) {
-      // Create default settings
-      settings = await prisma.emailSettings.create({
-        data: {
-          smtpHost: "smtp.gmail.com",
-          smtpPort: 587,
-          smtpUser: "",
-          smtpPassword: "",
-          fromEmail: "noreply@hs6tools.com",
-          fromName: "HS6Tools",
-          enableSSL: true,
-          isActive: false,
+type EmailSettingsInput = {
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword?: string;
+  fromEmail: string;
+  fromName: string;
+  enableSSL: boolean;
+  isActive: boolean;
+};
+
+const defaultEmailSettings: EmailSettingsInput = {
+  smtpHost: "smtp.gmail.com",
+  smtpPort: 587,
+  smtpUser: "",
+  smtpPassword: "",
+  fromEmail: "noreply@hs6tools.com",
+  fromName: "HS6Tools",
+  enableSSL: true,
+  isActive: false,
+};
+
+function validateEmailSettings(input: unknown) {
+  if (!input || typeof input !== "object") {
+    return { ok: false as const, error: "Invalid settings" };
+  }
+  const value = input as EmailSettingsInput;
+  if (!value.smtpHost || !value.smtpPort || !value.fromEmail || !value.fromName) {
+    return { ok: false as const, error: "Missing required fields" };
+  }
+  if (value.smtpPort < 1 || value.smtpPort > 65_535) {
+    return { ok: false as const, error: "Invalid port number" };
+  }
+  return { ok: true as const, value };
+}
+
+const handlers = createRestrictedSettingsHandlers({
+  getPrincipal: getSettingsPrincipal,
+  read: () => prisma.emailSettings.findFirst(),
+  initialize: (actorId) =>
+    prisma.$transaction((transaction) =>
+      initializeSettings({
+        read: () =>
+          transaction.emailSettings.findFirst(),
+        create: async () => {
+          const creation = await transaction.emailSettings.createMany({
+            data: [{ id: "default", ...defaultEmailSettings }],
+            skipDuplicates: true,
+          });
+          const settings = await transaction.emailSettings.findUniqueOrThrow({
+            where: { id: "default" },
+          });
+          return { settings, created: creation.count === 1 };
         },
-      });
-    }
+        audit: () =>
+          recordSettingsInitialization(
+            transaction,
+            SettingsGroup.EMAIL,
+            actorId,
+          ),
+      }),
+    ),
+  update: (input: EmailSettingsInput, actorId) =>
+    prisma.$transaction((transaction) =>
+      configureSettings({
+        read: () => transaction.emailSettings.findFirst(),
+        write: (existing) => {
+          const smtpPassword = input.smtpPassword || existing?.smtpPassword || "";
+          const data = { ...input, smtpPassword };
+          return existing
+            ? transaction.emailSettings.update({
+                where: { id: existing.id },
+                data,
+              })
+            : transaction.emailSettings.create({
+                data: { id: "default", ...data },
+              });
+        },
+        audit: () =>
+          recordSettingsInitialization(
+            transaction,
+            SettingsGroup.EMAIL,
+            actorId,
+            SettingsAuditAction.CONFIGURED,
+          ),
+      }),
+    ),
+  sanitize: sanitizeEmailSettings,
+  validate: validateEmailSettings,
+});
 
-    // Don't return the password in the response
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { smtpPassword: _unused, ...safeSettings } = settings;
-    return NextResponse.json({ success: true, data: safeSettings });
-  } catch (error) {
-    console.error("Error fetching email settings:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const {
-      smtpHost,
-      smtpPort,
-      smtpUser,
-      smtpPassword,
-      fromEmail,
-      fromName,
-      enableSSL,
-      isActive,
-    } = body;
-
-    // Validate required fields
-    if (!smtpHost || !smtpPort || !fromEmail || !fromName) {
-      return NextResponse.json(
-        { success: false, error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    // Validate port number
-    if (smtpPort < 1 || smtpPort > 65535) {
-      return NextResponse.json(
-        { success: false, error: "Invalid port number" },
-        { status: 400 }
-      );
-    }
-
-    // Update or create settings
-    const settings = await prisma.emailSettings.upsert({
-      where: { id: "default" },
-      update: {
-        smtpHost,
-        smtpPort,
-        smtpUser,
-        smtpPassword: smtpPassword || undefined, // Only update if provided
-        fromEmail,
-        fromName,
-        enableSSL,
-        isActive,
-      },
-      create: {
-        id: "default",
-        smtpHost,
-        smtpPort,
-        smtpUser,
-        smtpPassword,
-        fromEmail,
-        fromName,
-        enableSSL,
-        isActive,
-      },
-    });
-
-    // Don't return the password in the response
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { smtpPassword: _unused, ...safeSettings } = settings;
-    return NextResponse.json({ success: true, data: safeSettings });
-  } catch (error) {
-    console.error("Error updating email settings:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+export const { GET, POST, PUT } = handlers;

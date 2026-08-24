@@ -57,7 +57,11 @@ export default function EmailSettingsForm({
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          setFormData(result.data);
+          setFormData((previous) => ({
+            ...previous,
+            ...result.data,
+            smtpPassword: "",
+          }));
         }
       }
     } catch (error) {
