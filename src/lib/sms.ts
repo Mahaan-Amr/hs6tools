@@ -9,6 +9,10 @@
 
 import * as Kavenegar from "kavenegar";
 import type { kavenegar } from "kavenegar";
+import {
+  externalEffectsAreDisabled,
+  externalEffectsDisabledError,
+} from "./external-effects";
 
 // SMS.ir imports (dynamic import to avoid errors if package not installed)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -907,6 +911,10 @@ async function sendVerificationCodeViaKavenegar(
  * Automatically uses SMS.ir if configured, otherwise falls back to Kavenegar
  */
 export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("SMS");
+  }
+
   const provider = detectSMSProvider();
 
   if (provider === "smsir") {
@@ -933,6 +941,10 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
 export async function sendVerificationCode(
   options: VerifyLookupOptions,
 ): Promise<SMSResponse> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("SMS");
+  }
+
   const provider = detectSMSProvider();
 
   if (provider === "smsir") {
@@ -958,6 +970,10 @@ export async function sendVerificationCode(
 export async function sendTemplateSMS(
   options: TemplateSMSOptions,
 ): Promise<SMSResponse> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("SMS");
+  }
+
   const provider = detectSMSProvider();
 
   if (provider !== "smsir") {
@@ -1062,6 +1078,10 @@ export async function sendBulkSMS(
   message: string,
   sender?: string,
 ): Promise<SMSResponse> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("SMS");
+  }
+
   const provider = detectSMSProvider();
 
   if (provider === "kavenegar") {
@@ -1130,6 +1150,10 @@ export async function sendBulkSMS(
  * Currently only supports Kavenegar (SMS.ir status API can be added later)
  */
 export async function getSMSStatus(messageId: string): Promise<SMSResponse> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("SMS status lookup");
+  }
+
   const provider = detectSMSProvider();
 
   if (provider === "kavenegar") {
@@ -1350,6 +1374,10 @@ export async function sendSMSSafe(
   options: SendSMSOptions,
   errorContext?: string,
 ): Promise<void> {
+  if (externalEffectsAreDisabled()) {
+    return;
+  }
+
   try {
     const skipSMSInDev = process.env.SKIP_SMS_IN_DEV === "true";
     const isDevelopment =
@@ -1414,6 +1442,10 @@ export async function sendTemplateSMSSafe(
   fallbackMessage: string,
   errorContext?: string,
 ): Promise<void> {
+  if (externalEffectsAreDisabled()) {
+    return;
+  }
+
   try {
     const skipSMSInDev = process.env.SKIP_SMS_IN_DEV === "true";
     const isDevelopment =
@@ -1487,6 +1519,10 @@ export async function sendLowStockAlert(
   lowStockThreshold: number,
   adminPhones: string[],
 ): Promise<void> {
+  if (externalEffectsAreDisabled()) {
+    return;
+  }
+
   if (adminPhones.length === 0) {
     console.warn("[SMS] No admin phone numbers provided for low stock alert");
     return;

@@ -1,0 +1,9 @@
+# Merge only after Staging rehearsal and separate Release Owner approval.
+# archive_timeout bounds the unarchived WAL window to fifteen minutes.
+wal_level = replica
+archive_mode = on
+archive_timeout = '15min'
+archive_command = 'RECOVERY_CONFIG_FILE=/etc/hs6tools/recovery.env /opt/hs6tools/current/ops/recovery/archive-wal.sh "%p" "%f"'
+
+# Use this only in an isolated PITR recovery instance, never in Production.
+# restore_command = 'RECOVERY_CONFIG_FILE=/etc/hs6tools/recovery.env /opt/hs6tools/current/ops/recovery/restore-wal.sh "%f" "%p"'

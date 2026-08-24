@@ -1,0 +1,114 @@
+name: Recovery workflow checks
+
+on:
+  pull_request:
+    paths:
+      - "ops/recovery/**"
+      - "src/lib/external-effects.ts"
+      - "src/lib/email.ts"
+      - "src/lib/sms.ts"
+      - "src/lib/zarinpal.ts"
+      - "tests/recovery-workflow.test.mjs"
+      - "tests/external-effects.test.ts"
+      - "package.json"
+  push:
+    branches: [master, main]
+    paths:
+      - "ops/recovery/**"
+      - "src/lib/external-effects.ts"
+      - "src/lib/email.ts"
+      - "src/lib/sms.ts"
+      - "src/lib/zarinpal.ts"
+      - "tests/recovery-workflow.test.mjs"
+      - "tests/external-effects.test.ts"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: recovery-test
+          POSTGRES_DB: hs6tools_restore_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hs6tools_restore_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:recovery-test@127.0.0.1:5432/hs6tools_restore_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.9.0
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Validate recovery shell syntax
+        run: bash -n ops/recovery/*.sh
+      - name: Test recovery safety contract
+        run: npm run test:recovery
+      - name: Test external-effects kill switch
+        run: npx tsx --test tests/external-effects.test.ts
+      - name: Rehearse deterministic masking on PostgreSQL
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+          npx prisma db push --skip-generate
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/recovery-personal-data.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -Atf ops/recovery/row-counts.sql > /tmp/rows-before-mask
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f ops/recovery/mask-production-data.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f ops/recovery/validate-masked-data.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -Atf ops/recovery/row-counts.sql > /tmp/rows-after-mask
+          diff -u /tmp/rows-before-mask /tmp/rows-after-mask
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f ops/recovery/mask-production-data.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f ops/recovery/validate-masked-data.sql
+      - name: Verify isolated-cluster authorization marker
+        shell: bash
+        run: |
+          psql "postgresql://postgres:recovery-test@127.0.0.1:5432/postgres" \
+            -v ON_ERROR_STOP=1 -c 'CREATE DATABASE hs6tools_recovery_control'
+          psql "postgresql://postgres:recovery-test@127.0.0.1:5432/hs6tools_recovery_control" \
+            -v ON_ERROR_STOP=1 \
+            --set=recovery_environment=staging \
+            --set=recovery_instance_id=ci-isolated-cluster \
+            --file=ops/recovery/initialize-isolated-control.sql
+          RECOVERY_ENVIRONMENT=staging \
+          RECOVERY_INSTANCE_ID=ci-isolated-cluster \
+          RECOVERY_CONTROL_DATABASE_URL="postgresql://postgres:recovery-test@127.0.0.1:5432/hs6tools_recovery_control" \
+          RECOVERY_ADMIN_DATABASE_URL="postgresql://postgres:recovery-test@127.0.0.1:5432/postgres" \
+          TARGET_DATABASE_URL="$DATABASE_URL" \
+            bash -c 'source ops/recovery/common.sh; verify_isolated_postgres_control'
+      - name: Verify recovery smoke uses the restored database
+        shell: bash
+        env:
+          EXTERNAL_EFFECTS_DISABLED: "true"
+          RECOVERY_EXPECTED_DATABASE: hs6tools_restore_ci
+          RECOVERY_SMOKE_TOKEN: ci-recovery-smoke-token-000000000000
+        run: |
+          npm run build
+          npm start -- --port 3100 > /tmp/recovery-app.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent \
+              -H "X-Recovery-Smoke-Token: $RECOVERY_SMOKE_TOKEN" \
+              http://127.0.0.1:3100/api/recovery/smoke > /tmp/recovery-smoke.json; then
+              break
+            fi
+            sleep 1
+          done
+          node -e '
+            const result = JSON.parse(require("node:fs").readFileSync("/tmp/recovery-smoke.json", "utf8"));
+            if (result.success !== true || result.database !== "hs6tools_restore_ci" || result.externalEffectsDisabled !== true) process.exit(1);
+          '
+      - name: Typecheck
+        run: npx tsc --noEmit

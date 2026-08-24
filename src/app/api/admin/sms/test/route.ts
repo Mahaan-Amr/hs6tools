@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { externalEffectsAreDisabled } from "@/lib/external-effects";
 
 /**
  * GET /api/admin/sms/test
@@ -10,6 +11,13 @@ import { authOptions } from "@/lib/auth";
  */
 export async function GET() {
   try {
+    if (externalEffectsAreDisabled()) {
+      return NextResponse.json(
+        { success: false, error: "SMS diagnostics are disabled in this environment" },
+        { status: 503 },
+      );
+    }
+
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {

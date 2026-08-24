@@ -1,0 +1,15 @@
+[Unit]
+Description=HS6Tools encrypted PostgreSQL PITR base backup
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=hs6backup
+Group=hs6backup
+Environment=RECOVERY_CONFIG_FILE=/etc/hs6tools/recovery.env
+ExecStart=/opt/hs6tools/current/ops/recovery/pitr-base-backup.sh
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/hs6tools /var/log/hs6tools

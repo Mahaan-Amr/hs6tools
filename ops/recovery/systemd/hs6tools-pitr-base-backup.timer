@@ -1,0 +1,11 @@
+[Unit]
+Description=Run HS6Tools PITR base backup weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 01:00:00
+Persistent=true
+RandomizedDelaySec=10m
+Unit=hs6tools-pitr-base-backup.service
+
+[Install]
+WantedBy=timers.target

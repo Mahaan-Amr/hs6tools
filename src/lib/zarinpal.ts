@@ -11,6 +11,11 @@
  * - Refund: POST /pg/v4/payment/refund.json
  */
 
+import {
+  externalEffectsAreDisabled,
+  externalEffectsDisabledError,
+} from "./external-effects";
+
 // Zarinpal API Response Types
 export interface ZarinpalPaymentRequestResponse {
   data: {
@@ -171,6 +176,10 @@ export async function requestPayment(
   paymentUrl?: string;
   error?: string;
 }> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("payment");
+  }
+
   const timeoutMs = 15000;
   const controller = new AbortController();
   let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -296,6 +305,10 @@ export async function requestPayment(
 export async function verifyPayment(
   options: PaymentVerifyOptions,
 ): Promise<{ success: boolean; refId?: number; error?: string }> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("payment verification");
+  }
+
   try {
     const baseUrl = getApiBaseUrl(options.sandbox);
     const url = `${baseUrl}/payment/verify.json`;
@@ -369,6 +382,10 @@ export async function getUnverifiedTransactions(
   merchantId: string,
   sandbox: boolean = false,
 ): Promise<{ success: boolean; authorities?: string[]; error?: string }> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("payment lookup");
+  }
+
   try {
     const baseUrl = getApiBaseUrl(sandbox);
     const url = `${baseUrl}/payment/unVerified.json?merchant_id=${merchantId}`;
@@ -426,6 +443,10 @@ export async function getUnverifiedTransactions(
 export async function refundPayment(
   options: RefundOptions,
 ): Promise<{ success: boolean; refundId?: number; error?: string }> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError("payment refund");
+  }
+
   try {
     const baseUrl = getApiBaseUrl(options.sandbox);
     const url = `${baseUrl}/payment/refund.json`;

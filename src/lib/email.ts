@@ -1,5 +1,9 @@
 import nodemailer from 'nodemailer';
 import { prisma } from './prisma';
+import {
+  externalEffectsAreDisabled,
+  externalEffectsDisabledError,
+} from './external-effects';
 
 /**
  * Get email transporter from settings
@@ -35,6 +39,10 @@ export interface SendEmailOptions {
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean; error?: string }> {
+  if (externalEffectsAreDisabled()) {
+    return externalEffectsDisabledError('email');
+  }
+
   try {
     const settings = await prisma.emailSettings.findFirst();
     

@@ -1,0 +1,2 @@
+# Copy to /etc/hs6tools/.pgpass with mode 0400 and replace the placeholder.
+localhost:5432:hs6tools_prod:hs6backup:replace-with-backup-role-password

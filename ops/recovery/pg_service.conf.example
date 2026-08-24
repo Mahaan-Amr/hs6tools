@@ -1,0 +1,8 @@
+[hs6tools-backup]
+host=localhost
+port=5432
+dbname=hs6tools_prod
+user=hs6backup
+connect_timeout=10
+
+# Keep passwords out of this file. Store them only in the protected PGPASSFILE.
