@@ -1,32 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/authz";
 
 // GET /api/admin/shipping-methods - Get all shipping methods
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true }
-    });
-
-    if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
-      return NextResponse.json(
-        { success: false, error: "Admin access required" },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!auth.ok) return auth.response;
 
     const shippingMethods = await prisma.shippingMethodConfig.findMany({
       orderBy: [
@@ -75,27 +55,8 @@ export async function GET() {
 // POST /api/admin/shipping-methods - Create new shipping method
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true }
-    });
-
-    if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
-      return NextResponse.json(
-        { success: false, error: "Admin access required" },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!auth.ok) return auth.response;
 
     const body = await request.json();
     const { name, description, price, estimatedDays, isActive, sortOrder } = body;

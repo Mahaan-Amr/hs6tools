@@ -8,5 +8,9 @@ interface AuthProviderProps {
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return (
+    <SessionProvider refetchInterval={30} refetchOnWindowFocus>
+      {children}
+    </SessionProvider>
+  );
 }

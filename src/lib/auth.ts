@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
+import { activeAccountAuthority } from "@/lib/staff-authority";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -20,11 +21,15 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string }
+          const user = await prisma.user.findFirst({
+            where: {
+              email: credentials.email as string,
+              isActive: true,
+              deletedAt: null,
+            }
           });
 
-          if (!user || !user.isActive) {
+          if (!user) {
             return null;
           }
 
@@ -82,7 +87,48 @@ export const authOptions: NextAuthOptions = {
         token.position = user.position;
         token.lastLoginAt = user.lastLoginAt;
       }
-      
+
+      const currentAccount = token.id
+        ? await prisma.user.findUnique({
+            where: { id: token.id },
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              isActive: true,
+              deletedAt: true,
+              emailVerified: true,
+              phoneVerified: true,
+              avatar: true,
+              company: true,
+              position: true,
+              lastLoginAt: true,
+            },
+          })
+        : null;
+
+      const currentAuthority = activeAccountAuthority(currentAccount);
+      if (!currentAccount || !currentAuthority) {
+        token.role = null;
+        token.isActive = false;
+        return token;
+      }
+
+      token.id = currentAccount.id;
+      token.email = currentAccount.email;
+      token.firstName = currentAccount.firstName;
+      token.lastName = currentAccount.lastName;
+      token.role = currentAuthority.role;
+      token.isActive = currentAccount.isActive;
+      token.emailVerified = currentAccount.emailVerified;
+      token.phoneVerified = currentAccount.phoneVerified;
+      token.avatar = currentAccount.avatar;
+      token.company = currentAccount.company;
+      token.position = currentAccount.position;
+      token.lastLoginAt = currentAccount.lastLoginAt?.toISOString() ?? null;
+
       // Return the token
       return token;
     },
@@ -98,6 +144,8 @@ export const authOptions: NextAuthOptions = {
         
         // Set custom fields
         session.user.id = token.id as string;
+        // A null role is intentional: it makes every existing role guard fail
+        // closed after the account is disabled, deleted, or removed.
         session.user.role = token.role as UserRole;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;

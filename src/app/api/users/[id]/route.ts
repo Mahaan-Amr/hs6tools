@@ -1,19 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { UpdateUserData } from "@/types/admin";
+import { requireAuth } from "@/lib/authz";
+import {
+  canChangeAccountRole,
+  canChangeStaffStatus,
+  canRemoveActiveSuperAdmin,
+  isUserRole,
+  removesActiveSuperAdmin,
+} from "@/lib/staff-authority";
+import {
+  requireCurrentStaffActorUnderLock,
+  StaffAuthorityForbiddenError,
+} from "@/lib/staff-authority-db";
+
+class FinalActiveSuperAdminError extends Error {}
+
+async function validateAuthorityMutationUnderLock(
+  tx: Prisma.TransactionClient,
+  actorId: string,
+  id: string,
+  update: Parameters<typeof removesActiveSuperAdmin>[1],
+) {
+  const currentActor = await requireCurrentStaffActorUnderLock(tx, actorId);
+
+  const currentUser = await tx.user.findUnique({ where: { id } });
+
+  if (!currentUser) {
+    throw new Error("User disappeared during authority change");
+  }
+
+  if (removesActiveSuperAdmin(currentUser, update)) {
+    const activeSuperAdminCount = await tx.user.count({
+      where: {
+        role: "SUPER_ADMIN",
+        isActive: true,
+        deletedAt: null,
+      },
+    });
+    if (!canRemoveActiveSuperAdmin(activeSuperAdminCount)) {
+      throw new FinalActiveSuperAdminError();
+    }
+  }
+
+  return { currentActor, currentUser };
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
 
     const { id } = await params;
     const user = await prisma.user.findUnique({
@@ -91,13 +131,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
 
     const { id } = await params;
     const body: UpdateUserData = await request.json();
+
+    if (body.role !== undefined && !isUserRole(body.role)) {
+      return NextResponse.json({ success: false, error: "Invalid role" }, { status: 400 });
+    }
 
     if (!id) {
       return NextResponse.json({ success: false, error: "User ID is required" }, { status: 400 });
@@ -109,23 +151,35 @@ export async function PUT(
     }
 
     // ADMIN restrictions: Cannot modify SUPER_ADMIN users
-    if (session.user.role === "ADMIN" && existingUser.role === "SUPER_ADMIN") {
+    if (authResult.user.role === "ADMIN" && existingUser.role === "SUPER_ADMIN") {
       return NextResponse.json({ 
         success: false, 
         error: "You do not have permission to modify SUPER_ADMIN users" 
       }, { status: 403 });
     }
 
-    // ADMIN restrictions: Cannot change users to SUPER_ADMIN
-    if (session.user.role === "ADMIN" && body.role === "SUPER_ADMIN") {
+    if (
+      body.role !== undefined &&
+      !canChangeAccountRole(authResult.user.role, existingUser.role, body.role)
+    ) {
       return NextResponse.json({ 
         success: false, 
-        error: "You do not have permission to assign SUPER_ADMIN role" 
+        error: "Only a Super Admin can assign privileged roles"
       }, { status: 403 });
     }
 
+    if (
+      body.isActive !== undefined &&
+      !canChangeStaffStatus(authResult.user.role, existingUser.role)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Only a Super Admin can change staff status" },
+        { status: 403 },
+      );
+    }
+
     // Prevent SUPER_ADMIN from changing their own role to lower level
-    if (session.user.id === id && body.role && body.role !== "SUPER_ADMIN") {
+    if (authResult.user.id === id && body.role && body.role !== "SUPER_ADMIN") {
       return NextResponse.json({ 
         success: false, 
         error: "You cannot change your own role to a lower level" 
@@ -142,22 +196,48 @@ export async function PUT(
     if (body.company !== undefined) { updateData.company = body.company; }
     if (body.position !== undefined) { updateData.position = body.position; }
 
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: updateData,
-      include: {
-        addresses: {
-          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }]
-        },
-        _count: {
-          select: {
-            orders: true,
-            addresses: true,
-            reviews: true,
-            articles: true
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const { currentActor, currentUser } =
+        await validateAuthorityMutationUnderLock(
+          tx,
+          authResult.user.id,
+          id,
+          {
+            role: body.role,
+            isActive: body.isActive,
+          },
+        );
+
+      if (
+        body.role !== undefined &&
+        !canChangeAccountRole(currentActor.role, currentUser.role, body.role)
+      ) {
+        throw new StaffAuthorityForbiddenError();
+      }
+      if (
+        body.isActive !== undefined &&
+        !canChangeStaffStatus(currentActor.role, currentUser.role)
+      ) {
+        throw new StaffAuthorityForbiddenError();
+      }
+
+      return tx.user.update({
+        where: { id },
+        data: updateData,
+        include: {
+          addresses: {
+            orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }]
+          },
+          _count: {
+            select: {
+              orders: true,
+              addresses: true,
+              reviews: true,
+              articles: true
+            }
           }
         }
-      }
+      });
     });
 
     if (body.address) {
@@ -273,6 +353,18 @@ export async function PUT(
     });
 
   } catch (error) {
+    if (error instanceof StaffAuthorityForbiddenError) {
+      return NextResponse.json(
+        { success: false, error: "Only a Super Admin can change staff roles" },
+        { status: 403 },
+      );
+    }
+    if (error instanceof FinalActiveSuperAdminError) {
+      return NextResponse.json(
+        { success: false, error: "The final active Super Admin requires a protected workflow" },
+        { status: 409 },
+      );
+    }
     console.error("Error updating user:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
@@ -283,10 +375,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "ADMIN")) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!authResult.ok) return authResult.response;
 
     const { id } = await params;
 
@@ -295,7 +385,7 @@ export async function DELETE(
     }
 
     // Prevent users from deleting themselves
-    if (session.user.id === id) {
+    if (authResult.user.id === id) {
       return NextResponse.json({ 
         success: false, 
         error: "You cannot delete your own account" 
@@ -307,18 +397,33 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    // ADMIN restrictions: Cannot delete SUPER_ADMIN users
-    if (session.user.role === "ADMIN" && existingUser.role === "SUPER_ADMIN") {
+    if (authResult.user.role === "ADMIN" && existingUser.role !== "CUSTOMER") {
       return NextResponse.json({ 
         success: false, 
-        error: "You do not have permission to delete SUPER_ADMIN users" 
+        error: "Only a Super Admin can delete staff accounts"
       }, { status: 403 });
     }
 
-    // Soft delete - set deletedAt timestamp
-    await prisma.user.update({
-      where: { id },
-      data: { deletedAt: new Date() }
+    await prisma.$transaction(async (tx) => {
+      const { currentActor, currentUser } =
+        await validateAuthorityMutationUnderLock(
+          tx,
+          authResult.user.id,
+          id,
+          { deletedAt: new Date() },
+        );
+
+      if (
+        currentActor.role === "ADMIN" &&
+        currentUser.role !== "CUSTOMER"
+      ) {
+        throw new StaffAuthorityForbiddenError();
+      }
+
+      await tx.user.update({
+        where: { id },
+        data: { deletedAt: new Date() }
+      });
     });
 
     return NextResponse.json({ 
@@ -327,6 +432,18 @@ export async function DELETE(
     });
 
   } catch (error) {
+    if (error instanceof StaffAuthorityForbiddenError) {
+      return NextResponse.json(
+        { success: false, error: "Only a Super Admin can delete staff accounts" },
+        { status: 403 },
+      );
+    }
+    if (error instanceof FinalActiveSuperAdminError) {
+      return NextResponse.json(
+        { success: false, error: "The final active Super Admin requires a protected workflow" },
+        { status: 409 },
+      );
+    }
     console.error("Error deleting user:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }

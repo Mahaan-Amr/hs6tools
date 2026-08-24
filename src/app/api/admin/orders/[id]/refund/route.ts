@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/authz";
 import { restoreOrderStock } from "@/lib/inventory";
 import { sendSMSSafe, SMSTemplates } from "@/lib/sms";
 
@@ -32,29 +31,10 @@ export async function POST(
   const startTime = Date.now();
 
   try {
-    const session = await getServerSession(authOptions);
     const { id } = await params;
 
-    // Check if user is authenticated and is admin
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 },
-      );
-    }
-
-    // Check if user is admin or super admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-
-    if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
-      return NextResponse.json(
-        { success: false, error: "Admin access required" },
-        { status: 403 },
-      );
-    }
+    const auth = await requireAuth(["ADMIN", "SUPER_ADMIN"]);
+    if (!auth.ok) return auth.response;
 
     // Parse request body
     const body = await request.json();

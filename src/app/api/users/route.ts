@@ -3,6 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { PaginatedResponse } from "@/types/admin";
 import { requireAuth } from "@/lib/authz";
+import {
+  canAssignAccountRole,
+  isUserRole,
+} from "@/lib/staff-authority";
+import {
+  requireCurrentStaffActorUnderLock,
+  StaffAuthorityForbiddenError,
+} from "@/lib/staff-authority-db";
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -156,12 +165,19 @@ export async function POST(request: NextRequest) {
     if (!authResult.ok) return authResult.response;
 
     const body = await request.json();
-    const { email, phone, firstName, lastName, password, role, company, position } = body;
+    const { email, phone, firstName, lastName, password, company, position } = body;
+    const role = body.role;
 
-    // ADMIN restrictions: Cannot create SUPER_ADMIN users
-    if (authResult.user.role === "ADMIN" && role === "SUPER_ADMIN") {
+    if (!isUserRole(role)) {
       return NextResponse.json(
-        { success: false, error: "You do not have permission to create SUPER_ADMIN users" },
+        { success: false, error: "Invalid role" },
+        { status: 400 }
+      );
+    }
+
+    if (!canAssignAccountRole(authResult.user.role, role)) {
+      return NextResponse.json(
+        { success: false, error: "Only a Super Admin can create staff accounts" },
         { status: 403 }
       );
     }
@@ -210,31 +226,40 @@ export async function POST(request: NextRequest) {
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        phone,
-        firstName,
-        lastName,
-        passwordHash,
-        role,
-        company,
-        position,
-        isActive: true,
-        emailVerified: false,
-        phoneVerified: false
-      },
-      include: {
-        _count: {
-          select: {
-            orders: true,
-            addresses: true,
-            reviews: true,
-            articles: true
+    const user = await prisma.$transaction(async (tx) => {
+      const currentActor = await requireCurrentStaffActorUnderLock(
+        tx,
+        authResult.user.id,
+      );
+      if (!canAssignAccountRole(currentActor.role, role)) {
+        throw new StaffAuthorityForbiddenError();
+      }
+
+      return tx.user.create({
+        data: {
+          email,
+          phone,
+          firstName,
+          lastName,
+          passwordHash,
+          role,
+          company,
+          position,
+          isActive: true,
+          emailVerified: false,
+          phoneVerified: false
+        },
+        include: {
+          _count: {
+            select: {
+              orders: true,
+              addresses: true,
+              reviews: true,
+              articles: true
+            }
           }
         }
-      }
+      });
     });
 
     const transformedUser = {
@@ -266,6 +291,12 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
+    if (error instanceof StaffAuthorityForbiddenError) {
+      return NextResponse.json(
+        { success: false, error: "Current account state cannot create this account" },
+        { status: 403 },
+      );
+    }
     console.error("Error creating user:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
