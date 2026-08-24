@@ -3,6 +3,7 @@ name: Recovery workflow checks
 on:
   pull_request:
     paths:
+      - ".github/workflows/recovery-checks.yml"
       - "ops/recovery/**"
       - "src/lib/external-effects.ts"
       - "src/lib/email.ts"
@@ -14,6 +15,7 @@ on:
   push:
     branches: [master, main]
     paths:
+      - ".github/workflows/recovery-checks.yml"
       - "ops/recovery/**"
       - "src/lib/external-effects.ts"
       - "src/lib/email.ts"
