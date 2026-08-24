@@ -112,20 +112,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         // Show verification step
         setShowVerification(true);
         // Use INFO message, NOT success - registration is NOT complete yet!
-        let infoMessage = (messages?.auth?.enterVerificationCode as string) || "Please enter the verification code sent to your phone to complete registration.";
-        
-        // Show warning if SMS might not have been sent
-        if (sendCodeResult.warning) {
-          console.warn('⚠️ [Register] SMS warning:', sendCodeResult.warning);
-          
-          // In development mode, if we have a dev code, show it prominently
-          if (sendCodeResult.devCode) {
-            console.log(`🔑 [Register] Development mode - Your verification code is: ${sendCodeResult.devCode}`);
-            infoMessage = `Development Mode: Your verification code is ${sendCodeResult.devCode}. Enter this code to continue. (SMS not sent due to test account limitation)`;
-          } else {
-            infoMessage += ` (${sendCodeResult.warning})`;
-          }
-        }
+        const infoMessage = (messages?.auth?.enterVerificationCode as string) || "Please enter the verification code sent to your phone to complete registration.";
         
         setInfo(infoMessage);
         setCountdown(SMS_RESEND_COOLDOWN_SECONDS);
@@ -224,7 +211,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
     try {
       // Step 1: Verify the phone code
-      const verifyResponse = await fetch("/api/auth/verify-phone/send", {
+      const verifyResponse = await fetch("/api/auth/verify-phone/registration", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -232,7 +219,6 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         body: JSON.stringify({
           phone: verificationPhone,
           code: verificationCode,
-          verifyOnly: true, // Just verify, don't send new code
         }),
       });
 
@@ -253,7 +239,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         },
         body: JSON.stringify({
           ...pendingRegistrationData,
-          phoneVerified: true, // Mark phone as verified
+          verificationProof: verifyResult.verificationProof,
         }),
       });
 

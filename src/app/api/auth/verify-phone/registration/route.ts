@@ -1,9 +1,10 @@
-import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
 import { getPhoneVerificationLifecycle } from "@/lib/phone-verification";
-import { checkVerificationRateLimit } from "@/lib/verification-rate-limit";
+import {
+  checkVerificationRateLimit,
+  trustedClientIp,
+} from "@/lib/verification-rate-limit";
 import { isAllowedOrigin } from "@/utils/origin";
 
 const requestSchema = z
@@ -26,22 +27,20 @@ export async function POST(request: NextRequest) {
         { status: 403 },
       );
     }
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 },
-      );
-    }
     const { phone, code } = requestSchema.parse(await request.json());
-    if (
-      !(await checkVerificationRateLimit(
-        "verify-phone-account",
-        session.user.id,
-        5,
-        5 * 60 * 1000,
-      ))
-    ) {
+    const ipAllowed = await checkVerificationRateLimit(
+      "verify-registration",
+      trustedClientIp(request.headers),
+      10,
+      5 * 60 * 1000,
+    );
+    const recipientAllowed = await checkVerificationRateLimit(
+      "verify-registration-recipient",
+      phone,
+      5,
+      5 * 60 * 1000,
+    );
+    if (!ipAllowed || !recipientAllowed) {
       return NextResponse.json(
         {
           success: false,
@@ -51,25 +50,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const lifecycle = getPhoneVerificationLifecycle();
-    const verified = await lifecycle.verify(phone, "PHONE_VERIFICATION", code);
-    if (verified.status === "invalid") {
-      return NextResponse.json(
-        { success: false, error: "Invalid or expired verification code" },
-        { status: 400 },
-      );
-    }
-    const consumed = await lifecycle.consume(
+    const result = await getPhoneVerificationLifecycle().verify(
       phone,
       "PHONE_VERIFICATION",
-      verified.proof,
-      (transaction) =>
-        transaction.user.update({
-          where: { id: session.user.id },
-          data: { phone, phoneVerified: true },
-        }),
+      code,
     );
-    if (consumed.status === "invalid") {
+    if (result.status === "invalid") {
       return NextResponse.json(
         { success: false, error: "Invalid or expired verification code" },
         { status: 400 },
@@ -77,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({
       success: true,
-      message: "Phone number verified successfully",
+      verificationProof: result.proof,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -86,9 +72,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    console.error("[verify-phone/verify] Verification failed");
+    console.error("[verify-phone/registration] Verification failed");
     return NextResponse.json(
-      { success: false, error: "Failed to verify phone number" },
+      { success: false, error: "Verification failed" },
       { status: 500 },
     );
   }

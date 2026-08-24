@@ -329,11 +329,8 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
       const statusCode = error?.response?.status || error?.statusCode || 500;
 
       console.error("❌ [sendSMS] SMS.ir - API call failed:", {
-        error: errorMessage,
         statusCode,
-        receptor: options.receptor,
         errorType: error?.constructor?.name,
-        responseData: error?.response?.data,
       });
 
       return {
@@ -361,8 +358,6 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
         "Failed to send SMS via SMS.ir",
       );
       console.error("❌ [sendSMS] SMS.ir - SMS sending failed:", {
-        error: errorMessage,
-        receptor: options.receptor,
         statusCode: payload?.StatusCode || payload?.status,
       });
       return {
@@ -373,7 +368,7 @@ async function sendSMSViaSMSIr(options: SendSMSOptions): Promise<SMSResponse> {
       };
     }
   } catch (error) {
-    console.error("❌ [sendSMS] SMS.ir - Error:", error);
+    console.error("❌ [sendSMS] SMS.ir - Error");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown SMS.ir error",
@@ -435,13 +430,8 @@ async function sendVerificationCodeViaSMSIr(
       const statusCode = error?.response?.status || error?.statusCode || 500;
 
       console.error("❌ [sendVerificationCode] SMS.ir - API call failed:", {
-        error: errorMessage,
         statusCode,
-        receptor: options.receptor,
-        templateId,
-        parameters,
         errorType: error?.constructor?.name,
-        responseData: error?.response?.data,
       });
 
       return {
@@ -451,25 +441,6 @@ async function sendVerificationCodeViaSMSIr(
         provider: "smsir",
       };
     }
-
-    // Safe JSON stringify to avoid circular reference errors
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const safeStringify = (obj: any): string => {
-      try {
-        const seen = new WeakSet();
-        return JSON.stringify(obj, (key, value) => {
-          if (typeof value === "object" && value !== null) {
-            if (seen.has(value)) {
-              return "[Circular]";
-            }
-            seen.add(value);
-          }
-          return value;
-        });
-      } catch {
-        return String(obj);
-      }
-    };
 
     const payload = unwrapSMSIrResponse(result);
 
@@ -494,11 +465,7 @@ async function sendVerificationCodeViaSMSIr(
         payload?.StatusCode || payload?.status || payload?.data?.code || 500;
 
       console.error("❌ [sendVerificationCode] SMS.ir - Failed:", {
-        error: errorMessage,
-        receptor: options.receptor,
-        templateId,
         statusCode,
-        fullResponse: safeStringify(result),
       });
 
       return {
@@ -509,7 +476,7 @@ async function sendVerificationCodeViaSMSIr(
       };
     }
   } catch (error) {
-    console.error("❌ [sendVerificationCode] SMS.ir - Error:", error);
+    console.error("❌ [sendVerificationCode] SMS.ir - Error");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown SMS.ir error",
@@ -610,8 +577,6 @@ async function sendSMSViaKavenegar(
                 string | number | boolean | undefined
               > = {
                 status,
-                message,
-                receptor: options.receptor,
               };
 
               switch (status) {
@@ -675,8 +640,6 @@ async function sendSMSViaKavenegar(
               } else {
                 console.error("❌ [sendSMS] Kavenegar - SMS sending failed:", {
                   ...errorDetails,
-                  entries: entries,
-                  errorMessage,
                 });
               }
 
@@ -697,7 +660,7 @@ async function sendSMSViaKavenegar(
         );
       } catch (apiError) {
         clearTimeout(timeout);
-        console.error("❌ [sendSMS] Kavenegar - API call error:", apiError);
+        console.error("❌ [sendSMS] Kavenegar - API call error");
         resolve({
           success: false,
           error:
@@ -708,7 +671,7 @@ async function sendSMSViaKavenegar(
       }
     });
   } catch (error) {
-    console.error("❌ [sendSMS] Kavenegar - Error initializing:", error);
+    console.error("❌ [sendSMS] Kavenegar - Error initializing");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",
@@ -786,9 +749,6 @@ async function sendVerificationCodeViaKavenegar(
                 string | number | boolean | undefined
               > = {
                 status,
-                message,
-                receptor: options.receptor,
-                template: options.template,
               };
 
               switch (status) {
@@ -853,8 +813,6 @@ async function sendVerificationCodeViaKavenegar(
                   "❌ [sendVerificationCode] Kavenegar - SMS sending failed:",
                   {
                     ...errorDetails,
-                    entries: entries,
-                    errorMessage,
                   },
                 );
               }
@@ -876,10 +834,7 @@ async function sendVerificationCodeViaKavenegar(
         );
       } catch (apiError) {
         clearTimeout(timeout);
-        console.error(
-          "❌ [sendVerificationCode] Kavenegar - API call error:",
-          apiError,
-        );
+        console.error("❌ [sendVerificationCode] Kavenegar - API call error:");
         resolve({
           success: false,
           error:
@@ -890,10 +845,7 @@ async function sendVerificationCodeViaKavenegar(
       }
     });
   } catch (error) {
-    console.error(
-      "❌ [sendVerificationCode] Kavenegar - Error initializing:",
-      error,
-    );
+    console.error("❌ [sendVerificationCode] Kavenegar - Error initializing:");
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",

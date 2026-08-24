@@ -1,144 +1,121 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { SMSIRFastSendTemplates, sendSMSSafe, sendVerificationCode } from "@/lib/sms";
-import { VerificationType } from "@prisma/client";
-import { rateLimitByIp } from "@/lib/rateLimit";
+import { z } from "zod";
+import { getPhoneVerificationLifecycle } from "@/lib/phone-verification";
+import {
+  SMSIRFastSendTemplates,
+  sendSMS,
+  sendVerificationCode,
+} from "@/lib/sms";
+import {
+  checkVerificationRateLimit,
+  trustedClientIp,
+} from "@/lib/verification-rate-limit";
 import { isAllowedOrigin } from "@/utils/origin";
 
-function getEnvValue(name: string): string | undefined {
-  const value = process.env[name]?.trim().replace(/^['"]|['"]$/g, '');
+const requestSchema = z
+  .object({ phone: z.string().regex(/^09\d{9}$/) })
+  .strict();
+
+function getEnvValue(name: string) {
+  const value = process.env[name]?.trim().replace(/^['"]|['"]$/g, "");
   return value || undefined;
 }
 
-/**
- * POST /api/auth/reset-password/request
- * Request password reset - sends verification code to phone
- */
 export async function POST(request: NextRequest) {
   try {
-    // CSRF: require same-origin requests
-    const origin = request.headers.get("origin");
-    const host = request.headers.get("host") || "";
-    if (!isAllowedOrigin(origin, host)) {
+    if (
+      !isAllowedOrigin(
+        request.headers.get("origin"),
+        request.headers.get("host") || "",
+      )
+    ) {
       return NextResponse.json(
         { success: false, error: "Invalid origin" },
-        { status: 403 }
+        { status: 403 },
       );
     }
-
-    // Rate limit by IP for password reset code requests
-    const forwarded = request.headers.get("x-forwarded-for");
-    const ip =
-      (forwarded && forwarded.split(",")[0]?.trim()) ||
-      request.headers.get("x-real-ip") ||
-      null;
-    const limitResult = rateLimitByIp(ip, "reset-password-request", 5, 5 * 60 * 1000); // 5 requests / 5 min
-    if (!limitResult.allowed) {
+    if (
+      !(await checkVerificationRateLimit(
+        "reset-password-request",
+        trustedClientIp(request.headers),
+        5,
+        5 * 60 * 1000,
+      ))
+    ) {
       return NextResponse.json(
         { success: false, error: "Too many requests. Please try again later." },
-        { status: 429 }
+        { status: 429 },
       );
     }
-
-    const body = await request.json();
-    const { phone } = body;
-
-    // Validate phone number
-    if (!phone) {
+    const { phone } = requestSchema.parse(await request.json());
+    const lifecycle = getPhoneVerificationLifecycle();
+    await lifecycle.cleanup();
+    const issued = await lifecycle.issue(phone, "PASSWORD_RESET");
+    if (issued.status === "throttled") {
       return NextResponse.json(
-        { success: false, error: "Phone number is required" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Please wait before requesting another code.",
+        },
+        { status: 429 },
       );
     }
 
-    // Validate phone number format
-    const phoneRegex = /^09\d{9}$/;
-    if (!phoneRegex.test(phone)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid phone number format. Use format: 09123456789" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user exists with this phone
-    const user = await prisma.user.findUnique({
-      where: { phone },
-      select: { id: true, firstName: true, lastName: true }
-    });
-
-    if (!user) {
-      // Don't reveal that user doesn't exist (security best practice)
-      return NextResponse.json({
-        success: true,
-        message: "If a user exists with this phone number, a reset code will be sent"
-      });
-    }
-
-    // Generate 6-digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Delete any existing unused codes for this phone
-    await prisma.verificationCode.deleteMany({
-      where: {
-        phone,
-        type: VerificationType.PASSWORD_RESET,
-        used: false,
-        expiresAt: { gt: new Date() }
-      }
-    });
-
-    // Create verification code (expires in 10 minutes)
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    await prisma.verificationCode.create({
-      data: {
-        phone,
-        code,
-        type: VerificationType.PASSWORD_RESET,
-        expiresAt
-      }
-    });
-
-    // Send SMS with verification code
-    // Try using template first, fallback to simple SMS
-    // Determine template based on SMS provider
-    const smsirApiKey = getEnvValue('SMSIR_API_KEY');
-    const template = smsirApiKey 
-      ? (getEnvValue('SMSIR_PASSWORD_RESET_TEMPLATE_ID') || getEnvValue('SMSIR_VERIFY_TEMPLATE_ID') || '846716')
-      : 'password-reset'; // Template name for Kavenegar
-    
+    const smsirApiKey = getEnvValue("SMSIR_API_KEY");
+    const template = smsirApiKey
+      ? getEnvValue("SMSIR_PASSWORD_RESET_TEMPLATE_ID") ||
+        getEnvValue("SMSIR_VERIFY_TEMPLATE_ID") ||
+        "846716"
+      : "password-reset";
     const templateResult = await sendVerificationCode({
       receptor: phone,
-      token: code,
-      template: template,
-      parameters: {
-        OTP: code,
-      },
+      token: issued.code,
+      template,
+      parameters: { OTP: issued.code },
     });
-
-    // Fallback to simple SMS if template fails
-    if (!templateResult.success) {
-      console.warn('📱 [reset-password] Template SMS failed, using simple SMS fallback:', {
-        error: templateResult.error,
-        status: templateResult.status,
-      });
-      await sendSMSSafe({
-        receptor: phone,
-        message: SMSIRFastSendTemplates.PASSWORD_RESET(code),
-      }, `Password reset: ${phone}`);
+    let delivered = templateResult.success;
+    if (!delivered) {
+      delivered = (
+        await sendSMS({
+          receptor: phone,
+          message: SMSIRFastSendTemplates.PASSWORD_RESET(issued.code),
+        })
+      ).success;
+    }
+    if (!delivered) {
+      await lifecycle.invalidate(phone, "PASSWORD_RESET", issued.code);
+      console.error(
+        "[reset-password/request] Verification message delivery failed",
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Verification message could not be delivered. Please try again.",
+        },
+        { status: 502 },
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Password reset code sent successfully",
-      expiresIn: 600 // 10 minutes in seconds
-    });
-
-  } catch (error) {
-    console.error("Error requesting password reset:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to send password reset code" },
-      { status: 500 }
+      {
+        success: true,
+        message: "If this number is eligible, a reset code has been sent.",
+        expiresIn: issued.expiresIn,
+      },
+      { status: 202 },
+    );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid reset request" },
+        { status: 400 },
+      );
+    }
+    console.error("[reset-password/request] Reset request failed");
+    return NextResponse.json(
+      { success: false, error: "Reset request failed" },
+      { status: 500 },
     );
   }
 }
-

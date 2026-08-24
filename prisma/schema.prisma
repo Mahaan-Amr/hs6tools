@@ -945,10 +945,13 @@ model VerificationCode {
   phone     String? // For phone verification
   email     String? // For email verification (future use)
   code      String
+  attempts  Int              @default(0)
+  proofDigest String?        @unique
   type      VerificationType
   expiresAt DateTime
   used      Boolean          @default(false)
   usedAt    DateTime?
+  verifiedAt DateTime?
   createdAt DateTime         @default(now())
 
   @@index([phone, type, used])
@@ -960,4 +963,14 @@ enum VerificationType {
   PHONE_VERIFICATION
   PASSWORD_RESET
   EMAIL_VERIFICATION
+}
+
+model VerificationRateLimit {
+  key       String   @id
+  count     Int
+  expiresAt DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+  @@map("verification_rate_limits")
 }
