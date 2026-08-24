@@ -1,0 +1,28 @@
+/var/log/hs6tools/*.log {
+    daily
+    rotate 14
+    maxage 14
+    maxsize 50M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    create 0640 hs6tools hs6tools
+}
+
+/var/log/nginx/hs6tools-*.log {
+    daily
+    rotate 14
+    maxage 14
+    maxsize 50M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 www-data adm
+    sharedscripts
+    postrotate
+        test ! -r /run/nginx.pid || kill -USR1 "$(cat /run/nginx.pid)"
+    endscript
+}

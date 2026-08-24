@@ -1,0 +1,32 @@
+[Unit]
+Description=HS6Tools Production application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hs6tools
+Group=hs6tools
+WorkingDirectory=/var/www/hs6tools
+Environment=NODE_ENV=production
+Environment=PORT=3000
+EnvironmentFile=/etc/hs6tools/production.env
+ExecStart=/usr/bin/node scripts/redact-production-log.mjs --hostname 127.0.0.1 --port 3000
+Restart=on-failure
+RestartSec=5s
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/www/hs6tools/public/uploads /var/www/hs6tools/.next/cache /var/log/hs6tools
+StandardOutput=append:/var/log/hs6tools/application.log
+StandardError=append:/var/log/hs6tools/application-error.log
+
+[Install]
+WantedBy=multi-user.target
