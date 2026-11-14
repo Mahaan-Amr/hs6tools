@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import { DEFAULT_FREE_SHIPPING_THRESHOLD, shippingCharge } from "@/lib/shipping-policy";
+import { DEFAULT_FREE_SHIPPING_THRESHOLD, shippingCharge, acceptsShippingMethod } from "@/lib/shipping-policy";
 import { sendLowStockAlert } from "@/lib/sms";
 
 class OrderCreationError extends Error {
@@ -69,16 +69,6 @@ function calculateCouponDiscount(
   }
 
   return discount;
-}
-
-function isShippingMethodConfigId(
-  shippingMethod: unknown,
-): shippingMethod is string {
-  return (
-    typeof shippingMethod === "string" &&
-    shippingMethod.length > 20 &&
-    /^[a-z]/.test(shippingMethod)
-  );
 }
 
 function toPositiveInteger(value: unknown): number | null {
@@ -278,7 +268,6 @@ export async function POST(request: NextRequest) {
       shippingMethod,
       paymentMethod,
       customerNote,
-      shippingAmount,
       couponCode,
     } = body;
 
@@ -324,10 +313,10 @@ export async function POST(request: NextRequest) {
     }
 
     let shippingMethodId: string | null = null;
-    let normalizedShippingMethod: "POST" | "TIPAX" | "EXPRESS" = "POST";
+    const normalizedShippingMethod = "POST";
     let serverShippingAmount = new Decimal(0);
 
-    if (isShippingMethodConfigId(shippingMethod)) {
+    if (acceptsShippingMethod(shippingMethod)) {
       const shippingMethodConfig = await prisma.shippingMethodConfig.findUnique(
         {
           where: { id: shippingMethod },
@@ -358,27 +347,10 @@ export async function POST(request: NextRequest) {
       shippingMethodId = shippingMethodConfig.id;
       serverShippingAmount = new Decimal(shippingMethodConfig.price);
     } else {
-      const validShippingMethods = ["POST", "TIPAX", "EXPRESS"];
-      const normalized = String(shippingMethod).toUpperCase();
-
-      if (!validShippingMethods.includes(normalized)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Invalid shipping method: ${shippingMethod}. Must be one of: ${validShippingMethods.join(", ")} or a valid shipping method ID`,
-          },
-          { status: 400 },
-        );
-      }
-
-      normalizedShippingMethod = normalized as "POST" | "TIPAX" | "EXPRESS";
-      serverShippingAmount = new Decimal(Number(shippingAmount || 0));
-      if (serverShippingAmount.isNegative()) {
-        return NextResponse.json(
-          { success: false, error: "Shipping amount cannot be negative" },
-          { status: 400 },
-        );
-      }
+      return NextResponse.json(
+        { success: false, error: "A valid configured shipping method is required" },
+        { status: 400 },
+      );
     }
 
     const userExists = await prisma.user.findUnique({

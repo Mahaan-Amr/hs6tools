@@ -202,7 +202,21 @@ export default function CheckoutPageClient({
 
   // Fetch shipping methods from API
   const [shippingThreshold, setShippingThreshold] = useState<number | null>(null);
-  useEffect(() => { fetch("/api/shipping-policy", { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject()).then(data => setShippingThreshold(data.threshold)).catch(() => setShippingThreshold(null)); }, []);
+  const [policyError, setPolicyError] = useState(false);
+  const loadShippingPolicy = async () => {
+    setPolicyError(false);
+    try {
+      const response = await fetch("/api/shipping-policy", { cache: "no-store" });
+      if (!response.ok) throw new Error("Shipping policy unavailable");
+      const data = await response.json();
+      if (!Number.isSafeInteger(data.threshold) || data.threshold < 0) throw new Error("Invalid shipping policy");
+      setShippingThreshold(data.threshold);
+    } catch {
+      setShippingThreshold(null);
+      setPolicyError(true);
+    }
+  };
+  useEffect(() => { void loadShippingPolicy(); }, []);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
 
@@ -263,7 +277,7 @@ export default function CheckoutPageClient({
     address: "",
     postalCode: "",
   });
-  const [selectedShipping, setSelectedShipping] = useState<string>("post");
+  const [selectedShipping, setSelectedShipping] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [useSavedAddresses, setUseSavedAddresses] = useState(false);
   const [selectedShippingAddress, setSelectedShippingAddress] =
@@ -373,6 +387,7 @@ export default function CheckoutPageClient({
         setAddressErrors({});
       }
     }
+    if (currentStep === 2 && !isRetryMode && (shippingThreshold === null || !selectedShippingMethod)) return;
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }
@@ -487,6 +502,7 @@ export default function CheckoutPageClient({
   };
 
   const handlePlaceOrder = async () => {
+    if (shippingThreshold === null || !selectedShippingMethod) return;
     setIsProcessing(true);
 
     try {
@@ -1183,7 +1199,7 @@ export default function CheckoutPageClient({
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                              {formatPrice(shippingThreshold === null ? method.price : shippingCharge(totalPrice, shippingThreshold, method.price))}
+                              {shippingThreshold === null ? "—" : formatPrice(shippingCharge(totalPrice, shippingThreshold, method.price))}
                             </div>
                           </div>
                         </div>
@@ -1260,7 +1276,7 @@ export default function CheckoutPageClient({
                     </p>
                     <p>
                       {String(t.shippingCost)}:{" "}
-                      {formatPrice(shippingCost)}
+                      {shippingThreshold === null && !isRetryMode ? "—" : formatPrice(shippingCost)}
                     </p>
                   </div>
                 </div>
@@ -1294,6 +1310,12 @@ export default function CheckoutPageClient({
               </div>
             )}
 
+            {shippingThreshold === null && !isRetryMode && (
+              <div role="status" className="mt-4 text-red-600 dark:text-red-400">
+                {policyError ? (locale === "fa" ? "دریافت هزینه ارسال ناموفق بود. لطفاً دوباره تلاش کنید." : locale === "ar" ? "تعذر تحميل تكلفة الشحن. يرجى المحاولة مجدداً." : "Unable to load shipping costs. Please try again.") : (locale === "fa" ? "در حال دریافت هزینه ارسال..." : locale === "ar" ? "جارٍ تحميل تكلفة الشحن..." : "Loading shipping costs...")}
+                {policyError && <button type="button" onClick={() => void loadShippingPolicy()} className="underline mx-2">{locale === "fa" ? "تلاش دوباره" : locale === "ar" ? "إعادة المحاولة" : "Retry"}</button>}
+              </div>
+            )}
             {/* Navigation Buttons */}
             <div className="flex items-center justify-between mt-8">
               <button
@@ -1311,6 +1333,7 @@ export default function CheckoutPageClient({
               {currentStep < 3 ? (
                 <button
                   onClick={handleNextStep}
+                  disabled={currentStep === 2 && !isRetryMode && (shippingThreshold === null || !selectedShippingMethod)}
                   className="px-8 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-gray-900 dark:text-white rounded-xl font-semibold hover:shadow-glass-orange hover:scale-105 transition-all duration-200"
                 >
                   {String(t.nextStep)}
@@ -1318,7 +1341,7 @@ export default function CheckoutPageClient({
               ) : (
                 <button
                   onClick={isRetryMode ? handleRetryPayment : handlePlaceOrder}
-                  disabled={isProcessing}
+                  disabled={isProcessing || (!isRetryMode && (shippingThreshold === null || !selectedShippingMethod))}
                   className="px-8 py-3 bg-gradient-to-r from-primary-orange to-orange-500 text-gray-900 dark:text-white rounded-xl font-semibold hover:shadow-glass-orange hover:scale-105 transition-all duration-200 disabled:opacity-50"
                 >
                   {isProcessing ? (
@@ -1411,7 +1434,7 @@ export default function CheckoutPageClient({
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{String(t.shippingCostLabel)}:</span>
                   <span className="text-gray-900 dark:text-white">
-                    {formatPrice(shippingCost)}
+                    {shippingThreshold === null && !isRetryMode ? "—" : formatPrice(shippingCost)}
                   </span>
                 </div>
 
@@ -1435,7 +1458,7 @@ export default function CheckoutPageClient({
                   <div className="flex justify-between text-lg font-semibold text-gray-900 dark:text-white">
                     <span>{String(t.total)}:</span>
                     <span className="text-primary-orange">
-                      {formatPrice(totalWithShipping)}
+                      {shippingThreshold === null && !isRetryMode ? "—" : formatPrice(totalWithShipping)}
                     </span>
                   </div>
                 </div>
