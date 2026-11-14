@@ -11,6 +11,7 @@ import { createPageMetadata } from "@/lib/seo";
 import { sanitizeRichContent } from "@/lib/rich-content";
 import { buildProductStructuredData, serializeJsonLd } from "@/lib/product-structured-data";
 import MatomoProductView from "@/components/analytics/MatomoProductView";
+import { productImageAlt } from "@/lib/product-image-alt";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -286,7 +287,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       {relatedProduct.images[0] && (
                         <ResilientImage
                           src={relatedProduct.images[0].url}
-                          alt={relatedProduct.images[0].alt || relatedProduct.name}
+                          alt={productImageAlt(relatedProduct.images[0].alt, relatedProduct.name)}
                           fill
                           className="object-cover"
                         />

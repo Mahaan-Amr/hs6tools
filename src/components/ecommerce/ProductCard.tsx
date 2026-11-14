@@ -8,6 +8,7 @@ import type { Messages } from "@/lib/i18n";
 import type { PublicProduct } from "@/lib/catalog";
 import { formatPrice as formatPriceUtil } from "@/utils/format";
 import WishlistButton from "./WishlistButton";
+import { productImageAlt } from "@/lib/product-image-alt";
 
 interface ProductCardProps {
   product: PublicProduct;
@@ -58,7 +59,7 @@ export default function ProductCard({
         {primaryImage ? (
           <ResilientImage
             src={primaryImage.url}
-            alt={primaryImage.alt || product.name}
+            alt={productImageAlt(primaryImage.alt, product.name)}
             fill
             sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
             className="object-cover group-hover:scale-110 transition-transform duration-300"

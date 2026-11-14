@@ -6,6 +6,7 @@ import { useCartStore } from "@/contexts/CartContext";
 import { getMessages, Messages } from "@/lib/i18n";
 import ResilientImage from "@/components/shared/ResilientImage";
 import Link from "next/link";
+import { productImageAlt } from "@/lib/product-image-alt";
 
 interface WishlistItem {
   id: string;
@@ -199,7 +200,7 @@ export default function WishlistContent({ locale }: WishlistContentProps) {
             {item.product.images[0] ? (
               <ResilientImage
                 src={item.product.images[0].url}
-                alt={item.product.images[0].alt || item.product.name}
+                alt={productImageAlt(item.product.images[0].alt, item.product.name)}
                 fill
                 className="object-cover"
               />

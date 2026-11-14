@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ResilientImage from "@/components/shared/ResilientImage";
+import { productImageAlt } from "@/lib/product-image-alt";
 
 interface ProductGalleryImage {
   id: string;
@@ -37,7 +38,7 @@ export default function ProductImageGallery({
           <ResilientImage
             key={selectedImage.id}
             src={selectedImage.url}
-            alt={selectedImage.alt || productName}
+            alt={productImageAlt(selectedImage.alt, productName)}
             fill
             className="object-cover"
             priority
@@ -70,14 +71,14 @@ export default function ProductImageGallery({
                 type="button"
                 onClick={() => setSelectedImageId(image.id)}
                 aria-pressed={isSelected}
-                aria-label={image.alt || productName}
+                aria-label={productImageAlt(image.alt, productName)}
                 className={`relative aspect-square overflow-hidden rounded-2xl glass transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-orange ${
                   isSelected ? "ring-2 ring-primary-orange" : "hover:ring-2 hover:ring-primary-orange"
                 }`}
               >
                 <ResilientImage
                   src={image.url}
-                  alt={image.alt || productName}
+                  alt={productImageAlt(image.alt, productName)}
                   fill
                   className="object-cover"
                 />
