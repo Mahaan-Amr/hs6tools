@@ -10,6 +10,8 @@ type ProductForStructuredData = {
   id: string;
   slug: string;
   name: string;
+  sku?: string;
+  brand?: string;
   price: number;
   isInStock: boolean;
   stockQuantity: number;
@@ -37,6 +39,8 @@ export function buildProductStructuredData(product: ProductForStructuredData, lo
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
+    ...(product.sku?.trim() ? { sku: product.sku.trim() } : {}),
+    ...(product.brand?.trim() ? { brand: { "@type": "Brand", name: product.brand.trim() } } : {}),
     ...(product.shortDescription?.trim() ? { description: product.shortDescription } : {}),
     image,
     offers: {

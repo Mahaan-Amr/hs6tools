@@ -17,6 +17,7 @@ const publicCategoryWhere: Prisma.CategoryWhereInput = {
 
 export interface PublicProduct {
   id: string;
+  sku: string;
   slug: string;
   name: string;
   description?: string;
@@ -119,6 +120,7 @@ export interface PublicProductDetail extends PublicProduct {
 
 interface CatalogProductRecord {
   id: string;
+  sku: string;
   slug: string;
   name: string;
   nameEn: string | null;
@@ -229,6 +231,7 @@ function localizedValue(locale: string, fa: string | null, en?: string | null, a
 function mapProduct(product: CatalogProductRecord, locale = "fa"): PublicProduct {
   return {
     id: product.id,
+    sku: product.sku,
     slug: product.slug,
     name: localizedValue(locale, product.name, product.nameEn, product.nameAr) || product.name,
     description: localizedValue(locale, product.description, product.descriptionEn, product.descriptionAr),

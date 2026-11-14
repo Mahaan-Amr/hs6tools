@@ -125,6 +125,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
               {product.name}
             </h1>
+            {structuredData?.sku && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {locale === "fa" ? "کد کالا" : locale === "ar" ? "رمز المنتج" : "Product code"}: {structuredData.sku}
+              </p>
+            )}
 
             {/* Price */}
             <div className="space-y-2">
