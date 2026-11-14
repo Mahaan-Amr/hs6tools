@@ -10,8 +10,7 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host');
 
   if (host === 'www.hs6tools.com') {
-    const url = request.nextUrl.clone();
-    url.hostname = 'hs6tools.com';
+    const url = new URL(`${pathname}${request.nextUrl.search}`, 'https://hs6tools.com');
     return NextResponse.redirect(url, 301);
   }
   
@@ -66,8 +65,9 @@ export function middleware(request: NextRequest) {
 
   // Redirect to default locale if no locale is present
   const locale = defaultLocale;
-  request.nextUrl.pathname = `/${locale}${pathname}`;
-  return NextResponse.redirect(request.nextUrl);
+  const redirectPath = `/${locale}${pathname === "/" ? "" : pathname}${request.nextUrl.search}`;
+  const origin = host === 'hs6tools.com' ? 'https://hs6tools.com' : request.nextUrl.origin;
+  return NextResponse.redirect(new URL(redirectPath, origin));
 }
 
 export const config = {

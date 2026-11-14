@@ -25,6 +25,7 @@ export async function generateMetadata({
     description: seo.description,
     keywords: seo.keywords,
     metadataBase: new URL(siteUrl),
+    verification: { google: "IzDVGXRc08ELh7MRuxf1xBm4BcRdGSXNbGp1uX_VIuc" },
     alternates: {
       canonical: `/${locale}`,
       languages: {
