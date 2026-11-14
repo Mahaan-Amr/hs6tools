@@ -297,7 +297,7 @@ async function performAdvancedSearch(searchParams: URLSearchParams) {
           }
         }
       },
-      orderBy,
+      orderBy: [orderBy, { id: "asc" }],
       skip,
       take: limit
     }),

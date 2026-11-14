@@ -7,6 +7,8 @@ import ProductGrid from "./ProductGrid";
 import AdvancedSearch from "./AdvancedSearch";
 import IconRenderer from "@/components/shared/IconRenderer";
 import CategoryFallbackIcon from "@/components/shared/CategoryFallbackIcon";
+import Link from "next/link";
+import { shopPagePath } from "@/lib/shop-pagination";
 
 interface ProductsResponse {
   success: boolean;
@@ -188,6 +190,21 @@ export default function ShopProductsSection({
             {isLoadingMore ? messages.common.loading : messages.products.loadMoreProducts}
           </button>
         </div>
+      )}
+      {!activeParams.toString() && initialPagination.totalPages > 1 && (
+        <nav aria-label={locale === "fa" ? "صفحه‌بندی محصولات" : locale === "ar" ? "صفحات المنتجات" : "Product pages"} className="mt-8 flex items-center justify-center gap-6 text-sm">
+          {initialPagination.hasPrevPage && (
+            <Link className="text-primary-orange hover:underline" href={`/${locale}${shopPagePath(initialPagination.page - 1)}`}>
+              {locale === "fa" ? "صفحه قبل" : locale === "ar" ? "الصفحة السابقة" : "Previous page"}
+            </Link>
+          )}
+          <span className="text-gray-600 dark:text-gray-400">{initialPagination.page} / {initialPagination.totalPages}</span>
+          {initialPagination.hasNextPage && (
+            <Link className="text-primary-orange hover:underline" href={`/${locale}${shopPagePath(initialPagination.page + 1)}`}>
+              {locale === "fa" ? "صفحه بعد" : locale === "ar" ? "الصفحة التالية" : "Next page"}
+            </Link>
+          )}
+        </nav>
       )}
     </>
   );

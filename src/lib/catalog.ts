@@ -391,7 +391,7 @@ export async function getPublicProducts({
           },
         },
       },
-      orderBy: productOrderBy(sortBy, sortOrder),
+      orderBy: [productOrderBy(sortBy, sortOrder), { id: "asc" }],
       skip,
       take: safeLimit,
     }),

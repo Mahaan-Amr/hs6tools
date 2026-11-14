@@ -3,18 +3,22 @@ import type { Metadata } from "next";
 import ShopProductsSection from "@/components/ecommerce/ShopProductsSection";
 import { getCurrentWishlistProductIds, getPublicCategories, getPublicProducts, PublicCategory } from "@/lib/catalog";
 import { createPageMetadata } from "@/lib/seo";
+import { notFound } from "next/navigation";
+import { parseShopPage, shopPagePath } from "@/lib/shop-pagination";
 
 interface ShopPageProps {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string | string[] }>;
 }
 
-export async function generateMetadata({ params }: ShopPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: ShopPageProps): Promise<Metadata> {
   const { locale } = await params;
+  const page = parseShopPage((await searchParams).page);
   const messages = await getMessages(locale);
 
   return createPageMetadata({
     locale,
-    path: "/shop",
+    path: shopPagePath(page),
     title: messages.products.shopTitle,
     description: messages.products.shopSubtitle,
   });
@@ -32,14 +36,16 @@ async function getShopCategories(locale: string): Promise<PublicCategory[]> {
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
 }
 
-export default async function ShopPage({ params }: ShopPageProps) {
+export default async function ShopPage({ params, searchParams }: ShopPageProps) {
   const { locale } = await params;
+  const page = parseShopPage((await searchParams).page);
   const t = await getMessages(locale);
   const [{ products, pagination }, shopCategories, wishlistProductIds] = await Promise.all([
-    getPublicProducts({ limit: 24, sortBy: "createdAt", sortOrder: "desc", locale }),
+    getPublicProducts({ page, limit: 24, sortBy: "createdAt", sortOrder: "desc", locale }),
     getShopCategories(locale),
     getCurrentWishlistProductIds(),
   ]);
+  if (page > 1 && page > pagination.totalPages) notFound();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
@@ -63,6 +69,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
           </div>
 
           <ShopProductsSection
+            key={page}
             initialProducts={products}
             initialPagination={pagination}
             initialWishlistProductIds={wishlistProductIds}
