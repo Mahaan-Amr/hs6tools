@@ -9,6 +9,7 @@ import ProductDetailActions from "@/components/ecommerce/ProductDetailActions";
 import ProductImageGallery from "@/components/ecommerce/ProductImageGallery";
 import { createPageMetadata } from "@/lib/seo";
 import { sanitizeRichContent } from "@/lib/rich-content";
+import { buildProductStructuredData, serializeJsonLd } from "@/lib/product-structured-data";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -58,6 +59,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return new Date(dateString).toLocaleDateString(locale === "fa" ? "fa-IR" : "en-US");
   };
 
+  const structuredData = buildProductStructuredData(product, locale);
+
   const hasDiscount = Boolean(product.comparePrice && product.comparePrice > product.price);
   const hasProductSpecs = Boolean(
     product.brand ||
@@ -68,6 +71,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
+      {structuredData && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Breadcrumbs */}
         <nav className="mb-8">
