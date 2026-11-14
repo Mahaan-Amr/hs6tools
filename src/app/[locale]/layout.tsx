@@ -7,6 +7,7 @@ import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import SupportTicketWidget from "@/components/support/SupportTicketWidget";
 import { getSeoForLocale, getSystemSettings } from "@/lib/site-settings";
 import { SITE_URL } from "@/lib/seo";
+import MatomoPageTracking from "@/components/analytics/MatomoPageTracking";
 
 export async function generateMetadata({
   params,
@@ -73,6 +74,7 @@ export default async function LocaleLayout({
 
   return (
     <>
+      <MatomoPageTracking />
       <ScrollEffects />
       <Header locale={locale} messages={messages} />
       <main className="min-h-screen">

@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { trackCartAddition } from '@/lib/matomo';
 
 export interface CartItem {
   id: string;
@@ -54,6 +55,7 @@ export const useCartStore = create<CartState>()(
           };
           set({ items: [...items, itemWithId] });
         }
+        try { trackCartAddition(newItem.productId); } catch { /* Analytics must never affect the cart. */ }
       },
       
       removeItem: (id) => {

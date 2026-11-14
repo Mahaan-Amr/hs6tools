@@ -30,6 +30,10 @@ const documents: Record<LegalLocale, { privacy: LegalDocument; terms: LegalDocum
           paragraphs: ["از اطلاعات برای مدیریت حساب، پردازش و پیگیری سفارش، پاسخ‌گویی به درخواست‌ها، پیشگیری از سوءاستفاده و بهبود فروشگاه استفاده می‌کنیم."],
         },
         {
+          title: "آمار بازدید فروشگاه",
+          paragraphs: ["برای بهبود فروشگاه از Matomo روی سرور خودمان برای شمارش بازدید صفحه‌های عمومی، مشاهده محصول و افزودن کالا به سبد استفاده می‌کنیم. این ابزار بدون کوکی رهگیری و با ناشناس‌سازی بخشی از نشانی IP تنظیم شده است. صفحه‌های ورود، حساب، مدیریت و پرداخت در این آمار ثبت نمی‌شوند."],
+        },
+        {
           title: "پرداخت و ارائه‌دهندگان خدمات",
           paragraphs: ["پرداخت‌ها از طریق ارائه‌دهنده پرداخت معرفی‌شده در فرایند خرید انجام می‌شوند. اطلاعات فقط در حد لازم برای انجام پرداخت، ارسال، میزبانی و پشتیبانی با ارائه‌دهندگان مرتبط تبادل می‌شود."],
         },
@@ -85,6 +89,7 @@ const documents: Record<LegalLocale, { privacy: LegalDocument; terms: LegalDocum
       sections: [
         { title: "Information we receive", paragraphs: ["We receive information needed to operate the storefront, provide support, and fulfil orders."], items: ["Account and contact details", "Shipping addresses and order information", "Support messages, wishlists, and reviews", "Technical information required for security and site operation"] },
         { title: "How information is used", paragraphs: ["Information is used to manage accounts, process and track orders, respond to requests, prevent abuse, and improve the storefront."] },
+        { title: "Store analytics", paragraphs: ["We use self-hosted Matomo to count public page views, product views and additions to cart. Tracking cookies are disabled and IP addresses are partially anonymized. Login, account, administration and checkout pages are excluded."] },
         { title: "Payments and service providers", paragraphs: ["Payments are handled by the provider shown during checkout. Information is shared with relevant payment, delivery, hosting, and support providers only as needed to provide the service."] },
         { title: "Retention and security", paragraphs: ["Information is retained while needed for services, order records, legal obligations, or dispute handling. Technical safeguards and limited access are used to protect it."] },
         { title: "Choices and contact", paragraphs: ["To access, correct, or request deletion of eligible information, use the contact page or email info@hs6tools.com."] },
@@ -114,6 +119,7 @@ const documents: Record<LegalLocale, { privacy: LegalDocument; terms: LegalDocum
       sections: [
         { title: "المعلومات التي نستلمها", paragraphs: ["نستلم المعلومات اللازمة لتشغيل المتجر وتقديم الدعم وتنفيذ الطلبات."], items: ["بيانات الحساب والاتصال", "عناوين الشحن ومعلومات الطلب", "رسائل الدعم وقوائم الرغبات والمراجعات", "المعلومات التقنية اللازمة للأمان وتشغيل الموقع"] },
         { title: "كيفية استخدام المعلومات", paragraphs: ["تُستخدم المعلومات لإدارة الحسابات ومعالجة الطلبات وتتبعها والرد على الطلبات ومنع إساءة الاستخدام وتحسين المتجر."] },
+        { title: "إحصاءات المتجر", paragraphs: ["نستخدم Matomo على خادمنا لحساب زيارات الصفحات العامة ومشاهدات المنتجات وإضافتها إلى السلة. ملفات تعريف الارتباط للتتبع معطلة وعناوين IP مجهولة جزئياً، ولا تُسجّل صفحات تسجيل الدخول والحساب والإدارة والدفع."] },
         { title: "الدفع ومقدمو الخدمات", paragraphs: ["تتم معالجة الدفع عبر المزود المعروض أثناء إتمام الشراء، ولا تُشارك المعلومات إلا بالقدر اللازم للدفع والتوصيل والاستضافة والدعم."] },
         { title: "الاحتفاظ والأمان", paragraphs: ["نحتفظ بالمعلومات ما دامت لازمة للخدمات أو سجلات الطلبات أو الالتزامات القانونية أو معالجة النزاعات، مع تطبيق وسائل حماية تقنية وتقييد الوصول."] },
         { title: "الخيارات والتواصل", paragraphs: ["لطلب الوصول إلى المعلومات المؤهلة أو تصحيحها أو حذفها، استخدم صفحة الاتصال أو راسل info@hs6tools.com."] },

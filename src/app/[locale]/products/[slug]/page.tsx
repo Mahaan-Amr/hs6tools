@@ -10,6 +10,7 @@ import ProductImageGallery from "@/components/ecommerce/ProductImageGallery";
 import { createPageMetadata } from "@/lib/seo";
 import { sanitizeRichContent } from "@/lib/rich-content";
 import { buildProductStructuredData, serializeJsonLd } from "@/lib/product-structured-data";
+import MatomoProductView from "@/components/analytics/MatomoProductView";
 
 interface ProductPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -71,6 +72,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-primary-black dark:via-gray-900 dark:to-primary-black pt-20">
+      <MatomoProductView productId={product.id} />
       {structuredData && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
       )}
