@@ -11,6 +11,16 @@ export function publicAnalyticsPath(pathname: string): boolean {
   return ["fa", "en", "ar"].includes(segments[0]) && !privateSections.has(segments[1]);
 }
 
+export function anonymousReferrer(referrer: string, siteOrigin: string): string {
+  try {
+    const url = new URL(referrer);
+    if (url.protocol === "https:" || url.protocol === "http:") return `${url.origin}/`;
+  } catch {
+    // An absent or malformed referrer is treated as a direct visit.
+  }
+  return `${siteOrigin}/`;
+}
+
 function tracker(): unknown[][] | null {
   if (typeof window === "undefined") return null;
   if (!window._paq) {
@@ -18,7 +28,8 @@ function tracker(): unknown[][] | null {
       ["disableCookies"],
       ["setTrackerUrl", "/analytics/matomo.php"],
       ["setSiteId", "1"],
-      ["setReferrerUrl", `${window.location.origin}/`],
+      ["setRequestMethod", "POST"],
+      ["setReferrerUrl", anonymousReferrer(document.referrer, window.location.origin)],
     ];
     const script = document.createElement("script");
     script.async = true;
