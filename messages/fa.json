@@ -592,7 +592,7 @@
     "shippingInfo": "اطلاعات ارسال",
     "shippingInfoText1": "ارسال از طریق پست و تیپاکس",
     "shippingInfoText2": "زمان تحویل: 2-5 روز کاری",
-    "shippingInfoText3": "هزینه ارسال: رایگان برای سفارشات بالای 500,000 تومان",
+    "shippingInfoText3": "هزینه ارسال: رایگان برای سفارشات بالای {threshold}",
     "securePayment": "پرداخت امن با ZarinPal",
     "viewProducts": "مشاهده محصولات",
     "categories": "دسته‌بندی‌ها"

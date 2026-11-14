@@ -563,7 +563,7 @@
     "shippingInfo": "معلومات الشحن",
     "shippingInfoText1": "الشحن عبر البريد وتيباكس",
     "shippingInfoText2": "وقت التسليم: 2-5 أيام عمل",
-    "shippingInfoText3": "تكلفة الشحن: مجاني للطلبات التي تزيد عن 500,000 تومان",
+    "shippingInfoText3": "تكلفة الشحن: مجاني للطلبات التي تزيد عن {threshold}",
     "securePayment": "دفع آمن مع زرينبال",
     "viewProducts": "عرض المنتجات",
     "categories": "الفئات"

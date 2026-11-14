@@ -1,5 +1,6 @@
 "use client";
 
+import { shippingCharge } from "@/lib/shipping-policy";
 import { useCartStore } from "@/contexts/CartContext";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -200,6 +201,8 @@ export default function CheckoutPageClient({
   }, [searchParams, messages, locale, router]);
 
   // Fetch shipping methods from API
+  const [shippingThreshold, setShippingThreshold] = useState<number | null>(null);
+  useEffect(() => { fetch("/api/shipping-policy", { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject()).then(data => setShippingThreshold(data.threshold)).catch(() => setShippingThreshold(null)); }, []);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
 
@@ -302,7 +305,7 @@ export default function CheckoutPageClient({
   );
   const shippingCost = isRetryMode
     ? failedOrder.shippingAmount
-    : selectedShippingMethod?.price || 0;
+    : shippingThreshold === null ? (selectedShippingMethod?.price || 0) : shippingCharge(totalPrice, shippingThreshold, selectedShippingMethod?.price || 0);
   const taxAmount = isRetryMode
     ? failedOrder.taxAmount
     : Math.round(totalPrice * 0.09);
@@ -1180,7 +1183,7 @@ export default function CheckoutPageClient({
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                              {formatPrice(method.price)}
+                              {formatPrice(shippingThreshold === null ? method.price : shippingCharge(totalPrice, shippingThreshold, method.price))}
                             </div>
                           </div>
                         </div>
@@ -1257,7 +1260,7 @@ export default function CheckoutPageClient({
                     </p>
                     <p>
                       {String(t.shippingCost)}:{" "}
-                      {formatPrice(selectedShippingMethod?.price || 0)}
+                      {formatPrice(shippingCost)}
                     </p>
                   </div>
                 </div>

@@ -26,6 +26,24 @@ export default function ShippingMethodsForm({
   onSaveError,
   setIsLoading,
 }: ShippingMethodsFormProps) {
+  const [threshold, setThreshold] = useState("");
+  const [thresholdLoaded, setThresholdLoaded] = useState(false);
+  useEffect(() => {
+    fetch("/api/shipping-policy", { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject()).then(data => { setThreshold(String(data.threshold / 10)); setThresholdLoaded(true); }).catch(() => onSaveError("خطا در بارگذاری حد ارسال رایگان"));
+    // Load once; status callbacks can change identity on parent renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const saveThreshold = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const toman = Number(threshold);
+    if (!threshold.trim() || !Number.isInteger(toman) || toman < 0 || toman > 214748364) { onSaveError("مبلغ معتبر به تومان وارد کنید"); return; }
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/admin/shipping-policy", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ threshold: toman * 10 }) });
+      if (!response.ok) throw new Error("save failed");
+      onSaveSuccess("حد ارسال رایگان ذخیره شد");
+    } catch { onSaveError("خطا در ذخیره حد ارسال رایگان"); } finally { setIsLoading(false); }
+  };
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -227,6 +245,12 @@ export default function ShippingMethodsForm({
 
   return (
     <div className="space-y-6">
+      <form onSubmit={saveThreshold} className="glass rounded-2xl p-6 space-y-4">
+        <label htmlFor="free-shipping-threshold" className="block text-white">ارسال رایگان برای سفارش‌های بالاتر از (تومان)</label>
+        <input id="free-shipping-threshold" type="number" min="0" step="1" max="214748364" value={threshold} onChange={e => setThreshold(e.target.value)} className="w-full rounded-lg p-3 text-gray-900" required />
+        <p className="text-gray-400">مبلغ بر اساس جمع کالاها، پیش از تخفیف و مالیات محاسبه می‌شود.</p>
+        <button type="submit" disabled={!thresholdLoaded} className="px-4 py-2 bg-primary-orange text-white rounded-lg disabled:opacity-50">ذخیره حد ارسال رایگان</button>
+      </form>
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">مدیریت روش‌های ارسال</h2>
         <button

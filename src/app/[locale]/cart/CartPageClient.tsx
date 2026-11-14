@@ -16,6 +16,8 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [shippingThreshold, setShippingThreshold] = useState<number | null>(null);
+  useEffect(() => { fetch("/api/shipping-policy", { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject()).then(data => setShippingThreshold(data.threshold)).catch(() => setShippingThreshold(null)); }, []);
   const [messages, setMessages] = useState<Messages | null>(null);
 
   useEffect(() => {
@@ -261,7 +263,7 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
                 <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                   <p>• {t.shippingInfoText1}</p>
                   <p>• {t.shippingInfoText2}</p>
-                  <p>• {t.shippingInfoText3}</p>
+                  {shippingThreshold !== null && <p>• {t.shippingInfoText3.replace("{threshold}", formatPrice(shippingThreshold))}</p>}
                 </div>
               </div>
 

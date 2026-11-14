@@ -569,7 +569,7 @@
     "shippingInfo": "Shipping Information",
     "shippingInfoText1": "Shipping via Post and Tipax",
     "shippingInfoText2": "Delivery Time: 2-5 business days",
-    "shippingInfoText3": "Shipping Cost: Free for orders over 500,000 Toman",
+    "shippingInfoText3": "Shipping cost: Free for orders over {threshold}",
     "securePayment": "Secure Payment with ZarinPal",
     "viewProducts": "View Products",
     "categories": "Categories"

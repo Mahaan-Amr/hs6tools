@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import { DEFAULT_FREE_SHIPPING_THRESHOLD, shippingCharge } from "@/lib/shipping-policy";
 import { sendLowStockAlert } from "@/lib/sms";
 
 class OrderCreationError extends Error {
@@ -508,6 +509,13 @@ export async function POST(request: NextRequest) {
           (sum, item) => sum.plus(item.totalPrice),
           new Decimal(0),
         );
+
+        const shippingPolicy = await tx.shippingPolicy.findUnique({ where: { id: "default" } });
+        serverShippingAmount = new Decimal(shippingCharge(
+          subtotalDecimal.toNumber(),
+          shippingPolicy?.freeShippingThreshold ?? DEFAULT_FREE_SHIPPING_THRESHOLD,
+          serverShippingAmount.toNumber(),
+        ));
 
         let coupon: Awaited<ReturnType<typeof tx.coupon.findUnique>> = null;
         let couponId: string | null = null;
